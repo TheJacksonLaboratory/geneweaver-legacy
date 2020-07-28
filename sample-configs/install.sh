@@ -335,7 +335,7 @@ CELERYD_NODES="w1"
 #CELERYD_NODES="w1 w2 w3"
 
 # Absolute or relative path to the 'celery' command:
-CELERY_BIN="$INSTALL_PATH/$VIRTUALENV_NAME/bin/celery"
+CELERY_BIN="$INSTALL_PATH/$MODULE_DIR/$VIRTUALENV_NAME/bin/celery"
 
 # App instance to use
 CELERY_APP="tools.celeryapp"
