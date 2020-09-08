@@ -2,7 +2,7 @@
 # Description: This program converts the Geneweaver JSON output format for the HISim into a format that
 # can be used by the vz transit graph subway plots
 
-import simplejson
+import json
 import re
 
 
@@ -25,18 +25,18 @@ class JSON2TSV:
         # Doesnt work for some reason: Then convert all of the previous ' that were apostrophes, back to apostrophes
         #s = re.sub(r'([A-Za-z])"s',"\1\'s",s)
 
-        data = simplejson.loads(s)
+        data = json.loads(s)
         return data['nodes']
 
-    
+
     def generate_graph(self,filename, data):
-        
+
         # Don't get the file extension for the filename
         filename = filename.split(".")[0]
         # Open the nodes file
         nodes = "" #open(filename+"-nodes.tsv","w")
         nodes += "layer\tnode_id\tgenes\tgenesets\n"
-        #nodes.write("FILES\t" + filename + "\n") 
+        #nodes.write("FILES\t" + filename + "\n")
         # After doing all of that, figure out what the edges are
         edges = ""# open(filename + "-edges.tsv","w")
         edges += "node_from\tnode_to\n"
@@ -58,8 +58,8 @@ class JSON2TSV:
         # Close the file
         #nodes.close()
         #edges.close()
-        return nodes, edges 
-   
+        return nodes, edges
+
 
 
 

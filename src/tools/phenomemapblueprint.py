@@ -1,7 +1,7 @@
 import json
 import uuid
 import os
-
+#from tools.JSON2TSV import JSON2TSV
 import celery.states as states
 import flask
 
@@ -47,9 +47,9 @@ the following fields:
     gs_ids:         an array of strings for each gs_id analyzed
 
 The HiSim tool also writes several files to the results folder that aren't
-included in the return result (but probably should be). 
-One of these is a csv file (that isn't actually in the csv format...) 
-containing nodes, edges, and intersections. However it doesn't seem like the 
+included in the return result (but probably should be).
+One of these is a csv file (that isn't actually in the csv format...)
+containing nodes, edges, and intersections. However it doesn't seem like the
 data from this file is actually used at any time (although it is read from for
 some reason).
 Another is a JSON file containing the nodes and edges needed for the d3js viz.
@@ -276,14 +276,14 @@ def download_bmp(task_id):
 def view_result(task_id):
     """
     """
-    
+
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     resultpath = config.get('application', 'results')
 
     if async_result.state == states.FAILURE:
-        
+
         results = json.loads(async_result.result)
 
         if results['error']:
@@ -313,6 +313,20 @@ def view_result(task_id):
         with open(json_file, 'r') as fl:
             for ln in fl:
                 json_result += ln
+
+        #j2t = JSON2TSV()
+        #node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
+        '''
+        return flask.render_template(
+            'tool/hisim.html',
+            tsv_edges=str(edge_result),
+            tsv_nodes=(node_result),
+            'tool/PhenomeMap_result.html',
+             data=json_result,
+            task=task_id,
+             async_result=results,
+             tool=tool)
+        '''
 
         return flask.render_template(
             'tool/PhenomeMap_result.html',
