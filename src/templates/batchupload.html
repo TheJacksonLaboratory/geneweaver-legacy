@@ -117,14 +117,23 @@
                             <input id="file_data" type="file" name="selected_file" required="" accept=".bgf,.gw,text/plain"/>
                             <input id="fileContents" name="fileContents" type="hidden" />
                         </div>
-                        <span id="fileDisplayArea" style="color: #337700; vertical-align: middle; padding: 10px 0 0 10px;">No file selected</span>
+                        <span id="fileDisplayArea" style="color: #337700; vertical-align: middle; padding: 10px 0 0px 10px;">No file selected</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="btn btn-warning btn-file">Variant File Upload
+                            <input id="variant_file_data" type="file" name="selected_file" required="" accept=".vcf"/>
+                            <input id="varient_fileContents" name="fileContents" type="hidden" />
+                        </div>
+                        <span id="variant_fileDisplayArea" style="color: #337700; vertical-align: middle; padding: 20px 0 0 10px;">No file selected</span>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-12 btn-group">
                         <div class='help-block'></div>
                         <input id="upload-geneset-button" name="uploadButton" class="btn btn-warning btn-file " type="submit"
-                               value="Review GeneSet Upload &raquo;" disabled="true">
+                               value="Review Upload &raquo;" disabled="true">
                     </div>
                 </div>
             </div>
@@ -255,14 +264,14 @@
         $('#selectGroup').click(function(){
             var groups_selected = $('#selectGroup option:selected').length;
             var file_selected = $('input:file').val().length;
-    
+
             $('#upload-geneset-button').prop('disabled', ((groups_selected < 1) || (file_selected < 1)));
         });
 
         $('input:file').on("change", function() {
             var groups_selected = $('#selectGroup option:selected').length;
             var file_selected = $('input:file').val().length;
-            $('input:submit').prop('disabled', ((groups_selected < 1) || (file_selected < 1))); 
+            $('input:submit').prop('disabled', ((groups_selected < 1) || (file_selected < 1)));
         });
 
         $(function () {
@@ -301,8 +310,16 @@
         var fileDisplayArea = $('#fileDisplayArea');
         var fileContents = $('#fileContents');
 
+        // Do the same things for the variant upload
+        var variant_fileInput = document.getElementById('variant_file_data');
+        var variant_fileDisplayArea = $('#variant_fileDisplayArea');
+        var variant_fileContents = $('#variant_fileContents');
+
+
+
 		fileInput.addEventListener('change', function(e) {
 			var file = fileInput.files[0];
+
 
             // After reading the file, the filename and size are displayed
             // to the user. The contents goes under a hidden input for
@@ -338,6 +355,45 @@
 			}
 		});
 
+        // Do the same thing for the variant set (probs should change this to be one function but oh well)
+        variant_fileInput.addEventListener('change', function(e) {
+
+			var file = variant_fileInput.files[0];
+
+            // After reading the file, the filename and size are displayed
+            // to the user. The contents goes under a hidden input for
+            // submission later.
+
+            //check for valid file extension
+            //extra work as the file upload dialog prevents all but these extensions
+            var valid_types = [".vcf"];
+            var fname = file.name;
+            var valid = 0;
+
+            for (var i=0; i < valid_types.length; i++) {
+			   var ext = valid_types[i];
+			   var fext = fname.substr(fname.length - ext.length, ext.length);
+			   if(fext == ext) { valid = 1; }
+            }
+
+			if (valid == 1) {
+				var reader = new FileReader();
+
+				reader.onload = function(e) {
+                    var size = parseFloat(file.size / 1024).toFixed(2) + ' kB';
+
+                    variant_fileDisplayArea.text(file.name + ' (' + size + ')');
+                    variant_fileContents.val(reader.result);
+				};
+
+				reader.readAsText(file);
+
+			} else {
+				// Not a valid file extension
+				variant_fileDisplayArea.innerText = "File not supported!";
+			}
+		});
+
 		/*
 		 * Creates a link to the edit geneset genes page for the given gs_id.
 		 *
@@ -347,12 +403,12 @@
 		 *
 		 * returns
 		 * 		a string of HTML, the link to that set's edit genes page
-		 * 	
+		 *
 		 */
 		var generateEditLink = function(gsid, display) {
 
-			
-			var url = location.protocol + '//' + location.host + 
+
+			var url = location.protocol + '//' + location.host +
 				'/editgenesetgenes/' + gsid;
 
 			return '<a href="' + url + '">' + display + '</a>';
