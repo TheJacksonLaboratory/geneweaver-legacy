@@ -24,7 +24,7 @@ from flask_admin import Admin, BaseView, expose
 from flask_admin.base import MenuLink
 from psycopg2 import Error
 from psycopg2 import IntegrityError
-from wand.image import Image
+#from wand.image import Image
 from werkzeug.routing import BaseConverter
 import urllib3
 import bleach
@@ -2167,14 +2167,14 @@ def download_result():
         ## For some reason the DPI for this image needs to be low otherwise it
         ## takes forever to render (and may cause ImageMagick to crash). It's 
         ## also very clear even at low DPI.
-        img = Image(filename=classicpath, format='svg', resolution=150)
+       # img = Image(filename=classicpath, format='svg', resolution=150)
 
-    else:
-        img = Image(file=svg, format='svg', resolution=dpi)
+    #else:
+       # img = Image(file=svg, format='svg', resolution=dpi)
 
-    img.format = filetype
-    img.save(filename=img_abs)
-    img.close()
+   # img.format = filetype
+   # img.save(filename=img_abs)
+   # img.close()
 
     return img_rel
 
@@ -4910,7 +4910,7 @@ app.debug = True
 
 if __name__ == '__main__':
 
-    # config.loadConfig()
+    #config.loadConfig()
     # print config.CONFIG.sections()
 
 
@@ -4924,7 +4924,7 @@ if __name__ == '__main__':
         app.register_error_handler(Exception, error.internal_server_error)
 
     if config.get('application', 'host'):
-        app.run(host=config.get('application', 'host'))
+        app.run(host=config.get('application', 'host'),port=config.get('application','port'))
 
     else:
         app.run()

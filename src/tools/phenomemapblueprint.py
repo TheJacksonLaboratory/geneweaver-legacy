@@ -1,7 +1,7 @@
 import json
 import uuid
 import os
-#from tools.JSON2TSV import JSON2TSV
+from tools.JSON2TSV import JSON2TSV
 import celery.states as states
 import flask
 
@@ -314,14 +314,12 @@ def view_result(task_id):
             for ln in fl:
                 json_result += ln
 
-        #j2t = JSON2TSV()
-        #node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
-        '''
+        j2t = JSON2TSV()
+        node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
         return flask.render_template(
             'tool/hisim.html',
             tsv_edges=str(edge_result),
             tsv_nodes=(node_result),
-            'tool/PhenomeMap_result.html',
              data=json_result,
             task=task_id,
              async_result=results,
@@ -333,6 +331,7 @@ def view_result(task_id):
             data=json_result,
             async_result=results,
             tool=tool)
+       '''
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
