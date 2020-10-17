@@ -297,7 +297,7 @@ def get_shared_projects(usr_id):
     Retrieves all the projects that have been shared with the given user.
 
     :type usr_id: int
-    :arg usr_id: 
+    :arg usr_id:
 
     :ret list: projects (as project objects) shared with the user
     """
@@ -309,10 +309,10 @@ def get_shared_projects(usr_id):
                             pj_created, pj_notes, pj_star, usr_email AS owner
             FROM            project AS pj
             NATURAL JOIN    project2geneset, usr
-            WHERE           usr.usr_id = pj.usr_id AND 
+            WHERE           usr.usr_id = pj.usr_id AND
                             pj.usr_id <> %s AND
-                            project_is_readable(%s, pj_id) 
-            GROUP BY        pj.usr_id, pj_name, pj_id, owner 
+                            project_is_readable(%s, pj_id)
+            GROUP BY        pj.usr_id, pj_name, pj_id, owner
             ORDER BY        pj_name;
             ''',
                 (usr_id, usr_id)
@@ -462,7 +462,7 @@ def add_user_to_public_groups(group_ids, user_id):
 
 # group_name is a string provided by user, group_private should be either true or false
 # true, the group is private. false the group is public.
-# The user_id will be initialized as the owner of the group   
+# The user_id will be initialized as the owner of the group
 
 def create_group(group_name, group_private, user_id):
     if group_private == 'Private':
@@ -537,10 +537,10 @@ def add_user_to_group(group_id, owner_id, usr_email, permission=0):
 
         cursor.execute(
             '''
-            SELECT  usr_email 
-            FROM    usr 
+            SELECT  usr_email
+            FROM    usr
             WHERE   LOWER(usr_email) = %s
-            ''', 
+            ''',
                 (usr_email,)
         )
 
@@ -548,12 +548,12 @@ def add_user_to_group(group_id, owner_id, usr_email, permission=0):
             return {'error': 'No User'}
         else:
             email_from_db = cursor.fetchone()[0]
-        
+
         cursor.execute(
             '''
-            SELECT  u.usr_id 
-            FROM    usr u, usr2grp ug 
-            WHERE   LOWER(u.usr_email) = %s AND 
+            SELECT  u.usr_id
+            FROM    usr u, usr2grp ug
+            WHERE   LOWER(u.usr_email) = %s AND
                     u.usr_id = ug.usr_id AND
                     ug.grp_id = %s;
             ''', (usr_email, group_id)
@@ -582,7 +582,7 @@ def add_user_to_group(group_id, owner_id, usr_email, permission=0):
         owner = get_user(owner_id)
         owner_name = owner.first_name + " " + owner.last_name
         notifications.send_usr_notification(
-            email_from_db, 
+            email_from_db,
             "Added to Group",
             "You have been added to the group {} by {}".format(group_name, owner_name),
             True
@@ -855,14 +855,14 @@ def get_all_platform_resources():
     """
     with PooledCursor() as cursor:
         cursor.execute('''
-        SELECT *,x.probe_count,x.gene_count FROM platform, 
+        SELECT *,x.probe_count,x.gene_count FROM platform,
             (SELECT pf_id,count(probe.prb_id) as probe_count,
-            count(distinct probe2gene.prb_id) as probemap_count, 
-            count(distinct ode_gene_id) as gene_count 
-                FROM probe left outer join probe2gene 
-                    ON (probe.prb_id=probe2gene.prb_id) GROUP BY pf_id) x 
-                    WHERE x.pf_id=platform.pf_id 
-                    --AND pf_gpl_id IS NOT NULL 
+            count(distinct probe2gene.prb_id) as probemap_count,
+            count(distinct ode_gene_id) as gene_count
+                FROM probe left outer join probe2gene
+                    ON (probe.prb_id=probe2gene.prb_id) GROUP BY pf_id) x
+                    WHERE x.pf_id=platform.pf_id
+                    --AND pf_gpl_id IS NOT NULL
                     ORDER BY CAST(SUBSTR(pf_gpl_id,4) AS INTEGER);
 
         ''')
@@ -875,9 +875,9 @@ def get_all_ontology_resources():
     """
     with PooledCursor() as cursor:
         cursor.execute('''
-        SELECT *,x.count as ontdb_count FROM ontologydb, 
-            (SELECT ontdb_id,count(ont_id) FROM ontology 
-            GROUP BY ontdb_id) x 
+        SELECT *,x.count as ontdb_count FROM ontologydb,
+            (SELECT ontdb_id,count(ont_id) FROM ontology
+            GROUP BY ontdb_id) x
             WHERE x.ontdb_id=ontologydb.ontdb_id ORDER BY ontdb_name;
         ''')
         return list(dictify_cursor(cursor))
@@ -1215,7 +1215,7 @@ def update_geneset_values(gs_id):
         fsql = "select file_id from production.geneset where gs_id = {}".format(gs_id)
         cursor.execute(fsql)
         file_id = cursor.fetchone()[0]
-        '''get all gene data from temp_geneset values table and 
+        '''get all gene data from temp_geneset values table and
                 create a tab delimited string with newline characters
                 for each gene / value pair'''
         sql = "select src_value, src_id from production.temp_geneset_value where gs_id = {}".format(gs_id)
@@ -1287,12 +1287,12 @@ def add_geneset_genes_to_temp(gs_id, geneset_row_list):
                 try:
                     q = """
                         WITH upsert AS (
-                             UPDATE production.temp_geneset_value 
+                             UPDATE production.temp_geneset_value
                              SET gs_id='{gs_id}', ode_gene_id={ode_id}, src_value='{src_value}', src_id='{src_id}'
                              WHERE gs_id='{gs_id}' AND ode_gene_id={ode_id}
                              RETURNING *
                         )
-                        INSERT INTO production.temp_geneset_value (gs_id, ode_gene_id, src_value, src_id) 
+                        INSERT INTO production.temp_geneset_value (gs_id, ode_gene_id, src_value, src_id)
                         SELECT '{gs_id}', {ode_id}, '{src_value}', '{src_id}'
                         WHERE NOT EXISTS (SELECT * FROM upsert)
                     """.format(**{'gs_id': row[0], 'ode_id': row[1], 'src_value': row[2], 'src_id': row[3]})
@@ -1371,11 +1371,11 @@ def cancel_geneset_edit_by_id(rargs):
 def update_geneset(usr_id, form):
     """
     Selectively updates geneset metacontent and publication information. The
-    function determines how to update things in the following order: 
-    If a PMID (pub_pubmed) is provided, all metacontent fields will be 
-    updated. 
+    function determines how to update things in the following order:
+    If a PMID (pub_pubmed) is provided, all metacontent fields will be
+    updated.
     If a PMID is not provided and all other metacontent fields are blank, all
-    publication information associated with the geneset is removed. 
+    publication information associated with the geneset is removed.
     Finally, if any metacontent fields are filled out, all publication
     metacontent fields are updated and a new publication ID (pub_id) is created
     depending on whether it already exstis or not.
@@ -1428,13 +1428,13 @@ def update_geneset(usr_id, form):
         with PooledCursor() as cursor:
             cursor.execute('''
                 INSERT INTO publication (
-                    pub_authors, pub_title, pub_abstract, pub_journal, 
+                    pub_authors, pub_title, pub_abstract, pub_journal,
                     pub_volume, pub_pages, pub_month, pub_year, pub_pubmed
                 )
 				SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s
 				WHERE NOT EXISTS (
-                    SELECT 1 
-                    FROM publication 
+                    SELECT 1
+                    FROM publication
                     WHERE pub_pubmed = %s
                 );
                 ''', (pub_authors, pub_title, pub_abstract, pub_journal,
@@ -1446,8 +1446,8 @@ def update_geneset(usr_id, form):
 
         with PooledCursor() as cursor:
             cursor.execute('''
-                SELECT pub_id 
-                FROM publication 
+                SELECT pub_id
+                FROM publication
                 WHERE pub_pubmed = %s;
                 ''', (pub_pubmed,)
             )
@@ -1468,11 +1468,11 @@ def update_geneset(usr_id, form):
         if pub_id:
             with PooledCursor() as cursor:
                 cursor.execute('''
-                    UPDATE publication 
-                    SET pub_title = %s, pub_abstract = %s, pub_journal = %s, 
-                        pub_volume = %s, pub_pages = %s, pub_month = %s, 
-                        pub_year = %s, pub_pubmed = %s 
-                    FROM geneset 
+                    UPDATE publication
+                    SET pub_title = %s, pub_abstract = %s, pub_journal = %s,
+                        pub_volume = %s, pub_pages = %s, pub_month = %s,
+                        pub_year = %s, pub_pubmed = %s
+                    FROM geneset
                     WHERE publication.pub_id = geneset.pub_id AND
 						  geneset.gs_id = %s;
                     ''', (pub_title, pub_abstract, pub_journal, pub_volume,
@@ -1486,12 +1486,12 @@ def update_geneset(usr_id, form):
             with PooledCursor() as cursor:
                 cursor.execute('''
                     INSERT INTO publication (
-                        pub_authors, pub_title, pub_abstract, pub_journal, 
+                        pub_authors, pub_title, pub_abstract, pub_journal,
                         pub_volume, pub_pages, pub_month, pub_year
-                    ) 
+                    )
                     VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s
-                    ) 
+                    )
                     RETURNING pub_id;
                     ''', (pub_authors, pub_title, pub_abstract, pub_journal,
                           pub_volume, pub_pages, pub_month, pub_year)
@@ -1518,8 +1518,8 @@ def update_geneset(usr_id, form):
     # update geneset with changes
     with PooledCursor() as cursor:
         sql = cursor.mogrify('''
-            UPDATE geneset 
-            SET pub_id = %s, gs_name = (%s), gs_abbreviation = (%s), 
+            UPDATE geneset
+            SET pub_id = %s, gs_name = (%s), gs_abbreviation = (%s),
                 gs_description = (%s), gs_threshold_type = (%s), cur_id = (%s), gs_groups = (%s)
             WHERE gs_id = %s;
             ''', (pub_id, gs_name, gs_abbreviation, gs_description, gs_threshold_type, cur_id, gs_groups, gs_id)
@@ -1557,8 +1557,8 @@ def add_ont_to_geneset(gs_id, ont_id, gso_ref_type):
     with PooledCursor() as cursor:
         cursor.execute('''
             INSERT INTO geneset_ontology
-                (gs_id, ont_id, gso_ref_type) 
-            VALUES 
+                (gs_id, ont_id, gso_ref_type)
+            VALUES
                 (%s, %s, %s);
             ''', (gs_id, ont_id, gso_ref_type))
         cursor.connection.commit()
@@ -1613,7 +1613,7 @@ def does_geneset_have_annotation(gs_id, ont_id):
     Checks to see if a particular ontology term has been annotated to a
     geneset.
 
-    :param gs_id:   geneset ID 
+    :param gs_id:   geneset ID
     :param ont_id:  ontology ID for the term being checked
     :return:        true if the term is annotated to the given geneset,
                     otherwise false
@@ -1663,7 +1663,7 @@ def update_geneset_ontology_reference(gs_id, ont_id, ref_type):
     Updates the ontology reference type for the given geneset and ontology
     term.
 
-    :param gs_id:       geneset ID 
+    :param gs_id:       geneset ID
     :param ont_id:      ontology ID for the term being checked
     :param ref_type:    new reference type
     """
@@ -1692,7 +1692,7 @@ def add_project(usr_id, pj_name):
 
 def add_geneset2project(pj_id, gs_id):
     """ Function to associate a geneset with a project in the database.
-    
+
     Args:
         proj_id (int): The ID of the project to which geneset will be associated
         gs_id (int): The ID of the geneset to associate with the project
@@ -1754,7 +1754,7 @@ def remove_geneset_from_project(rargs):
 
 def add_geneset_group(gs_id, grp_id):
     """
-    Adds a new group to a geneset's gs_groups column. 
+    Adds a new group to a geneset's gs_groups column.
 
     arguments
         gs_id: geneset ID
@@ -1834,7 +1834,7 @@ def remove_ont_from_geneset(gs_id, ont_id, gso_ref_type):
     with PooledCursor() as cursor:
         cursor.execute('''
             DELETE FROM geneset_ontology
-            WHERE gs_id = %s AND 
+            WHERE gs_id = %s AND
                   ont_id = %s
             ''', (gs_id, ont_id)
         )
@@ -1914,7 +1914,7 @@ def update_threshold_values(rargs):
             # need to also update the geneset_value table to set gsv_in_threshold == true for values between min & max
             # It's easier here to set them all to f and then update the ones you want to t
             cursor.execute('''UPDATE extsrc.geneset_value SET gsv_in_threshold='f' WHERE gs_id=%s''', (gs_id,))
-            cursor.execute('''UPDATE extsrc.geneset_value SET gsv_in_threshold='t' 
+            cursor.execute('''UPDATE extsrc.geneset_value SET gsv_in_threshold='t'
                                 WHERE gsv_value>=%s AND gsv_value<=%s AND gs_id=%s''',
                            (float(min), float(max), gs_id,))
             cursor.connection.commit()
@@ -2817,7 +2817,7 @@ class User:
             self.__projects = get_all_projects(self.user_id)
 
         ## Case insensitive sorting otherwise project names with captial
-        ## letters come before those with lowercase. 
+        ## letters come before those with lowercase.
         self.__projects = sorted(self.__projects, key=lambda p: p.name.lower())
 
         return self.__projects
@@ -3522,21 +3522,21 @@ def get_similar_genesets(geneset_id, user_id, grp_by):
     with PooledCursor() as cursor:
         cursor.execute(
             '''SELECT a.* FROM (
-                   (SELECT geneset.*,jac_value,gic_value 
+                   (SELECT geneset.*,jac_value,gic_value
                        FROM geneset, geneset_jaccard gj
-                       WHERE gs_id=gs_id_right AND gs_id_left=%(geneset_id)s 
-                         AND geneset_is_readable(%(user_id)s, gs_id) 
-                         AND gs_status NOT LIKE 'de%%' 
+                       WHERE gs_id=gs_id_right AND gs_id_left=%(geneset_id)s
+                         AND geneset_is_readable(%(user_id)s, gs_id)
+                         AND gs_status NOT LIKE 'de%%'
                            ORDER BY gj.jac_value DESC LIMIT 500
-                     ) 
+                     )
                      UNION
-                   (SELECT geneset.*,jac_value,gic_value 
-                       FROM geneset, geneset_jaccard gj 
-                       WHERE gs_id=gs_id_left AND gs_id_right=%(geneset_id)s 
-                         AND geneset_is_readable(%(user_id)s, gs_id) 
-                         AND gs_status NOT LIKE 'de%%' 
+                   (SELECT geneset.*,jac_value,gic_value
+                       FROM geneset, geneset_jaccard gj
+                       WHERE gs_id=gs_id_left AND gs_id_right=%(geneset_id)s
+                         AND geneset_is_readable(%(user_id)s, gs_id)
+                         AND gs_status NOT LIKE 'de%%'
                            ORDER BY gj.jac_value DESC LIMIT 500
-                     ) 
+                     )
                  ) AS a ORDER BY ''' + order_by + ''' a.jac_value DESC LIMIT 1000''',
             {
                 'geneset_id': geneset_id,
@@ -3816,8 +3816,8 @@ def get_geneset_hom_ids(gs_id):
     :return:
     """
     with PooledCursor() as cursor:
-        cursor.execute('''SELECT DISTINCT hom_id FROM extsrc.homology h INNER JOIN extsrc.geneset_value gsv 
-                ON h.ode_gene_id=gsv.ode_gene_id INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id 
+        cursor.execute('''SELECT DISTINCT hom_id FROM extsrc.homology h INNER JOIN extsrc.geneset_value gsv
+                ON h.ode_gene_id=gsv.ode_gene_id INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id
                 WHERE gs_status not like 'de%%' AND g.gs_id=%s''', (gs_id,))
         if cursor.rowcount == 0:
             return 0
@@ -4127,7 +4127,7 @@ def transpose_genes_by_species(attr):
 def get_omicssoft(gs_id):
     '''
     Return data from the omicssoft table if any exists
-    :param gs_id: 
+    :param gs_id:
     :return: dictionary
     '''
     omicssoft = {'project': 'N\A', 'tag': 'GeneWeaver', 'type': 'N\A'}
@@ -4326,10 +4326,10 @@ def geneset_intersection_values_for_mset(gs_a, gs_b):
 
             INNER JOIN homology AS h
             ON gsv.ode_gene_id = h.ode_gene_id
-            
+
             INNER JOIN gene_info AS gi
             ON gsv.ode_gene_id = gi.ode_gene_id
-            
+
             INNER JOIN gene AS g
             ON gsv.ode_gene_id = g.ode_gene_id
             WHERE gsv.gs_id = %s
@@ -4388,8 +4388,8 @@ def get_gene_homolog_ids(ode_gene_ids, gdb_id):
         gdb_id:         ID of the different gene type the user wants to see
 
     returns
-        a mapping of ode_gene_ids to ode_ref_ids. 
-        The ode_gene_ids in this case are the originals provided in the first 
+        a mapping of ode_gene_ids to ode_ref_ids.
+        The ode_gene_ids in this case are the originals provided in the first
         argument of this function. The ode_ref_ids are the reference IDs to
         some other MOD, mapped across species.
     """
@@ -4400,13 +4400,13 @@ def get_gene_homolog_ids(ode_gene_ids, gdb_id):
     with PooledCursor() as cursor:
         cursor.execute(
             '''
-            SELECT      h.ode_gene_id, g.ode_ref_id 
-            FROM        homology AS h 
-            INNER JOIN  homology AS h2 
-            ON          h.hom_id = h2.hom_id 
+            SELECT      h.ode_gene_id, g.ode_ref_id
+            FROM        homology AS h
+            INNER JOIN  homology AS h2
+            ON          h.hom_id = h2.hom_id
             INNER JOIN  gene AS g
-            ON          g.ode_gene_id = h2.ode_gene_id 
-            WHERE       h.ode_gene_id in %s AND 
+            ON          g.ode_gene_id = h2.ode_gene_id
+            WHERE       h.ode_gene_id in %s AND
                         g.gdb_id = %s;
             ''', (ode_gene_ids, gdb_id,)
         )
@@ -4426,7 +4426,7 @@ def get_geneset_values(
     Updated version of the get_geneset_values function designed to remove
     dependence on session variables and fix several bugs: 1) genes without
     homologs don't show up in the gene list, 2) paralogs for all genes show up
-    in the gene list, 3) genes with more than one of the same identifier 
+    in the gene list, 3) genes with more than one of the same identifier
     types prevent other identifiers from showing up.
     The original function was a nightmare to debug so this is split into
     a separate component for retrieving IDs across species.
@@ -4454,13 +4454,13 @@ def get_geneset_values(
     gdb_spid = get_gdb_sp(gdb_id)[0]['sp_id']
 
     ## The user wants to convert identifiers to another species' MOD IDs. We
-    ## temporarily set gdb_id to symbols (7) otherwise the query below won't 
+    ## temporarily set gdb_id to symbols (7) otherwise the query below won't
     ## return anything since the original gdb_id is for a different species
     if gdb_spid != 0 and gdb_spid != sp_id:
         original_gdb_id = gdb_id
         gdb_id = 7
 
-    ## Not supposed to do this 'cause potential SQL injection vector but 
+    ## Not supposed to do this 'cause potential SQL injection vector but
     ## ORDER BY CASE doesn't work with mixed types (varchar and int in our
     ## case)
     if sort == 'value':
@@ -4476,31 +4476,31 @@ def get_geneset_values(
         cursor.execute(
             '''
             SELECT gsv.gs_id, gsv.ode_gene_id, gsv.gsv_value, gsv.gsv_hits,
-                   gsv.gsv_source_list, gsv.gsv_value_list, 
+                   gsv.gsv_source_list, gsv.gsv_value_list,
                    gsv.gsv_in_threshold, gsv.gsv_date, h.hom_id, gi.gene_rank,
                    gsv.ode_ref_id, gsv.gdb_id
-                   
+
             --
             -- Use a subquery here so we can prevent duplicate gene identifiers
-            -- of the same type from being returned (the DISTINCT ON section) 
-            -- otherwise when we try to change identifier types from the view 
+            -- of the same type from being returned (the DISTINCT ON section)
+            -- otherwise when we try to change identifier types from the view
             -- GS page, duplicate entries screw things up
             --
             FROM (
-                SELECT DISTINCT ON (g.ode_gene_id, g.gdb_id) 
+                SELECT DISTINCT ON (g.ode_gene_id, g.gdb_id)
                         gsv.*, g.ode_ref_id, g.gdb_id, g.ode_pref
-                FROM    geneset_value as gsv, gene as g 
-                WHERE   gsv.gs_id = %s AND 
+                FROM    geneset_value as gsv, gene as g
+                WHERE   gsv.gs_id = %s AND
                         g.ode_gene_id = gsv.ode_gene_id AND
                         g.gdb_id = (SELECT COALESCE (
-                            (SELECT gdb_id 
-                             FROM   gene AS g2 
-                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND 
-                                   g2.gdb_id = %s 
+                            (SELECT gdb_id
+                             FROM   gene AS g2
+                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
+                                   g2.gdb_id = %s
                              LIMIT 1),
-                            (SELECT gdb_id 
-                             FROM   gene AS g2 
-                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND 
+                            (SELECT gdb_id
+                             FROM   gene AS g2
+                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
                                    g2.gdb_id = 7
                              LIMIT 1)
                         )) AND
@@ -4511,13 +4511,13 @@ def get_geneset_values(
                         --
                         CASE %s
                             WHEN '' THEN true
-                            ELSE g.ode_ref_id ~* %s 
+                            ELSE g.ode_ref_id ~* %s
                         END AND
- 
+
                         --
                         -- When viewing symbols, always pick the preferred gene symbol
                         --
-                        CASE 
+                        CASE
                             WHEN g.gdb_id = 7 THEN g.ode_pref = 't'
                             ELSE true
                         END
@@ -4533,23 +4533,23 @@ def get_geneset_values(
             -- Have to use a left outer join because some genes may not have homologs
             --
             LEFT OUTER JOIN homology AS h
-            ON          gsv.ode_gene_id = h.ode_gene_id 
-             
+            ON          gsv.ode_gene_id = h.ode_gene_id
+
             WHERE h.hom_source_name = 'Homologene' OR
                   -- In case the gene doesn't have any homologs
                   h.hom_source_name IS NULL
-            
-            ORDER BY 
+
+            ORDER BY
             ''' + sort + ' ' + direct +
             '''
             LIMIT %s OFFSET %s
             ''',
             (gs_id, gdb_id, search, search, limit, offset)
-            #ORDER BY 
+            #ORDER BY
             #    CASE WHEN %s = 'asc' THEN
             #        CASE %s
             #            WHEN 'value' THEN gsv.gsv_value :: character varying
-            #            WHEN 'alt' THEN gsv.ode_ref_id 
+            #            WHEN 'alt' THEN gsv.ode_ref_id
             #            ELSE gsv.gsv_source_list :: character varying
             #        END
             #    ELSE ''
@@ -4557,13 +4557,13 @@ def get_geneset_values(
             #    CASE WHEN %s = 'desc' THEN
             #        CASE %s
             #            WHEN 'value' THEN gsv.gsv_value :: character varying
-            #            WHEN 'alt' THEN gsv.ode_ref_id 
+            #            WHEN 'alt' THEN gsv.ode_ref_id
             #            ELSE gsv.gsv_source_list :: character varying
             #        END
             #    ELSE ''
             #    END desc
             #LIMIT %s OFFSET %s
-            #''', 
+            #''',
             #(gs_id, gdb_id, search, search, direct, sort, direct, sort, limit, offset)
         )
 
@@ -4593,7 +4593,7 @@ def get_geneset_values_simple(gsid):
     """
     Returns all geneset_values for the given gsid without selecting based on
     homology, gene ID types, or any of the complicated stuff get_geneset_values
-    does. 
+    does.
     This function only returns genes that have an entry in the gene table. Many
     gene sets have defunct or singular ode_gene_ids used to represent genes
     that may not exist or are unknown (microarray probes, riken clones, etc).
@@ -4828,7 +4828,7 @@ def export_results_by_gs_id(gs_id):
 def get_gdb_names():
     """
     get all names associated with gene databases, essentially all external resources for gene names
-    :return: 
+    :return:
     """
     gdb_names = []
     with PooledCursor() as cursor:
@@ -4843,8 +4843,8 @@ def get_gdb_names():
 def get_all_gene_ids(gs_id):
     """
     this exports all gene symbols in a list
-    :param gs_id: 
-    :return: 
+    :param gs_id:
+    :return:
     """
     # Get all of the gdb_names for seeding the disctionary
     gdb_names = get_gdb_names()
@@ -4852,9 +4852,9 @@ def get_all_gene_ids(gs_id):
     data = defaultdict(dict)
     with PooledCursor() as cursor:
         cursor.execute(
-            '''SELECT gsv.ode_gene_id, g.ode_ref_id, gdb.gdb_name 
+            '''SELECT gsv.ode_gene_id, g.ode_ref_id, gdb.gdb_name
                 FROM gene g, genedb gdb, geneset_value gsv, geneset gs
-                 WHERE gs.gs_id=%s AND gs.sp_id=g.sp_id AND gs.gs_id=gsv.gs_id AND gsv.ode_gene_id=g.ode_gene_id 
+                 WHERE gs.gs_id=%s AND gs.sp_id=g.sp_id AND gs.gs_id=gsv.gs_id AND gsv.ode_gene_id=g.ode_gene_id
                  AND g.gdb_id=gdb.gdb_id ORDER BY g.ode_gene_id''' % (gs_id,)
         )
         results = cursor.fetchall()
@@ -4952,23 +4952,23 @@ def get_intersect_by_homology(gsid1, gsid2):
         ## intersection of both sets using homology IDs
         cursor.execute(
             '''
-            SELECT g1.gi_symbol, g1.ode_gene_id, g1.hom_id 
+            SELECT g1.gi_symbol, g1.ode_gene_id, g1.hom_id
             FROM   (
                 SELECT      gv.ode_gene_id, gi.gi_symbol, h.hom_id
-                FROM        extsrc.geneset_value AS gv 
-                INNER JOIN  homology AS h 
-                USING       (ode_gene_id) 
-                INNER JOIN  gene_info AS gi 
-                USING       (ode_gene_id) 
+                FROM        extsrc.geneset_value AS gv
+                INNER JOIN  homology AS h
+                USING       (ode_gene_id)
+                INNER JOIN  gene_info AS gi
+                USING       (ode_gene_id)
                 WHERE       gs_id = %s
             ) g1
             INNER JOIN (
                 SELECT      gv.ode_gene_id, gi.gi_symbol, h.hom_id
-                FROM        extsrc.geneset_value AS gv 
-                INNER JOIN  homology AS h 
-                USING       (ode_gene_id) 
-                INNER JOIN  gene_info AS gi 
-                USING       (ode_gene_id) 
+                FROM        extsrc.geneset_value AS gv
+                INNER JOIN  homology AS h
+                USING       (ode_gene_id)
+                INNER JOIN  gene_info AS gi
+                USING       (ode_gene_id)
                 WHERE       gs_id = %s
             ) g2
             ON g1.hom_id = g2.hom_id;
@@ -5117,9 +5117,9 @@ def insert_omicssoft_metadata(gs_id, project, source, tag, otype):
 
     arguments
         gs_id: gene set ID
-        project: the project field from an OmicsSoft gene set 
-        tag: the tag field from an OmicsSoft gene set 
-        source: the source field from an OmicsSoft gene set 
+        project: the project field from an OmicsSoft gene set
+        tag: the tag field from an OmicsSoft gene set
+        source: the source field from an OmicsSoft gene set
     """
 
     with PooledCursor() as cursor:
@@ -5165,7 +5165,7 @@ def get_missing_ref_ids(refs, sp_id, gdb_id):
         return [t[0] for t in cursor.fetchall()]
 
 ## These functions below were added for the new batch parser. If some variant
-## of them already exists elsewhere in this file (I looked and couldn't find 
+## of them already exists elsewhere in this file (I looked and couldn't find
 ## them), please delete these and update batch.py accordingly.
 
 def get_gene_ids_by_spid_type(sp_id, gdb_id):
@@ -5184,7 +5184,7 @@ def get_gene_ids_by_spid_type(sp_id, gdb_id):
     ## with different ode_gene_ids. One is the correct entry, the other is an
     ## entry for another gene with the same symbol (incorrectly attributed).
     ## One e.g. is the mouse Ccr4 gene. There is the true entry for Ccr4, but
-    ## another gene (Cnot6) also has CCR4 as a gene symbol synonym which 
+    ## another gene (Cnot6) also has CCR4 as a gene symbol synonym which
     ## screws with our case insensitive searches. So, when symbols are
     ## searched for the ode_pref_tag MUST be used.
     #gene_types = get_short_gene_types()
@@ -5463,13 +5463,61 @@ def insert_geneset(gs):
 
         return cursor.fetchone()[0]
 
+def insert_variantset(gs):
+    """
+    Inserts a new geneset of variants into the database.
+
+    arguments
+        gs: a dict whose keys match the columns in the geneset table
+
+    returns
+        a gs_id
+    """
+
+    if ('gs_created' not in gs):
+        gs['gs_created'] = 'NOW()'
+
+    if ('pub_id' not in gs):
+        gs['pub_id'] = None
+
+    if 'gs_attribution' not in gs:
+        gs['gs_attribution'] = None
+
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            INSERT INTO geneset
+
+                (usr_id, file_id, gs_name, gs_abbreviation, pub_id, cur_id,
+                gs_description, sp_id, gs_count, gs_threshold_type,
+                gs_threshold, gs_groups, gs_gene_id_type, gs_created,
+                gs_attribution, gs_is_variant)
+
+            VALUES
+
+                (%(usr_id)s, %(file_id)s, %(gs_name)s, %(gs_abbreviation)s,
+                %(pub_id)s, %(cur_id)s, %(gs_description)s, %(sp_id)s,
+                %(gs_count)s, %(gs_threshold_type)s, %(gs_threshold)s,
+                %(gs_groups)s, %(gs_gene_id_type)s, %(gs_created)s,
+                %(gs_attribution)s, %(gs_is_variant)s)
+
+            RETURNING gs_id;
+            ''',
+                gs
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchone()[0]
+
 
 # sample api calls begin
 
 # get all genesets associated to a gene by gene_ref_id and gdb_id
 #	if homology is included at the end of the URL also return all
 
-# Tool Information Functions  
+# Tool Information Functions
 
 
 def get_file(apikey, task_id, file_type):
@@ -5529,7 +5577,7 @@ def get_user_id_by_apikey(apikey):
     return cursor.fetchone()
 
 
-#	genesets associated with homologous genes 
+#	genesets associated with homologous genes
 def get_genesets_by_gene_id(apikey, gene_ref_id, gdb_name, homology):
     """
     Get all genesets for a specific gene_id
@@ -5856,7 +5904,7 @@ def search_ontology_terms(search):
             FROM        extsrc.ontology AS o
             INNER JOIN  odestatic.ontologydb AS odb
             ON          o.ontdb_id = odb.ontdb_id
-            WHERE       ont_name ILIKE %s OR 
+            WHERE       ont_name ILIKE %s OR
                         ont_ref_id ILIKE %s
             LIMIT       30;
             ''',
