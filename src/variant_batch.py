@@ -33,7 +33,7 @@ class BatchReader(object):
     """
 
 
-    def parse_batch_file():
+    def parse_batch_file(self, bs='', usr_id=0):
         """
         Parses a batch file to completion.
 
