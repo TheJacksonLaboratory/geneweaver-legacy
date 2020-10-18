@@ -5,7 +5,7 @@ import re
 
 import geneweaverdb as gwdb
 from pubmedsvc import get_pubmed_info
-from batch import __init__, __reset_parsed_set, __check_parsed_set, __parse_score_type, __check_thresholds
+from batch import __parse_batch_syntax, __insert_geneset_file
 
 class BatchReader(object):
     """
@@ -32,21 +32,6 @@ class BatchReader(object):
         _annotation_cache:  mapping of ontology term IDs -> ont_ids
     """
 
-    def __parse_batch_syntax(self, lns):
-        """
-        Parses a batch file according to the format listed on
-        http://geneweaver.org/index.php?action=manage&cmd=batchgeneset
-        The results (gene set objects) and any errors or warnings are stored in
-        their respective class attributes.
-
-        arguments
-            lns: list of strings, one for each line in the batch file
-        """
-        # probably import this function?
-
-    def __insert_variantset_file(self, variants):
-        # do we need this if we are not storing the file in the file table?
-        return gwdb.insert_file()
 
     def parse_batch_file():
         """
@@ -77,8 +62,40 @@ class BatchReader(object):
 
         if self.errors:
             return []
-        # still need post-processing steps (mappings & stuff)
+
+        for gs in self.genesets:
+            gs['usr_id'] = usr_id
+            gs['gs_is_variant'] = True;
+
         return self.genesets
 
     def insert_variantset(self):
-        # tbd
+        """
+        Inserts parsed gene sets along with their files, values, and
+        annotations into the DB.
+
+        returns
+            the gs_ids of the inserted sets
+        """
+        ids = []
+
+        for gs in self.genesets:
+
+            if not gs['gs_count']:
+
+                self.errors.append((
+                    'No genes in the set %s mapped to GW identifiers so it '
+                    'was not uploaded'
+                ) % gs['gs_name'])
+
+                continue
+
+            if not gs['pub_id'] and gs['pub']:
+                gs['pub_id'] = gwdb.insert_publication(gs['pub'])
+
+            gs['file_id'] = self.__insert_geneset_file(gs['values'])
+            gs['gs_id'] = gwdb.insert_variantset(gs)
+
+            ids.append(gs['gs_id'])
+
+        return ids
