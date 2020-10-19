@@ -23,6 +23,7 @@ def createConfig():
     :ret:
     """
 
+
     with open(CONFIG_PATH, 'w') as fl:
         print('## GeneWeaver Configuration File', file=fl)
         print('#', file=fl)
@@ -70,6 +71,7 @@ def loadConfig():
     """
     Attempts to load and parse a config file.
     """
+
 
     if not os.path.exists(CONFIG_PATH):
         createConfig()
