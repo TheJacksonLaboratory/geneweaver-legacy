@@ -1,5 +1,6 @@
 import re
 import batch
+import variant_batch
 import json
 import sys
 import urllib
@@ -10,6 +11,7 @@ import pubmedsvc
 import annotator as ann
 from decorators import login_required, create_guest
 import curation_assignments
+
 
 
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
@@ -105,6 +107,13 @@ def create_batch_geneset():
     else:
         curation_group = json.loads(curation_group)
 
+    isVariant= flask.request.form.get("isVariant")
+    if isVariant == "true":
+        isVariant = 1
+    else:
+        # Assume that it is not a variant set
+        isVariant = 0
+
     batch_file = flask.request.form['batchFile']
 
     ## The data sent to us should be URL encoded
@@ -115,7 +124,10 @@ def create_batch_geneset():
     user = flask.g.user
     user_id = user.user_id
 
-    batch_reader = batch.BatchReader(batch_file, user_id)
+    if isVariant > 0:
+        batch_reader =  variant_batch.BatchReader(batch_file, user_id)
+    else:
+        batch_reader = batch.BatchReader(batch_file, user_id)
 
     ## Required later on when inserting OmicsSoft specific metadata
     is_omicssoft = False
@@ -127,7 +139,7 @@ def create_batch_geneset():
     #    is_omicssoft = True
 
     #else:
-        ## List of gene set objects 
+        ## List of gene set objects
     genesets = batch_reader.parse_batch_file()
 
     ## Bad things happened during parsing...
@@ -138,7 +150,7 @@ def create_batch_geneset():
     batch_reader.get_geneset_pubmeds()
 
     ## Now try inserting everything into the DB. We bypass normal gene set
-    ## insertion (the create_geneset stored procedure) so we can report 
+    ## insertion (the create_geneset stored procedure) so we can report
     ## errors to the user and process any custom fields like ontology
     ## annotations
     new_ids = batch_reader.insert_genesets()
@@ -160,7 +172,7 @@ def create_batch_geneset():
             curation_assignments.submit_geneset_for_curation(gs_id, curation_group, curation_note)
 
     return flask.jsonify({
-        'genesets': new_ids, 
+        'genesets': new_ids,
         'warn': batch_reader.warns,
         'error': batch_reader.errors
     })

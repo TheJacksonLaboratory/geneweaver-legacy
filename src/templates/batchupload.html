@@ -122,13 +122,14 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        <div class="btn btn-warning btn-file">Variant File Upload
-                            <input id="variant_file_data" type="file" name="selected_file" required="" accept=".vcf"/>
-                            <input id="varient_fileContents" name="fileContents" type="hidden" />
-                        </div>
-                        <span id="variant_fileDisplayArea" style="color: #337700; vertical-align: middle; padding: 20px 0 0 10px;">No file selected</span>
+                        <span>Is Variant Set: <input id="isVariant" name="isVariant" type="input" value="false"/></span>
+
+
+
+
                     </div>
                 </div>
+
                 <div class="row">
                     <div class="col-sm-12 btn-group">
                         <div class='help-block'></div>
@@ -310,10 +311,7 @@
         var fileDisplayArea = $('#fileDisplayArea');
         var fileContents = $('#fileContents');
 
-        // Do the same things for the variant upload
-        var variant_fileInput = document.getElementById('variant_file_data');
-        var variant_fileDisplayArea = $('#variant_fileDisplayArea');
-        var variant_fileContents = $('#variant_fileContents');
+
 
 
 
@@ -355,44 +353,6 @@
 			}
 		});
 
-        // Do the same thing for the variant set (probs should change this to be one function but oh well)
-        variant_fileInput.addEventListener('change', function(e) {
-
-			var file = variant_fileInput.files[0];
-
-            // After reading the file, the filename and size are displayed
-            // to the user. The contents goes under a hidden input for
-            // submission later.
-
-            //check for valid file extension
-            //extra work as the file upload dialog prevents all but these extensions
-            var valid_types = [".vcf"];
-            var fname = file.name;
-            var valid = 0;
-
-            for (var i=0; i < valid_types.length; i++) {
-			   var ext = valid_types[i];
-			   var fext = fname.substr(fname.length - ext.length, ext.length);
-			   if(fext == ext) { valid = 1; }
-            }
-
-			if (valid == 1) {
-				var reader = new FileReader();
-
-				reader.onload = function(e) {
-                    var size = parseFloat(file.size / 1024).toFixed(2) + ' kB';
-
-                    variant_fileDisplayArea.text(file.name + ' (' + size + ')');
-                    variant_fileContents.val(reader.result);
-				};
-
-				reader.readAsText(file);
-
-			} else {
-				// Not a valid file extension
-				variant_fileDisplayArea.innerText = "File not supported!";
-			}
-		});
 
 		/*
 		 * Creates a link to the edit geneset genes page for the given gs_id.
@@ -416,7 +376,7 @@
 
         $('#upload-geneset-form').on('submit', function (event) {
             event.preventDefault();
-
+            var isVariant=$("#isVariant").val()
             var batchFile = $('#fileContents').val();
             // Encodes spaces, quotes, and other crap prior to sending
             batchFile = encodeURIComponent(batchFile);
@@ -439,7 +399,7 @@
                     type: 'POST',
                     url: '../createBatchGeneset',
                     dataType: 'text',
-                    data: {'batchFile': batchFile, 'curation_group': curation_group},
+                    data: {'batchFile': batchFile, 'curation_group': curation_group,'isVariant' :isVariant},
                     success: function (data) {
 
                         data = JSON.parse(data);

@@ -5,9 +5,9 @@ import re
 
 import geneweaverdb as gwdb
 from pubmedsvc import get_pubmed_info
-from batch import __parse_batch_syntax, __insert_geneset_file
+import batch
 
-class BatchReader(object):
+class BatchReader(batch.BatchReader):
     """
     Class used to read and parse batch variant geneset files.
 
