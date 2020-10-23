@@ -808,12 +808,15 @@ class BatchReader(object):
         ## used for up(load|dat)ing public resource data and users shouldn't be
         ## able to specify at_ids
         #attributions = db.get_attributions()
+        # TODO: This should be fixed
         attributions = gwdb.get_all_attributions()
+        attributions_sub = gwdb.get_all_attributions()
 
         for at_id, abbrev in attributions.items():
             ## Fucking NULL row in the db, this needs to be removed
             if abbrev:
-                attributions[abbrev.lower()] = at_id
+                attributions_sub[abbrev.lower()] = at_id
+        attributions = attributions_sub
 
         ## Geneset post-processing: mapping gene -> ode_gene_ids, attributions,
         ## annotations, and the user ID
@@ -841,7 +844,7 @@ class BatchReader(object):
             self._pub_map = gwdb.get_publication_mapping()
 
         ## These publications already exist in the DB
-        found = [g for g in self.genesets if g['pmdi'] in self._pub_map]
+        found = [g for g in self.genesets if g['pmid'] in self._pub_map]
         ## These don't
         not_found = [g for g in self.genesets if g['pmid'] not in self._pub_map]
 
