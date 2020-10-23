@@ -502,7 +502,7 @@ class BatchReader(object):
             ## support single spaces instead of tabs since people are gonna do
             ## it anyway and some of our examples keep getting their tabs
             ## converted.
-            elif len(lns[i].split(b'\t')) == 2 or len(lns[i].split()) == 2:
+            elif len(lns[i].split('\t')) == 2 or len(lns[i].split()) == 2:
 
                 ## Check to see if all the required data was specified, if not
                 ## this set can't get uploaded. Let the user figure out what the
