@@ -98,6 +98,7 @@ def view_result(task_id):
             'tool/SimilarVariantSet.html',
             json_results=json_results,
             async_result=results,
+            tool=tool,
             task_id=task_id)
 
     else:
