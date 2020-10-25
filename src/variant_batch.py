@@ -57,8 +57,7 @@ class BatchReader(batch.BatchReader):
 
         if not usr_id:
             usr_id = self.usr_id
-
-        print("bs " + bs)
+        print("Parsing in VariantBatch")
         self.__parse_batch_syntax(bs)
 
         if self.errors:
