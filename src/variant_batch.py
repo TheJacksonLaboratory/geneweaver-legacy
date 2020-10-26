@@ -82,7 +82,7 @@ class BatchReader(batch.BatchReader):
         for gs in self.genesets:
 
             if not gs['gs_count']:
-
+                print("error in variant_batch.py insert_variantset")
                 self.errors.append((
                     'No genes in the set %s mapped to GW identifiers so it '
                     'was not uploaded'
