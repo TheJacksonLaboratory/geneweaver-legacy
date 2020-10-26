@@ -14,9 +14,14 @@ TOOL_CLASSNAME = 'SimilarVariantSet'
 RESULTS_PATH = config.get('application', 'results')
 similiar_variantset_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
+
+@similiar_variantset_blueprint.route('/run-similar-variant-set2.html', methods=['GET'])
+def test():
+    return "Test"
+
 @similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
 def run_tool():
-
+    print("Here")
     gs_id = request.args.get('gs_id')
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
