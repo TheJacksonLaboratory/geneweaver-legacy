@@ -2624,7 +2624,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
-    
+
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,

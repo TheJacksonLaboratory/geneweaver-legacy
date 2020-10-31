@@ -21,13 +21,12 @@ def test():
 
 @similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
 def run_tool():
-    print("Tool running")
+
     gs_id = request.args.get('gs_id')
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     #user_id = flask.session['user_id']
     desc = '{} on {}'.format(tool, 'GS' + str(gs_id))
-    print("Description: %s", desc)
 
     '''
     gwdb.insert_result(
