@@ -114,8 +114,8 @@ def create_batch_geneset():
         # Assume that it is not a variant set
         isVariant = 0
     # check the value of isVariant
-    flask.jsonify({'testing': 'isVaraintValue is:' + isVariant})
-    print("ISVARINT VALUE in genesetblueprint.py is " + isVariant)
+    flask.jsonify({'testing': 'isVaraintValue is:' + str(isVariant)})
+    print("ISVARINT VALUE in genesetblueprint.py is " + str(isVariant))
 
     batch_file = flask.request.form['batchFile']
 
