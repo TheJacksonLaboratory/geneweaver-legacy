@@ -5342,6 +5342,26 @@ def insert_file(contents, comments):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+'''
+Edit for inserting variant file
+'''
+
+
+def insert_variant_file(contents, file_url, comments):
+    with PooledCursor() as cursor:
+        cursor.execute(
+            '''
+            INSERT INTO file
+            (file_size, file_url, file_comments, file_craeted)
+            VALUES 
+            (%s, %s, %s, NOW())
+            RETURNING file_id;
+            ''',
+            (len(contents), file_url, comments)
+        )
+        cursor.connection.commit()
+        return cursor.fetchone()[0]
+
 
 def insert_geneset_value(gs_id, gene_id, value, name, threshold):
     """

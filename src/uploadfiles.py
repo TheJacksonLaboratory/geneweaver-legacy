@@ -90,7 +90,6 @@ def insert_new_contents_to_file(contents):
         print('New File_id: ' + str(file_id))
         return file_id
 
-
 def insert_into_hom2geneset_by_gsid(gs_id):
     """
     This function takes a gs_id and appends the associated genes onto arrays in the hom2geneset files
