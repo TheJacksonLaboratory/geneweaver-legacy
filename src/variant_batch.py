@@ -73,6 +73,7 @@ class BatchReader(batch.BatchReader):
         """
         Inserts parsed gene sets along with their files, values, and
         annotations into the DB.
+        For variant_set, if gs_count is not found, set it to null.
 
         returns
             the gs_ids of the inserted sets
@@ -80,9 +81,9 @@ class BatchReader(batch.BatchReader):
         ids = []
 
         for gs in self.genesets:
-
             if not gs['gs_count']:
                 print("error in variant_batch.py insert_variantset")
+                gs['gs_count'] = 0
                 self.errors.append((
                     'No genes in the set %s mapped to GW identifiers so it '
                     'was not uploaded'
