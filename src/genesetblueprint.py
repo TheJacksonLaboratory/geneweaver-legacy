@@ -113,7 +113,8 @@ def create_batch_geneset():
     else:
         # Assume that it is not a variant set
         isVariant = 0
-
+    # check the value of isVariant
+    print("ISVARINT VALUE in genesetblueprint.py is " + isVariant)
     batch_file = flask.request.form['batchFile']
 
     ## The data sent to us should be URL encoded
@@ -124,6 +125,7 @@ def create_batch_geneset():
     user_id = user.user_id
 
     if isVariant > 0:
+        print("CALLING variant_batch.BatchReader(batch_file, user_id successfully)")
         batch_reader =  variant_batch.BatchReader(batch_file, user_id)
     else:
         batch_reader = batch.BatchReader(batch_file, user_id)
