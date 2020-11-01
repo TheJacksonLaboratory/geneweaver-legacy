@@ -37,7 +37,7 @@ def createConfig():
         print('admin_email = noreply@geneweaver.org', file=fl)
         print('', file=fl)
         print('[celery]', file=fl)
-        print('url = amqp://geneweaver:geneweaver@localhost:5672/geneweaver', file=fl)
+        print('url = amqp://geneweaver:geneweaver@localhost:8888/geneweaver', file=fl)
         print('backend = amqp', file=fl)
         print('', file=fl)
         print('[db]', file=fl)
