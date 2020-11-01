@@ -29,7 +29,7 @@ def createConfig():
         print('#', file=fl)
         print('', file=fl)
         print('[application]', file=fl)
-        print('host = 127.0.0.1', file=fl)
+        print('host = 127.0.0.1:8888', file=fl)
         print('results = /opt/geneweaver/results', file=fl)
         print('secret = ' + binascii.hexlify(os.urandom(32)).decode(), file=fl)
         print('help_url = http://geneweaver.org/help', file=fl)
