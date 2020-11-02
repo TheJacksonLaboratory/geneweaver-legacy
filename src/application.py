@@ -1829,7 +1829,7 @@ def render_editgeneset_genes(gs_id, curation_view=False):
 def render_remove_genesets(gs_id):
     user_id = session['user_id'] if 'user_id' in session else 0
     gs_and_proj = None
-    if user_id is not 0:
+    if user_id != 0:
         gs_and_proj = geneweaverdb.get_selected_genesets_by_projects(gs_id)
     return render_template('removegenesets.html', user_id=user_id, gs_and_proj=gs_and_proj)
 
@@ -2624,7 +2624,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
-
+    print("Geneset" ,geneset)
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,
@@ -2647,6 +2647,16 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
+@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
+def render_variantsetdetails(gs_id):
+    variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+    variant_set_details = [(e[0],e[1],str(e[2])) for e in variant_set_details]
+    variant_set_details = {"values": variant_set_details}
+    print(variant_set_details)
+    return render_template(
+        'ViewVariant.html',
+        variantsets=variant_set_details
+    )
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
 def render_viewgenesetoverlap(gs_ids):

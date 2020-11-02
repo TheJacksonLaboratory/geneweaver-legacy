@@ -5571,6 +5571,30 @@ def insert_variantset(gs):
         return cursor.fetchone()[0]
 
 
+def get_variant_set_details(gs_id):
+    """
+    Selects the raw variant set entries from the database
+
+    arguments
+        gs_id: a geneset id
+
+    returns
+        a set of variants associated with the gs_id
+    """
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT * FROM VARIANT_VALUE WHERE gs_id = %s
+            ''' %(
+                gs_id)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchall()
+
+
 # sample api calls begin
 
 # get all genesets associated to a gene by gene_ref_id and gdb_id
