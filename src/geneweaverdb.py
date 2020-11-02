@@ -5353,7 +5353,7 @@ def insert_variant_file(contents, file_url, comments):
             '''
             INSERT INTO file
             (file_size, file_url, file_comments, file_craeted)
-            VALUES 
+            VALUES
             (%s, %s, %s, NOW())
             RETURNING file_id;
             ''',
@@ -5483,6 +5483,7 @@ def insert_geneset(gs):
 
         return cursor.fetchone()[0]
 
+# TODO: Maybe remove this function since the only difference is the isVariant attribute
 def insert_variantset(gs):
     """
     Inserts a new geneset of variants into the database.
