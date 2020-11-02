@@ -5353,7 +5353,7 @@ def insert_variant_file(contents, file_url, comments):
             '''
             INSERT INTO file
             (file_size, file_url, file_comments, file_craeted)
-            VALUES 
+            VALUES
             (%s, %s, %s, NOW())
             RETURNING file_id;
             ''',
@@ -5399,6 +5399,43 @@ def insert_geneset_value(gs_id, gene_id, value, name, threshold):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+
+
+def insert_variantset_value(gs_id, rs_id, value):
+    """
+    Inserts a new variantset_value into the database.
+
+    arguments
+        gs_id:      gene set ID
+        gene_id:    ode_gene_id
+        value:      value associated with this gene
+        threshold:  boolean indicating if the value is within the threshold
+
+    returns
+        the gs_id associated with this variant set value
+    """
+
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            INSERT INTO variant_value
+
+                (gs_id, rs_id, variant_value)
+
+            VALUES
+
+                (%s, %s, %s)
+
+            RETURNING gs_id;
+            ''',
+                (gs_id, rs_id, value)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchone()[0]
+
 
 def insert_publication(pub):
     """

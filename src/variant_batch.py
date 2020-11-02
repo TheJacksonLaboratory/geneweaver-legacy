@@ -100,3 +100,29 @@ class BatchReader(batch.BatchReader):
             ids.append(gs['gs_id'])
 
         return ids
+
+    def __insert_geneset_values(self, gs):
+        """
+        Inserts gene set values into the DB.
+
+        arguments
+            gs: gene set object
+        """
+
+        ttype = gs['gs_threshold_type']
+        thresh = None
+
+        if ttype == 1 or ttype == 2 or ttype == 3:
+            thresh = float(gs['gs_threshold'])
+
+        elif ttype == 4 or ttype == 5:
+            thresh = map(float, gs['gs_threshold'].split(','))
+
+        ## This should never happen
+        else:
+            thresh = 1.0
+
+        for ref, ode, value in gs['geneset_values']:
+            gwdb.insert_variantset_value(
+                gs['gs_id'], ode, self.__check_thresholds(ttype, thresh, value)
+            )
