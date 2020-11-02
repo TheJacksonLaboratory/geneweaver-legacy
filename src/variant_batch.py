@@ -125,7 +125,9 @@ class BatchReader(batch.BatchReader):
         else:
             thresh = 1.0
 
-        for ref, ode, value in gs['geneset_values']:
+        for rs_id,value in gs['values']:
+            # TODO: Check the threshold value
+            rs_id = int(re.sub("rs","",rs_id))
             gwdb.insert_variantset_value(
-                gs['gs_id'], ode, self.__check_thresholds(ttype, thresh, value)
+                gs['gs_id'],rs_id, value
             )
