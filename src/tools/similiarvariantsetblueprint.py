@@ -21,7 +21,7 @@ def test():
 
 @similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
 def run_tool():
-    print("Here")
+
     gs_id = request.args.get('gs_id')
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
@@ -39,7 +39,7 @@ def run_tool():
         desc)
 
     '''
-
+    print("Sending task")
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
@@ -49,7 +49,9 @@ def run_tool():
         },
         task_id=task_id
     )
+    print("Task sent")
     new_location = flask.url_for(TOOL_CLASSNAME + '.view_result', task_id=task_id)
+    print("New Loc: %s" % new_location)
     response = flask.make_response(tc.render_tool_pending(async_result, tool))
     response.status_code = 303
     response.headers['location'] = new_location

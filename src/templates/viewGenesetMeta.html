@@ -11,6 +11,11 @@
         <button type="button" class="btn btn-block btn-warning" id="viewSimilarGenesets">
             <i class="fa fa-eye pull-left"></i> Similar GeneSets
         </button>
+        {% if geneset.gs_is_variant%}
+        <button type="button" class="btn btn-block btn-warning" id="viewSimilarVariantSets">
+            <i class="fa fa-eye pull-left"></i> Similar Variant Sets
+        </button>
+        {% endif %}
         {% if geneset.cur_id in [1, 2, 3] %}
         <button type="button" class="btn btn-block btn-warning" id="requestCuration">
             <i class="fa fa-flag pull-left"></i> Request Curation

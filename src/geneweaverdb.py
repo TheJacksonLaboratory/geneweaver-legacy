@@ -3082,6 +3082,7 @@ class Geneset:
         # TODO figure out what this field is for
         self.gsv_qual = gs_dict['gsv_qual']
         self.attribution = gs_dict['gs_attribution']
+        self.gs_is_variant = gs_dict['gs_is_variant']
 
         # add two values for geneset
 
