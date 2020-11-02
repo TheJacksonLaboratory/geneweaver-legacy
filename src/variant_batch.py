@@ -69,7 +69,8 @@ class BatchReader(batch.BatchReader):
 
         return self.genesets
 
-    def insert_variantset(self):
+    def insert_genesets(self):
+        print("Overloading")
         """
         Inserts parsed gene sets along with their files, values, and
         annotations into the DB.
@@ -81,6 +82,8 @@ class BatchReader(batch.BatchReader):
         ids = []
 
         for gs in self.genesets:
+            print(gs)
+            gs['gs_count'] = 1
             if not gs['gs_count']:
                 print("error in variant_batch.py insert_variantset")
                 gs['gs_count'] = 0
@@ -96,8 +99,8 @@ class BatchReader(batch.BatchReader):
 
             gs['file_id'] = self.__insert_geneset_file(gs['values'])
             gs['gs_id'] = gwdb.insert_variantset(gs)
-
-            ids.append(gs['gs_id'])
+            self.__insert_geneset_values(gs)
+            self.__insert_annotations(gs)
 
         return ids
 
