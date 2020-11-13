@@ -48,7 +48,7 @@ def run_tool():
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': [gs_id],
+            'gs_dict': [gs_id],
             'output_prefix': task_id,
             'params': {},
         },
