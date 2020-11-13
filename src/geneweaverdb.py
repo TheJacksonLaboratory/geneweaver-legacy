@@ -32,7 +32,7 @@ class GeneWeaverThreadedConnectionPool(ThreadedConnectionPool):
         conn = super(GeneWeaverThreadedConnectionPool, self)._connect(key)
         conn.set_client_encoding('UTF-8')
         cursor = conn.cursor()
-        cursor.execute('SET search_path TO production, extsrc, odestatic;')
+        cursor.execute('SET search_path TO production, extsrc, odestatic,variant ;')
         conn.commit()
 
         return conn
@@ -5585,7 +5585,7 @@ def get_variant_set_details(gs_id):
 
         cursor.execute(
             '''
-            SELECT * FROM VARIANT_VALUE WHERE gs_id = %s
+            SELECT * FROM VARIANT_VALUE vv, Variant v WHERE gs_id = %s AND v.var_ref_id = vv.rs_id
             ''' %(
                 gs_id)
         )

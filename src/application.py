@@ -2650,12 +2650,33 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
-    variant_set_details = [(e[0],e[1],str(e[2])) for e in variant_set_details]
-    variant_set_details = {"values": variant_set_details}
-    print(variant_set_details)
+
+    chroms = dict()
+
+    nodes = []
+    links = []
+    counter = 0
+    for m in range(0,len(variant_set_details)):
+        i = dict()
+        i["id"] = m
+        i["name"] = variant_set_details[m][0]
+        nodes.append(i)
+        chro = variant_set_details[m][6]
+        if chro not in chroms.keys():
+            chroms[chro] = len(variant_set_details) + counter
+            nodes.append({"name" : chro, "id" :chroms[chro]})
+        li = {"source":chroms[chro], "target": m}
+        links.append(li)
+
+    output = {"nodes": nodes, "links": links}
+    f = open("test.json","w")
+    f.write(json.dumps(output))
+    f.close()
+    variant_set_details_mini  = {"values": []}
+
     return render_template(
         'ViewVariant.html',
-        variantsets=variant_set_details
+        variantsets=variant_set_details_mini
     )
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
