@@ -1,0 +1,7 @@
+[{"name": "root.Human.398678", "size": 10,"imports":[]},
+  {"name": "root.Human.398677", "size": 10,"imports":[]},
+  {"name": "root.Human.398676", "size": 10,"imports":[]},
+  {"name": "root.Human.398675", "size": 10,"imports":[]},
+  {"imports": ["root.Human.398675", "root.Human.398678"], "name": "root.Human.(398675,398678)", "size": 10},
+  {"imports": ["root.Human.398677", "root.Human.(398675,398678)"],"name": "root.Human.(398677,(398675,398678))", "size": 10},
+  {"imports": ["root.Human.398676", "root.Human.(398677,(398675,398678))"], "name": "root.Human.(398676,(398677,(398675,398678)))", "size": 10}]
