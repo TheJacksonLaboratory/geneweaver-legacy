@@ -504,11 +504,13 @@ class BatchReader(object):
             ## converted.
             elif len(lns[i].split('\t')) == 2 or len(lns[i].split()) == 2:
 
+
                 ## Check to see if all the required data was specified, if not
                 ## this set can't get uploaded. Let the user figure out what the
                 ## hell they're missing cause telling them is too much work on
                 ## our part.
                 if not self.__check_parsed_set():
+
 
                     err = 'One or more of the required fields are missing.'
 
@@ -521,8 +523,10 @@ class BatchReader(object):
 
                     self._parse_set['values'].append((lns[i][0], lns[i][1]))
 
+
             ## Who knows what the fuck this line is, just skip it
             else:
+
                 self.warns.append(
                     'LINE %s: Skipping line with unknown identifiers (%s)' %
                     ((i + 1), lns[i])

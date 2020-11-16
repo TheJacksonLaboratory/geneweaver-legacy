@@ -14,6 +14,11 @@ TOOL_CLASSNAME = 'SimilarVariantSet'
 RESULTS_PATH = config.get('application', 'results')
 similiar_variantset_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
+class SimiliarVariantSerError(Exception):
+    def __init__(self,message):
+        self.message = message
+    """ Exception returned when boolean results have a problem """
+    pass
 
 @similiar_variantset_blueprint.route('/run-similar-variant-set2.html', methods=['GET'])
 def test():
@@ -21,7 +26,7 @@ def test():
 
 @similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
 def run_tool():
-
+    #http://{host_name}/run-similar-variant-set.html?gs_id=<gs_id>
     gs_id = request.args.get('gs_id')
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
@@ -43,7 +48,7 @@ def run_tool():
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': [gs_id],
+            'gs_dict': [gs_id],
             'output_prefix': task_id,
             'params': {},
         },
@@ -59,21 +64,21 @@ def run_tool():
 
 def get_results(async_result):
     if async_result.state in states.PROPAGATE_STATES:
-        raise BooleanResultError('error while processing:')
+        raise SimiliarVariantSerError('error while processing:')
 
     elif async_result.state == states.FAILURE:
         results = json.loads(async_result.result)
 
         if results['error']:
-            raise BooleanResultError(results['error'])
+            raise SimiliarVariantSerError(results['error'])
         else:
-            raise BooleanResultError('An unknown error occurred. Please contact a GeneWeaver admin.')
+            raise SimiliarVariantSerError('An unknown error occurred. Please contact a GeneWeaver admin.')
 
     elif async_result.state in states.READY_STATES:
         results = json.loads(async_result.result)
 
         if 'error' in results and results['error']:
-            raise BooleanResultError(results['error'])
+            raise SimiliarVariantSerError(results['error'])
         else:
             return results
 
@@ -91,7 +96,7 @@ def view_result(task_id):
 
     try:
         results = get_results(async_result)
-    except BooleanResultError as e:
+    except SimiliarVariantSerError as e:
         flask.flash(e.message)
         return flask.redirect('/analyze')
 

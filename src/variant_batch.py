@@ -69,10 +69,12 @@ class BatchReader(batch.BatchReader):
 
         return self.genesets
 
-    def insert_variantset(self):
+    def insert_genesets(self):
+        print("Overloading")
         """
         Inserts parsed gene sets along with their files, values, and
         annotations into the DB.
+        For variant_set, if gs_count is not found, set it to null.
 
         returns
             the gs_ids of the inserted sets
@@ -80,9 +82,11 @@ class BatchReader(batch.BatchReader):
         ids = []
 
         for gs in self.genesets:
-
+            print(gs)
+            gs['gs_count'] = 1
             if not gs['gs_count']:
-
+                print("error in variant_batch.py insert_variantset")
+                gs['gs_count'] = 0
                 self.errors.append((
                     'No genes in the set %s mapped to GW identifiers so it '
                     'was not uploaded'
@@ -95,7 +99,35 @@ class BatchReader(batch.BatchReader):
 
             gs['file_id'] = self.__insert_geneset_file(gs['values'])
             gs['gs_id'] = gwdb.insert_variantset(gs)
-
-            ids.append(gs['gs_id'])
+            self.__insert_geneset_values(gs)
+            self.__insert_annotations(gs)
 
         return ids
+
+    def __insert_geneset_values(self, gs):
+        """
+        Inserts gene set values into the DB.
+
+        arguments
+            gs: gene set object
+        """
+
+        ttype = gs['gs_threshold_type']
+        thresh = None
+
+        if ttype == 1 or ttype == 2 or ttype == 3:
+            thresh = float(gs['gs_threshold'])
+
+        elif ttype == 4 or ttype == 5:
+            thresh = map(float, gs['gs_threshold'].split(','))
+
+        ## This should never happen
+        else:
+            thresh = 1.0
+
+        for rs_id,value in gs['values']:
+            # TODO: Check the threshold value
+            rs_id = int(re.sub("rs","",rs_id))
+            gwdb.insert_variantset_value(
+                gs['gs_id'],rs_id, value
+            )

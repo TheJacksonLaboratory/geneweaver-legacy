@@ -24,16 +24,8 @@ jaccardsimilarity_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
 
 class result():
-<<<<<<< HEAD
-    async_result = ''
-
-
-r = result()
-
-=======
     async_result=''
 r = result()
->>>>>>> parent of c8481a6... Cosmetic changes for tools/
 
 @jaccardsimilarity_blueprint.route('/run-jaccard-similarity.html', methods=['POST'])
 def run_tool():

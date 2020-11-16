@@ -113,6 +113,8 @@ def create_batch_geneset():
     else:
         # Assume that it is not a variant set
         isVariant = 0
+    # check the value of isVariant
+    flask.jsonify({'testing': 'isVaraintValue is:' + str(isVariant)})
 
     batch_file = flask.request.form['batchFile']
 
@@ -124,9 +126,12 @@ def create_batch_geneset():
     user_id = user.user_id
 
     if isVariant > 0:
+
         batch_reader =  variant_batch.BatchReader(batch_file, user_id)
+
     else:
         batch_reader = batch.BatchReader(batch_file, user_id)
+      
 
     ## Required later on when inserting OmicsSoft specific metadata
     is_omicssoft = False
@@ -174,6 +179,7 @@ def create_batch_geneset():
         'genesets': new_ids,
         'warn': batch_reader.warns,
         'error': batch_reader.errors
+
     })
 
 

@@ -122,10 +122,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        <span>Is Variant Set: <input id="isVariant" name="isVariant" type="input" value="false"/></span>
-
-
-
+                        <span>Is Variant Set: <input id="isVariant" name="isVariant" type="checkbox" /></span>
 
                     </div>
                 </div>
@@ -376,7 +373,7 @@
 
         $('#upload-geneset-form').on('submit', function (event) {
             event.preventDefault();
-            var isVariant=$("#isVariant").val()
+            var isVariant=document.getElementById('isVariant').checked
             var batchFile = $('#fileContents').val();
             // Encodes spaces, quotes, and other crap prior to sending
             batchFile = encodeURIComponent(batchFile);
@@ -515,7 +512,7 @@
     $('#clickableGenes').popover({
         title: 'Gene Information', content: 'Provide a list of genes to associate with this record. ' +
         'A full description of the gene set format can be found ' +
-        '<a href="http://www.geneweaver.org/wiki/index.php?title=Upload#Single_Gene_Sets" target="_blank">' +
+        '<a href="http://www.geneweaver.org/help/#uploading-gene-sets" target="_blank">' +
         '       <strong>here</strong></a>.',
         html: 'true'
     });

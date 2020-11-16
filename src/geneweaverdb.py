@@ -32,7 +32,7 @@ class GeneWeaverThreadedConnectionPool(ThreadedConnectionPool):
         conn = super(GeneWeaverThreadedConnectionPool, self)._connect(key)
         conn.set_client_encoding('UTF-8')
         cursor = conn.cursor()
-        cursor.execute('SET search_path TO production, extsrc, odestatic;')
+        cursor.execute('SET search_path TO production, extsrc, odestatic,variant ;')
         conn.commit()
 
         return conn
@@ -5343,6 +5343,26 @@ def insert_file(contents, comments):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+'''
+Edit for inserting variant file
+'''
+
+
+def insert_variant_file(contents, file_url, comments):
+    with PooledCursor() as cursor:
+        cursor.execute(
+            '''
+            INSERT INTO file
+            (file_size, file_url, file_comments, file_craeted)
+            VALUES
+            (%s, %s, %s, NOW())
+            RETURNING file_id;
+            ''',
+            (len(contents), file_url, comments)
+        )
+        cursor.connection.commit()
+        return cursor.fetchone()[0]
+
 
 def insert_geneset_value(gs_id, gene_id, value, name, threshold):
     """
@@ -5380,6 +5400,43 @@ def insert_geneset_value(gs_id, gene_id, value, name, threshold):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+
+
+def insert_variantset_value(gs_id, rs_id, value):
+    """
+    Inserts a new variantset_value into the database.
+
+    arguments
+        gs_id:      gene set ID
+        gene_id:    ode_gene_id
+        value:      value associated with this gene
+        threshold:  boolean indicating if the value is within the threshold
+
+    returns
+        the gs_id associated with this variant set value
+    """
+
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            INSERT INTO variant_value
+
+                (gs_id, rs_id, variant_value)
+
+            VALUES
+
+                (%s, %s, %s)
+
+            RETURNING gs_id;
+            ''',
+                (gs_id, rs_id, value)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchone()[0]
+
 
 def insert_publication(pub):
     """
@@ -5464,6 +5521,7 @@ def insert_geneset(gs):
 
         return cursor.fetchone()[0]
 
+# TODO: Maybe remove this function since the only difference is the isVariant attribute
 def insert_variantset(gs):
     """
     Inserts a new geneset of variants into the database.
@@ -5511,6 +5569,30 @@ def insert_variantset(gs):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+
+
+def get_variant_set_details(gs_id):
+    """
+    Selects the raw variant set entries from the database
+
+    arguments
+        gs_id: a geneset id
+
+    returns
+        a set of variants associated with the gs_id
+    """
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT * FROM VARIANT_VALUE vv, Variant v WHERE gs_id = %s AND v.var_ref_id = vv.rs_id
+            ''' %(
+                gs_id)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchall()
 
 
 # sample api calls begin
