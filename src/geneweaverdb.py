@@ -5585,14 +5585,44 @@ def get_variant_set_details(gs_id):
 
         cursor.execute(
             '''
-            SELECT * FROM VARIANT_VALUE vv, Variant v WHERE gs_id = %s AND v.var_ref_id = vv.rs_id
-            ''' %(
-                gs_id)
+            SELECT vv.*, v.*, g.gi_name, vg.ode_gene_id FROM VARIANT_VALUE vv, Variant v, Variant2Gene vg, gene_info g
+            WHERE gs_id=%s AND v.var_ref_id = vv.rs_id AND vg.var_id = v.var_id AND g.ode_gene_id=vg.ode_gene_id
+            ''' % (gs_id)
         )
 
         cursor.connection.commit()
 
         return cursor.fetchall()
+
+
+def get_variant_mapping_information(gene_id):
+    """
+    Selects the variant information from the database
+
+    arguments
+        gene_id: the genes of interest
+
+    returns
+        the mapping information associated with the variant set
+    """
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT re_experiment, re_cell_type
+                FROM regulatory_evidence re
+                WHERE re.re_id IN
+                (SELECT re_id
+                FROM regulated_gene rg
+                WHERE gene_id=%s)
+            ''' %(
+                gene_id)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchall()
+
 
 
 # sample api calls begin

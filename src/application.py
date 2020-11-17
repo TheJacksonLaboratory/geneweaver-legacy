@@ -2651,25 +2651,36 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
 
-    chroms = dict()
+    genes = dict()
 
     nodes = []
     links = []
     counter = 0
     for m in range(0,len(variant_set_details)):
-        i = dict()
-        i["id"] = m
-        i["name"] = variant_set_details[m][0]
+        # Create a dictionary for this node
+
+
+        # The gene should be the last element of the returned array
+        gene_id = variant_set_details[m][len(variant_set_details[m])-1]
+        gene_name = variant_set_details[m][len(variant_set_details[m])-2]
+
+        i = {"id": m, "name": variant_set_details[m][1], "type" : "variant","gene_name": "NA"}
         nodes.append(i)
-        chro = variant_set_details[m][6]
-        if chro not in chroms.keys():
-            chroms[chro] = len(variant_set_details) + counter
-            nodes.append({"name" : chro, "id" :chroms[chro]})
-        li = {"source":chroms[chro], "target": m}
+
+        if gene_id not in genes.keys():
+            genes[gene_id] = len(variant_set_details) + counter
+            nodes.append({"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name})
+            counter = counter + 1
+        info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
+
+        if len(info_type) == 0:
+          info_type = "testing"
+        li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
+    print(variant_set_details[0])
 
     output = {"nodes": nodes, "links": links}
-    f = open("test.json","w")
+    f = open("test3.json","w")
     f.write(json.dumps(output))
     f.close()
     variant_set_details_mini  = {"values": []}
