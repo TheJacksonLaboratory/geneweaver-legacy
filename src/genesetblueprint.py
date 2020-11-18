@@ -5,7 +5,7 @@ import json
 import sys
 import urllib
 import flask
-
+import tools.toolcommon as tc
 import geneweaverdb
 import pubmedsvc
 import annotator as ann
@@ -13,7 +13,7 @@ from decorators import login_required, create_guest
 import curation_assignments
 
 
-
+TOOL_CLASSNAME = 'BatchUpload'
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
 
 # gets species and gene identifiers for uploadgeneset page
@@ -120,18 +120,33 @@ def create_batch_geneset():
 
     ## The data sent to us should be URL encoded
     batch_file = urllib.parse.unquote(batch_file)
-    batch_file = batch_file.split('\n')
+
+    #batch_file = batch_file.split('\n')
 
     user = flask.g.user
     user_id = user.user_id
 
+    file_id = geneweaverdb.upload_giant_file(str(batch_file))
+
+
+    async_result = tc.celery_app.send_task(
+        tc.fully_qualified_name(TOOL_CLASSNAME),
+        kwargs={
+            'params': {
+                "file_id" : file_id,
+                "user_id" : user_id
+            },
+        }
+    )
+
+    '''
     if isVariant > 0:
-
         batch_reader =  variant_batch.BatchReader(batch_file, user_id)
-
     else:
         batch_reader = batch.BatchReader(batch_file, user_id)
-      
+
+
+
 
     ## Required later on when inserting OmicsSoft specific metadata
     is_omicssoft = False
@@ -174,13 +189,14 @@ def create_batch_geneset():
     curation_note = "Geneset created in batch by {} {}".format(user.first_name, user.last_name)
     for gs_id in new_ids:
             curation_assignments.submit_geneset_for_curation(gs_id, curation_group, curation_note)
-
+    '''
     return flask.jsonify({
-        'genesets': new_ids,
-        'warn': batch_reader.warns,
-        'error': batch_reader.errors
+        'genesets': [],#new_ids,
+        'warn': [],#batch_reader.warns,
+        'error': []#batch_reader.errors
 
     })
+
 
 
 def tokenize_lines(candidate_sep_regexes, lines):

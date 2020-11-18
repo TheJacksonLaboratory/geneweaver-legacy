@@ -5624,6 +5624,16 @@ def get_variant_mapping_information(gene_id):
         return cursor.fetchall()
 
 
+def upload_giant_file(contents):
+    with PooledCursor() as cursor:
+        cursor.execute(
+                ''' INSERT INTO production.file_dat
+                (file_contents) VALUES ('%s')
+                RETURNING file_id;
+                ''' % (contents)
+                )
+        cursor.connection.commit()
+    return cursor.fetchone()
 
 # sample api calls begin
 
