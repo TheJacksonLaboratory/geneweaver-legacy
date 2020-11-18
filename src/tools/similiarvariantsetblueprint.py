@@ -1,3 +1,20 @@
+# Author: Sam Shenoi
+# Description: This file defines the blueprint for the similar variant set
+#  tool. It defines some endpoints that are used for 1) running the tool and
+#   2) viewing the result
+#
+#   parameters
+#      - gs_id : the geneset that needs to be compared against the database.
+#
+#   return
+#      - the tool outputs the results to a json file in the output folder.
+#          the filename of the json file is the same as defined by calling
+#          the celery task.
+#
+#   TODO: ensure authentication for each page and insert results into geneweaver db
+
+
+###### Imports #############
 import json
 import uuid
 import os
@@ -26,10 +43,17 @@ def test():
 
 @similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
 def run_tool():
-    #http://{host_name}/run-similar-variant-set.html?gs_id=<gs_id>
+    # Get the gs_id from the request the user wants to use
     gs_id = request.args.get('gs_id')
+
+    # Generate a random hash for the name of this run using the uuid package
+    # This taskid is what uniquely defines this run of the tool and will be
+    # used to get the results from the results folder later on
     task_id = str(uuid.uuid4())
+
+    # Get the tool from the geneweaver database
     tool = gwdb.get_tool(TOOL_CLASSNAME)
+
     #user_id = flask.session['user_id']
     desc = '{} on {}'.format(tool, 'GS' + str(gs_id))
 
@@ -54,9 +78,9 @@ def run_tool():
         },
         task_id=task_id
     )
-    print("Task sent")
+
     new_location = flask.url_for(TOOL_CLASSNAME + '.view_result', task_id=task_id)
-    print("New Loc: %s" % new_location)
+
     response = flask.make_response(tc.render_tool_pending(async_result, tool))
     response.status_code = 303
     response.headers['location'] = new_location
@@ -82,11 +106,6 @@ def get_results(async_result):
         else:
             return results
 
-def read_results_file(task_id):
-    with open(RESULTS_PATH + '/' + task_id + '.json', 'r') as f:
-        json_results = f.readline()
-        f.close()
-    return json.loads(json_results)
 
 @similiar_variantset_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET'])
 def view_result(task_id):
@@ -116,6 +135,24 @@ def view_result(task_id):
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
+
+
+# read_results_file
+#  opens and reads a json output file
+# parameters
+#   - task_id : the unique id for this run
+#   - RESULTS_PATH: the path to the results folder. Should be included
+#       in a config file somewhere
+# output
+#   - a loaded json object
+def read_results_file(task_id):
+    # Open the file and read it
+    with open(RESULTS_PATH + '/' + task_id + '.json', 'r') as f:
+        # Read the entire thing
+        json_results = f.readline()
+
+        # Close the file
+        f.close()
 
 @similiar_variantset_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
