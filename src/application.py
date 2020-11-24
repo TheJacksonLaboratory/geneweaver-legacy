@@ -16,6 +16,7 @@ import os
 import os.path as path
 import re
 import urllib
+from urllib.parse import urlencode
 
 from flask import Flask, Response
 from flask import (abort, jsonify, make_response, redirect, render_template,
@@ -30,6 +31,9 @@ import urllib3
 import bleach
 import flask
 import flask_restful as restful
+
+from authlib.integrations.flask_client import OAuth
+from authlib.integrations.base_client.errors import OAuthError
 
 from decorators import login_required, create_guest, restrict_to_current_user
 from tools import abbablueprint
@@ -122,6 +126,17 @@ admin.add_view(
 
 admin.add_link(MenuLink(name='My Account', url='/accountsettings'))
 
+oauth = OAuth(app)
+
+auth0 = oauth.register(
+    'geneweaver-auth0',
+    client_id=config.get('auth', 'client_id'),
+    client_secret=config.get('auth', 'client_secret'),
+    api_base_url=f'https://{config.get("auth", "domain")}/',
+    access_token_url=f'https://{config.get("auth", "domain")}/{config.get("auth", "token_endpoint")}',
+    authorize_url=f'https://{config.get("auth", "domain")}/{config.get("auth", "auth_endpoint")}',
+    client_kwargs={'scope': 'openid profile email'},
+)
 
 class ListConverter(BaseConverter):
     """
@@ -246,6 +261,14 @@ def _logout():
     except AttributeError:
         pass
 
+    # The code above is great, but let's make sure the session clears
+    session.clear()
+
+    # Redirect user to logout endpoint
+    params = {'returnTo': url_for('render_home', _external=True),
+              'client_id': config.get('auth', 'client_id')}
+    return redirect(auth0.api_base_url + 'v2/logout?' + urlencode(params))
+
 
 def _form_login():
     user = None
@@ -270,7 +293,6 @@ def _form_login():
     return user
 
 
-
 def send_mail(to, subject, body):
     # print to, subject, body
     sendmail_location = "/usr/bin/mail"  # sendmail location
@@ -285,35 +307,7 @@ def send_mail(to, subject, body):
         print("Sendmail exit status", status)
 
 
-def _form_register():
-    user = flask.g.user
-    user_id = user.user_id if user else None
-    is_guest = user.is_guest if user else None
-    form = request.form
-    if 'usr_email' in form:
-        existing_user = geneweaverdb.get_user_byemail(form['usr_email'])
-        if existing_user and is_guest:
-            user = _form_login()
-        elif existing_user:
-            _logout()
-            user = None
-        elif user_id and is_guest:
-            user = geneweaverdb.register_user_from_guest(
-                form['usr_first_name'], form['usr_last_name'], form['usr_email'], form['usr_password'], user_id)
-        else:
-            _logout()
-            user = geneweaverdb.register_user(
-                form['usr_first_name'], form['usr_last_name'], form['usr_email'], form['usr_password'])
-
-        return user
-
-
-@app.route('/logout.json', methods=['GET', 'POST'])
-def json_logout():
-    _logout()
-    return jsonify({'success': True})
-
-
+# TODO: Fully replace this endpoint with ssologin endpoint
 @app.route('/login.json', methods=['POST'])
 def json_login():
     json_result = dict()
@@ -347,11 +341,80 @@ def login_as(as_user_id):
     if not as_user:
         return jsonify({'error': ''})
 
-
     session['user_id'] = as_user.user_id
     flask.g.user = as_user
 
     return redirect('/')
+
+@app.route('/login', methods=['GET'])
+@app.route('/ssologin', methods=['GET'])
+def sso_login():
+    return auth0.authorize_redirect(redirect_uri=url_for('callback_handling', _external=True))
+
+@app.route('/ssosignup', methods=['GET'])
+def sso_signup():
+    return auth0.authorize_redirect(redirect_uri=url_for('callback_handling', _external=True),
+                                    screen_hint='signup')
+
+@app.route('/callback')
+def callback_handling():
+    # Handles response from token endpoint
+    try:
+        auth0.authorize_access_token()
+    except OAuthError as e:
+        if e.description == "Jax users must use Jax connection to log in.":
+            _logout()
+            params = {'returnTo': url_for('callback_error_jax_email', _external=True),
+                      'client_id': config.get('auth', 'client_id')}
+            return redirect(auth0.api_base_url + 'v2/logout?' + urlencode(params))
+        abort(403)
+
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
+    user = None
+
+    # This is a bit tricky since we don't have a unique constraint on emails addrs in our database,
+    # but auth0 does have that unique constraint.
+    try:
+        user = geneweaverdb.get_user_byemail(userinfo['email'])
+    except AttributeError:
+        # Something went very wrong. An admin NEEDS to look into this
+        _logout()
+        params = {'returnTo': url_for('callback_error_duplicate_email', _external=True),
+                  'client_id': config.get('auth', 'client_id')}
+        return redirect(auth0.api_base_url + 'v2/logout?' + urlencode(params))
+
+    if not user:
+        user = geneweaverdb.register_sso_user(
+            userinfo['name'],
+            userinfo['email'],
+            userinfo['sub']
+        )
+
+    if user and not geneweaverdb.sso_id_exists(userinfo['sub']):
+        geneweaverdb.link_user_id_with_sso_id(user.user_id, userinfo['sub'])
+
+    if user:
+        # Store the user information in flask session.
+        # These two jwt_payload entries in the session are intended to eventually replace
+        # the other entries set here.
+        session['jwt_payload'] = userinfo
+        flask.session['user_id'] = user.user_id
+        flask.session['user_sso_id'] = userinfo['sub']
+        remote_addr = flask.request.remote_addr
+        if remote_addr:
+            flask.session['remote_addr'] = remote_addr
+        geneweaverdb.update_user_seen(user.user_id)
+
+    return redirect('/')
+
+@app.route('/callback/errors/email-mismatch')
+def callback_error_jax_email():
+    return render_template('error/403_jax_emails_connection_mismatch.html')
+
+@app.route('/callback/errors/duplicate-email')
+def callback_error_duplicate_email():
+    return render_template('error/403_duplicate_email.html')
 
 
 @app.route('/analyze')
@@ -382,7 +445,6 @@ def render_analyze():
         active_tools=active_tools,
         grp2proj=grp2proj
     )
-
 
 @app.route('/analyzeshared')
 def render_analyze_shared():
@@ -2100,7 +2162,9 @@ def set_annotator():
 
     return response
 
-@app.route('/login')
+
+# TODO: Remove this login endpoint
+@app.route('/login/deprecated')
 def render_login():
     return render_template('login.html')
 
@@ -4321,12 +4385,13 @@ def render_usage():
 
 @app.route('/register', methods=['GET', 'POST'])
 def render_register():
-    return render_template('register.html')
-
+    return sso_signup()
 
 @app.route('/reset', methods=['GET', 'POST'])
 def render_reset():
-    return render_template('reset.html')
+    # For now, we need to redirect to login page. Hopefully we can find a way to redirect directly
+    # to the password reset screen.
+    return sso_login()
 
 
 @app.route('/reset_submit.html', methods=['GET', 'POST'])
@@ -4368,65 +4433,6 @@ def render_home():
     news_array = geneweaverdb.get_news()
     stats = geneweaverdb.get_stats()
     return render_template('index.html', news_array=news_array, stats=stats)
-
-
-@app.route('/register_submit.html', methods=['GET', 'POST'])
-def json_register_successful():
-    # Secret key for reCAPTCHA form
-    RECAP_SECRET = '6LeO7g4TAAAAAObZpw2KFnFjz1trc_hlpnhkECyS'
-    RECAP_URL = 'https://www.google.com/recaptcha/api/siteverify'
-    form = request.form
-    http = urllib3.PoolManager()
-
-    if not form['usr_first_name']:
-        return render_template('register.html', error="Please enter your first name.")
-    elif not form['usr_last_name']:
-        return render_template('register.html', error="Please enter your last name.")
-    elif not form['usr_email']:
-        return render_template('register.html', error="Please enter your email.")
-    elif not form['usr_password']:
-        return render_template('register.html', error="Please enter your password.")
-
-    captcha = form['g-recaptcha-response']
-
-    ## No robots
-    if not captcha:
-        return render_template('register.html',
-                                     error="There was a problem with your captcha input. Please try again.")
-
-    else:
-        ## The only data required by reCAPTCHA is secret and response. An
-        ## optional parameter, remotep, containing the end user's IP can also
-        ## be appended.
-        pdata = {'secret': RECAP_SECRET, 'response': captcha}
-        resp = http.request('POST', RECAP_URL, fields=pdata)
-
-    ## 200 = OK
-    if resp.status != 200:
-        return render_template('register.html',
-                                     error=("There was a problem with the reCAPTCHA servers. "
-                                            "Please try again."))
-
-    rdata = json.loads(resp.data)
-
-    ## If success is false, the dict should contain an 'error-code.' This
-    ## isn't checked currently.
-    if not rdata['success']:
-        return render_template('register.html',
-                                     error="Incorrect captcha. Please try again.")
-    user = _form_register()
-
-    if user is None:
-        return render_template('register.html', register_not_successful=True)
-    else:
-        session['user_id'] = user.user_id
-        remote_addr = request.remote_addr
-        if remote_addr:
-            session['remote_addr'] = remote_addr
-
-    flask.g.user = user
-
-    return render_home()
 
 
 @create_guest

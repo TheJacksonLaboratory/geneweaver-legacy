@@ -50,6 +50,15 @@ def createConfig():
         print('host = 127.0.0.1', file=fl)
         print('port = 9312', file=fl)
         print('', file=fl)
+        print('[auth]', file=fl)
+        print('client_id = wMjx3nGV24qneBjXqz52IhEpq6AU7reo', file=fl)
+        print('client_secret = <CLIENT_SECRET>', file=fl)
+        print('domain = geneweaver.auth0.com', file=fl)
+        print('auth_endpoint = authorize', file=fl)
+        print('token_endpoint = oauth/token', file=fl)
+        print('userinfo_endpoint = oauth/userinfo', file=fl)
+        print('jwks_endpoint = .well-known/jwks.json', file=fl)
+        print('', file=fl)
 
 def checkIntegrity():
     """
