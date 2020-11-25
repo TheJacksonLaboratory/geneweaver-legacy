@@ -12,12 +12,6 @@
 
 <p id="demo"></p>
 
-<script>
-    var data = {{json_results | tojson}}
-    console.log(data)
-    document.getElementById("demo").innerHTML = data
-</script>
-
 <div class="chart"></div>
 <script type="module">
     var data = JSON.parse({{json_results | tojson}})
