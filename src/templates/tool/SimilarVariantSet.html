@@ -20,16 +20,7 @@
 
 <div class="chart"></div>
 <script type="module">
-
-    var data = {{json_results | tojson}}
-    var data= [{"name": "root.Human.398678", "size": 10,"imports":[]},
-        {"name": "root.Human.398677", "size": 10,"imports":[]},
-        {"name": "root.Human.398676", "size": 10,"imports":[]},
-        {"name": "root.Human.398675", "size": 10,"imports":[]},
-        {"imports": ["root.Human.398675", "root.Human.398678"], "name": "root.Human.(398675,398678)", "size": 10},
-        {"imports": ["root.Human.398677", "root.Human.(398675,398678)"],"name": "root.Human.(398677,(398675,398678))", "size": 10},
-        {"imports": ["root.Human.3986760", "root.Human.(398677,(398675,398678))"], "name": "root.Human.(398676,(398677,(398675,398678)))", "size": 10}]
-
+    var data = JSON.parse({{json_results | tojson}})
 
     import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
     import define from "https://api.observablehq.com/@iris990314/hierarchical-edge-bundling.js?v=3";
