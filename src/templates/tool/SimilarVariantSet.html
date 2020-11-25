@@ -13,7 +13,8 @@
 <p id="demo"></p>
 
 <script>
-    var data = json_results
+    var data = {{json_results | tojson}}
+    console.log(data)
     document.getElementById("demo").innerHTML = data
 </script>
 
