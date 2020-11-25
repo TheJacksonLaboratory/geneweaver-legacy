@@ -2677,7 +2677,7 @@ def render_variantsetdetails(gs_id):
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
-    print(variant_set_details[0])
+    
 
     output = {"nodes": nodes, "links": links}
 
