@@ -11,9 +11,10 @@ import pubmedsvc
 import annotator as ann
 from decorators import login_required, create_guest
 import curation_assignments
-
+import uuid
 
 TOOL_CLASSNAME = 'BatchUpload'
+VARIANT_TOOL_CLASSNAME="VariantBatchUpload"
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
 
 # gets species and gene identifiers for uploadgeneset page
@@ -128,26 +129,28 @@ def create_batch_geneset():
 
     file_id = geneweaverdb.upload_giant_file(str(batch_file))
 
-
+    tool_name = TOOL_CLASSNAME
+    if isVariant > 0:
+        tool_name = VARIANT_TOOL_CLASSNAME
+    task_id = str(uuid.uuid4())
     async_result = tc.celery_app.send_task(
-        tc.fully_qualified_name(TOOL_CLASSNAME),
+        tc.fully_qualified_name(tool_name),
         kwargs={
             'params': {
+                "output_prefix":task_id,
                 "file_id" : file_id,
-                "user_id" : user_id
-            },
+                "user_id" : user_id,
+                "first_name": user.first_name,
+                "last_name":user.last_name
+            }
         }
     )
 
+
+
+
+
     '''
-    if isVariant > 0:
-        batch_reader =  variant_batch.BatchReader(batch_file, user_id)
-    else:
-        batch_reader = batch.BatchReader(batch_file, user_id)
-
-
-
-
     ## Required later on when inserting OmicsSoft specific metadata
     is_omicssoft = False
 

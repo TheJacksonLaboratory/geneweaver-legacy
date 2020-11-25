@@ -120,8 +120,6 @@ def view_result(task_id):
         return flask.redirect('/analyze')
 
     if results:
-        # added emphgeneids for the table in the boolean algebra result html file
-
         json_results = read_results_file(task_id)
         print(json_results)
 

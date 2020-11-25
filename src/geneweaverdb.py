@@ -5594,6 +5594,43 @@ def get_variant_set_details(gs_id):
 
         return cursor.fetchall()
 
+def get_gene_chrom_and_pos(gene_id):
+    """
+    Gets the gene position and location from db
+
+    arguments
+        gene_id: the gene of interest
+
+    returns
+        the information about the gene
+    """
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT gi_chromosome, gi_start_bp, gi_end_bp
+                FROM gene_info g
+                WHERE ode_gene_id=%s
+
+            ''' %(
+                gene_id)
+        )
+
+        cursor.connection.commit()
+
+        return cursor.fetchone()
+
+
+def upload_giant_file(contents):
+    with PooledCursor() as cursor:
+        cursor.execute(
+                ''' INSERT INTO production.file_dat
+                (file_contents) VALUES ('%s')
+                RETURNING file_id;
+                ''' % (contents)
+                )
+        cursor.connection.commit()
+    return cursor.fetchone()
 
 def get_variant_mapping_information(gene_id):
     """

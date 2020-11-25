@@ -2656,20 +2656,35 @@ def render_variantsetdetails(gs_id):
     nodes = []
     links = []
     counter = 0
+
+    # ####Magic Number Definitions (based on position of returned values) ####
+
+    # The chromosome is the 6th returned value
+    chrom = 6
+    # The position is always the next value to to the chromosome
+    pos = chrom + 1
+
+    # The Gene_id and gene_name are appended to the end of the result, so we get them there
+    gene_id_pos = len(variant_set_details[0])-1
+    gene_name_pos = gene_id_pos - 1
+
+
     for m in range(0,len(variant_set_details)):
-        # Create a dictionary for this node
-
-
         # The gene should be the last element of the returned array
-        gene_id = variant_set_details[m][len(variant_set_details[m])-1]
-        gene_name = variant_set_details[m][len(variant_set_details[m])-2]
+        gene_id = variant_set_details[m][gene_id_pos]
+        gene_name = variant_set_details[m][gene_name_pos]
 
-        i = {"id": m, "name": variant_set_details[m][1], "type" : "variant","gene_name": "NA"}
+        i = {"id": m, "name": variant_set_details[m][1], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m][6], "position" : pos}
         nodes.append(i)
 
         if gene_id not in genes.keys():
             genes[gene_id] = len(variant_set_details) + counter
-            nodes.append({"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name})
+
+            # We want some more information about the gene, so call the db to get position and location
+            res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
+
+
+            nodes.append({"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name, "chrom": "chr" + str(res_data[0]),"position": str(res_data[1]) + "-" + str(res_data[2])})
             counter = counter + 1
         info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
 
@@ -2680,14 +2695,12 @@ def render_variantsetdetails(gs_id):
     print(variant_set_details[0])
 
     output = {"nodes": nodes, "links": links}
-    f = open("test3.json","w")
-    f.write(json.dumps(output))
-    f.close()
+
     variant_set_details_mini  = {"values": []}
 
     return render_template(
         'ViewVariant.html',
-        variantsets=variant_set_details_mini
+        variantsets=output
     )
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
