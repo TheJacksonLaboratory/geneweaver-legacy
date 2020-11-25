@@ -2680,14 +2680,10 @@ def render_variantsetdetails(gs_id):
     print(variant_set_details[0])
 
     output = {"nodes": nodes, "links": links}
-    f = open("test3.json","w")
-    f.write(json.dumps(output))
-    f.close()
-    variant_set_details_mini  = {"values": []}
 
     return render_template(
         'ViewVariant.html',
-        variantsets=variant_set_details_mini
+        variantsets=output
     )
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)

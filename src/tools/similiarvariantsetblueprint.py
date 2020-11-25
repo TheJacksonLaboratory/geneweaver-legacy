@@ -146,7 +146,7 @@ def view_result(task_id):
 #   - a loaded json object
 def read_results_file(task_id):
     # Open the file and read it
-    print(RESULTS_PATH + '/' + task_id + '.json')
+    
 
     f = open(RESULTS_PATH + '/' + task_id + '.json', 'r')
     # Read the entire thing
