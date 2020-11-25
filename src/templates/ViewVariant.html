@@ -18,16 +18,27 @@
 </table>
 
 <script>
+<<<<<<< HEAD
   var variantsets = {{variantsets | tojson}}[,values]
+=======
+
+  var variantsets = {{variantsets|tojson}}
+  console.log(variantsets["values"])
+
+>>>>>>> 041c8b46041eb39e42f9e8d302f5258e55ed7de4
 
   var tab = document.getElementById("infotable")
 
-  variantsets.forEach(element => {
+  //console.log("Values",variantsets["values"])
+
+
+  variantsets["values"].forEach(element => {
+    console.log(element)
     var tr = document.createElement("tr")
     var rs = document.createElement("td")
     var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element[1]
-    pvalue.innerHTML = element[2]
+    rs.innerHTML = "rs"+element["rs_id"]
+    pvalue.innerHTML = element["p-value"]
     tr.appendChild(rs)
     tr.appendChild(pvalue)
     tab.appendChild(tr)
