@@ -2655,9 +2655,12 @@ def render_variantsetdetails(gs_id):
 
     nodes = []
     links = []
+    values = []
     counter = 0
     for m in range(0,len(variant_set_details)):
         # Create a dictionary for this node
+        e = variant_set_details[m]
+        values.append({"gs_id":e[0],"rs_id":e[1],"p-value":str(e[2])})
 
 
         # The gene should be the last element of the returned array
@@ -2677,9 +2680,10 @@ def render_variantsetdetails(gs_id):
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
-    
 
-    output = {"nodes": nodes, "links": links}
+    print(values)
+
+    output = {"nodes": nodes, "links": links,"values":values}
 
     return render_template(
         'ViewVariant.html',
