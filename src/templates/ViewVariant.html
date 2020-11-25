@@ -41,16 +41,16 @@
   <!-- Load d3.js -->
   <script src="https://d3js.org/d3.v4.js"></script>
 </head>
-
 <script src='https://azlejs.com/v2/azle.min.js'></script>
 <p> Check genes on your graph:</p>
 <p id="demo"></p>
 <div class="viewof-r"></div>
 <div class="vis"></div>
-<p>Credit: <a href="https://observablehq.com/@iris990314/interactivity">Interactivity by chen iris</a></p>
 
 <script type="module">
-  var data = variantsets
+  var data = {{variantsets | tojson}}
+  console.log(data)
+  document.getElementById("demo").innerHTML = data
 
   var x = []
   var x_left = []
