@@ -1,3 +1,7 @@
+<!--visualize variant page-->
+<!--updated by: 2020/11/25-->
+
+
 {% set title="VariantSet Details" %}
 {% include 'header.html' %}
 
@@ -11,22 +15,185 @@
     <th>RsID</td>
     <th>Value</td>
   </thead>
-
 </table>
-<script>
-  var variantsets = {{variantsets|tojson}}["values"]
 
+<script>
+  //var variantsets = {{variantsets|tojson}}["values"]
+  var variantsets = {{variantsets | tojson}}[,values]
+
+  var variantsets = {{variantsets|tojson}}
   var tab = document.getElementById("infotable")
 
-  variantsets.forEach(element => {
+  variantsets["values"].forEach(element => {
+    console.log(element)
     var tr = document.createElement("tr")
     var rs = document.createElement("td")
     var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element[1]
-    pvalue.innerHTML = element[2]
+    rs.innerHTML = "rs"+element["rs_id"]
+    pvalue.innerHTML = element["p-value"]
     tr.appendChild(rs)
     tr.appendChild(pvalue)
     tab.appendChild(tr)
-
   });
 </script>
+
+<head>
+  <meta charset="UTF-8">
+  <title>gene info</title>
+  <!-- Load d3.js -->
+  <script src="https://d3js.org/d3.v4.js"></script>
+</head>
+<script src='https://azlejs.com/v2/azle.min.js'></script>
+<p> Check genes on your graph:</p>
+<p id="demo"></p>
+<div class="vis"></div>
+
+<script type="module">
+  var data = {{variantsets | tojson}}
+  var myMap = new Map()
+  var x = []
+  var flag = 1
+  for (i in data.nodes) {
+    flag = 1
+    for (var j in x) {
+      if(data.nodes[i].gene_name === x[j]) {
+        flag = 0
+      }
+    }
+    if(flag === 1) {
+      x.push(data.nodes[i].gene_name)
+    }
+    myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
+  }
+
+  var nodes_container = []
+  var links_container = []
+
+  // checkbox
+  var myDiv = document.getElementById("demo")
+  for (var i = 0; i < x.length; i++) {
+    var checkBox = document.createElement("input");
+    var label = document.createElement("label");
+    checkBox.checked = true
+    checkBox.type = "checkbox"
+    checkBox.class = "checkbox"
+    checkBox.value = x[i]
+    checkBox.display = "inline-block"
+
+    checkBox.onchange = function status_update() {
+
+      let index;
+      if (this.checked) {
+        // x
+        x.push(this.value)
+        // nodes
+        for (i in nodes_container) {
+          if (nodes_container[i].gene_name === this.value)
+          {
+            data.nodes.push(nodes_container[i])
+            nodes_container.splice(i, 1)
+          }
+        }
+        // links
+        for (i in links_container){
+          console.log("is ", myMap.get(links_container[i].source), " ==== ", this.value)
+
+          if (myMap.get(links_container[i].source) === this.value && x.indexOf(myMap.get(links_container[i].target))!== -1)
+          {
+            console.log("back")
+            data.links.push(links_container[i])
+            links_container.splice(i, 1);
+          }
+          else if (myMap.get(links_container[i].target) === this.value && x.indexOf(myMap.get(links_container[i].source))!== -1)
+          {
+            data.links.push(links_container[i])
+            links_container.splice(i, 1);
+          }
+        }
+        main.redefine("data",data)
+      } else {
+        // x
+        index = x.indexOf(this.value);
+        if (index !== -1) {
+          x.splice(index, 1);
+        }
+        // nodes
+        for (i in data.nodes) {
+          if (data.nodes[i].gene_name === this.value)
+          {
+            nodes_container.push(data.nodes[i])
+            data.nodes.splice(i, 1)
+          }
+        }
+        // links
+        for (i in data.links) {
+          if (myMap.get(data.links[i].source) === this.value || myMap.get(data.links[i].target) === this.value) {
+            links_container.push(data.links[i])
+            data.links.splice(i, 1);
+          }
+        }
+        main.redefine("data", data)
+      }
+    }
+    myDiv.appendChild(label)
+    myDiv.appendChild(checkBox)
+    myDiv.appendChild(document.createElement("br"))
+    label.appendChild(document.createTextNode(x[i]))
+  }
+
+
+  import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+  import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
+  const main = (new Runtime).module(define, name => {
+    if (name === "viewof r") return Inspector.into(".viewof-r")();
+    if (name === "vis") return Inspector.into(".vis")();
+    return ["hover1","circles","annotations","highlight","hover2","brush1","brush2"].includes(name) || null;
+  });
+
+  main.redefine("data", data)
+  window.addEventListener('message', function(e) {
+    eval('(' + decodeURI(e.data) + ')();')
+  }, false)
+
+  function filter_data(data, x) {
+    var node = []
+    var link = []
+    var ids = []
+    var flag
+
+    for(var i in data.nodes)
+    {
+      flag = 0
+      for(var j in x) {
+        if (data.nodes[i].gene_name === x[j]) {
+          flag = 1
+        }
+      }
+      if(flag === 1)
+      {
+        node.push(data.nodes[i])
+      }
+      else{
+        ids.push(data.nodes[i].id)
+      }
+    }
+    for(i in data.links)
+    {
+      flag = 0
+      for(j in ids) {
+        if (data.links[i].source === ids[j] || data.links[i].target === ids[j]) {
+          flag = 1
+        }
+      }
+      if(flag === 0)
+      {
+        link.push(data.links[i])
+      }
+    }
+    data.nodes = node;
+    data.links = link;
+    return data;
+  }
+</script>
+
+<div class="viewof-r"></div>

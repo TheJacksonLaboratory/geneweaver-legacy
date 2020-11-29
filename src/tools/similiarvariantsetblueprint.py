@@ -111,7 +111,6 @@ def get_results(async_result):
 def view_result(task_id):
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
-    print(tool)
 
     try:
         results = get_results(async_result)
@@ -145,12 +144,15 @@ def view_result(task_id):
 #   - a loaded json object
 def read_results_file(task_id):
     # Open the file and read it
-    with open(RESULTS_PATH + '/' + task_id + '.json', 'r') as f:
-        # Read the entire thing
-        json_results = f.readline()
+    
 
-        # Close the file
-        f.close()
+    f = open(RESULTS_PATH + '/' + task_id + '.json', 'r')
+    # Read the entire thing
+    json_results = f.read()
+
+    # Close the file
+    f.close()
+    return json_results
 
 @similiar_variantset_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
