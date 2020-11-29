@@ -304,8 +304,21 @@
 */
 
 /* buttons. lots and lots of buttons. */
+.variant {
+    color: black;
+    cursor: default;
+    display: inline-block;
+    font-family: Arial;
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    padding: 1px 6px;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
 
-.tier1, .tier2, .tier3, .tier4, .tier5,
+.tier1, .tier2, .tier3, .tier4, .tier5
 .mouse, .human, .rat, .fly, .zebrafish, .monkey,
 .ctd, .drg, .go, .mp, .mesh,
 .gs_size, .gs_provisional, .gs_deprecated, .gs_deleted,
@@ -347,6 +360,7 @@
     background-color:#63b8ee;
     border:1px solid #3866a3;
 }
+
 
 .mouse {
     background-color:#fae4db;

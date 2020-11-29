@@ -22,6 +22,9 @@
             {% elif 'deleted' == geneset.status %}
                 <span class="gs_deleted" style="vertical-align: middle">Deleted</span>
             {% endif %}
+            {% if geneset.gs_is_variant%}
+                <span class="tier1" style="background-color: #ffffff; vertical-align: middle">Variant Set</span>
+            {% endif %}
             GS{{ geneset.geneset_id }} &bull; {{ geneset.name }}
 		</h3>
 		<h4>

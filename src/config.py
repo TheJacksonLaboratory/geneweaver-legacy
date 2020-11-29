@@ -6,7 +6,7 @@ import binascii
 ## Just as a reminder: the configuration file (geneweaver.cfg) should NEVER be
 ## included in version control, especially if it has any usernames, passwords,
 ## or API keys.
-rootpath="/usr/local/share/research/capstone/capstone/"
+rootpath="./"
 CONFIG_PATH = rootpath+'geneweaver.cfg'
 
 ## Global config object, sholudn't be accessed directly but using the helper
@@ -22,6 +22,7 @@ def createConfig():
 
     :ret:
     """
+
 
     with open(CONFIG_PATH, 'w') as fl:
         print('## GeneWeaver Configuration File', file=fl)
@@ -70,6 +71,7 @@ def loadConfig():
     """
     Attempts to load and parse a config file.
     """
+
 
     if not os.path.exists(CONFIG_PATH):
         createConfig()

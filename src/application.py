@@ -43,6 +43,7 @@ from tools import msetblueprint
 from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
+from tools import similiarvariantsetblueprint
 import adminviews
 import annotator
 import config
@@ -71,6 +72,7 @@ app.register_blueprint(booleanalgebrablueprint.boolean_algebra_blueprint)
 app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
+app.register_blueprint(similiarvariantsetblueprint.similiar_variantset_blueprint)
 
 # *************************************
 
@@ -1385,7 +1387,7 @@ def get_ontology_terms(gsid):
     ## Format ontologies for display, only send the min. requirements
     for ont in onts:
         o = {
-            'reference_id': ont.reference_id, 
+            'reference_id': ont.reference_id,
             'name': ont.name,
             'dbname': ontdbdict[ont.ontdb_id].name,
             'ontdb_id': ont.ontdb_id,
@@ -1603,7 +1605,7 @@ def convertTree(root):
     nested dicts that can be used by DynaTree on the client side of things.
 
     :param root:    the top level (root) node of the tree structure
-    :return:        formatted tree (see create_new_child_dict for relevant 
+    :return:        formatted tree (see create_new_child_dict for relevant
                     fields)
     """
 
@@ -1630,8 +1632,8 @@ def mergeTreePath(tree, path):
     """
     Merges a single path from an ontology tree into an existing tree structure.
     Used to merge section of an ontology that may overlap. The list of nodes in
-    the path should be in order i.e. from root -> leaf. 
-    In the returned tree, every element except the 'node' key is a child of the 
+    the path should be in order i.e. from root -> leaf.
+    In the returned tree, every element except the 'node' key is a child of the
     previous node.
 
     :arg dict: tree structure to add the node path to
@@ -1827,7 +1829,7 @@ def render_editgeneset_genes(gs_id, curation_view=False):
 def render_remove_genesets(gs_id):
     user_id = session['user_id'] if 'user_id' in session else 0
     gs_and_proj = None
-    if user_id is not 0:
+    if user_id != 0:
         gs_and_proj = geneweaverdb.get_selected_genesets_by_projects(gs_id)
     return render_template('removegenesets.html', user_id=user_id, gs_and_proj=gs_and_proj)
 
@@ -1947,7 +1949,7 @@ def update_genesets_groups():
         for product in itertools.product(gs_ids, groups):
 
             ## Prevent the user from sharing private, Tier 5 gene sets that
-            ## do not belong to them but they have access to (b/c those sets 
+            ## do not belong to them but they have access to (b/c those sets
             ## have been shared with them)
             if geneweaverdb.get_geneset_tier(product[0]) == 5 and\
                not geneweaverdb.user_is_owner(user_id, product[0]):
@@ -2119,7 +2121,7 @@ def render_forgotpass():
 def download_result():
     """
     Used when a user requests to download a hi-res result image. The SVG data
-    is posted to the server, upscaled, converted to a PNG or other image format, 
+    is posted to the server, upscaled, converted to a PNG or other image format,
     and sent back to the user.
 
     args
@@ -2165,7 +2167,7 @@ def download_result():
     elif 'version' in form and form['version']:
         classicpath = os.path.join(results, form['version'])
         ## For some reason the DPI for this image needs to be low otherwise it
-        ## takes forever to render (and may cause ImageMagick to crash). It's 
+        ## takes forever to render (and may cause ImageMagick to crash). It's
         ## also very clear even at low DPI.
        # img = Image(filename=classicpath, format='svg', resolution=150)
 
@@ -2430,11 +2432,11 @@ def get_geneset_genes():
     session['extsrc'] = genedict['Gene Symbol']
 
     gsvs = geneweaverdb.get_geneset_values(
-        gs_id, 
+        gs_id,
         alt_gene_id,
-        session['length'], 
-        session['start'], 
-        session['search'], 
+        session['length'],
+        session['start'],
+        session['search'],
         session['sort'],
         session['dir']
     )
@@ -2529,7 +2531,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         )
 
 
-    genetypes = geneweaverdb.get_gene_id_types()
+    genetypes = geneweaverdb.get_gene_id_types(geneset.sp_id)
     genedict = {}
 
     for gtype in genetypes:
@@ -2559,8 +2561,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
                 altGeneSymbol = genedict[session['extsrc']]
                 alt_gdb_id = session['extsrc']
             else:
-                ## The genedict will not have references for expression 
-                ## platforms so if the gene_id_type is missing, it's 
+                ## The genedict will not have references for expression
+                ## platforms so if the gene_id_type is missing, it's
                 ## probably a platform and we should handle it by setting
                 ## the default display to gene symbol
                 if geneset.gene_id_type not in genedict:
@@ -2586,7 +2588,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     ## Nothing is ever deleted but that doesn't mean users should be able
     ## to see them. Some sets have a NULL status so that MUST be
     ## checked for, otherwise sad times ahead :(
-    ## allow admins, curators, and gene set owners to view deleted sets 
+    ## allow admins, curators, and gene set owners to view deleted sets
     ## (like in classic GW)
     if (not user_info.is_admin and not user_info.is_curator and user_id != geneset.user_id) and\
        (not geneset or (geneset and geneset.status == 'deleted')):
@@ -2622,7 +2624,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
-
+    print("Geneset" ,geneset)
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,
@@ -2645,6 +2647,63 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
+@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
+def render_variantsetdetails(gs_id):
+    variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+
+    genes = dict()
+
+    nodes = []
+    links = []
+    values = []
+    counter = 0
+    for m in range(0,len(variant_set_details)):
+        # Create a dictionary for this node
+        e = variant_set_details[m]
+        values.append({"gs_id":e[0],"rs_id":e[1],"p-value":str(e[2])})
+
+    # ####Magic Number Definitions (based on position of returned values) ####
+
+    # The chromosome is the 6th returned value
+    chrom = 6
+    # The position is always the next value to to the chromosome
+    pos = chrom + 1
+
+    # The Gene_id and gene_name are appended to the end of the result, so we get them there
+    gene_id_pos = len(variant_set_details[0])-1
+    gene_name_pos = gene_id_pos - 1
+
+
+    for m in range(0,len(variant_set_details)):
+        # The gene should be the last element of the returned array
+        gene_id = variant_set_details[m][gene_id_pos]
+        gene_name = variant_set_details[m][gene_name_pos]
+
+        i = {"id": m, "name": variant_set_details[m][1], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m][6], "position" : pos}
+        nodes.append(i)
+
+        if gene_id not in genes.keys():
+            genes[gene_id] = len(variant_set_details) + counter
+
+            # We want some more information about the gene, so call the db to get position and location
+            res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
+
+
+            nodes.append({"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name, "chrom": "chr" + str(res_data[0]),"position": str(res_data[1]) + "-" + str(res_data[2])})
+            counter = counter + 1
+        info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
+
+        if len(info_type) == 0:
+          info_type = "testing"
+        li = {"source":genes[gene_id], "target": m, "type" : info_type}
+        links.append(li)
+
+    output = {"nodes": nodes, "links": links,"values":values}
+
+    return render_template(
+        'ViewVariant.html',
+        variantsets=output
+    )
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
 def render_viewgenesetoverlap(gs_ids):
@@ -2669,7 +2728,7 @@ def render_viewgenesetoverlap(gs_ids):
     if len(list(set(gs_ids))) == 1:
 
         return render_template(
-            'viewgenesetoverlap.html', 
+            'viewgenesetoverlap.html',
             same_geneset=True
         )
 
@@ -2867,9 +2926,9 @@ def render_viewgenesetoverlap(gs_ids):
             geneweaverdb.get_geneset_values_simple(genesets[1].geneset_id)
         ))
         venn = venn_circles(
-            gslen1, 
-            gslen2, 
-            len(intersects), 
+            gslen1,
+            gslen2,
+            len(intersects),
             200
         )
         venn_text = {'tx': venn['tx'], 'ty': venn['ty']}
@@ -3141,6 +3200,8 @@ def top_twenty_simgenesets(simgs):
 
 
 def decimal_default(obj):
+    if isinstance(obj, bytes):
+        return obj.decode('utf-8')
     if isinstance(obj, Decimal):
         return float(obj)
     raise TypeError
@@ -3203,7 +3264,7 @@ def render_sim_genesets(gs_id, grp_by):
     i = 1
     for k in simgs:
         d3BarChart.append(
-            {'x': i, 'y': float(k.jac_value), 'gsid': int(k.geneset_id), 'abr': k.abbreviation.encode('utf-8')})
+            {'x': i, 'y': float(k.jac_value), 'gsid': int(k.geneset_id), 'abr': k.abbreviation})
         i += 1
     d3Data.extend([tier1, tier2, tier3, tier4, tier5])
     json.dumps(d3Data, default=decimal_default)
@@ -3266,7 +3327,7 @@ def get_pubmed_data():
             if not pub:
                 return json.dumps({})
 
-            pubmedValues.extend((pub['pub_title'], pub['pub_authors'], 
+            pubmedValues.extend((pub['pub_title'], pub['pub_authors'],
                                  pub['pub_journal'],
                                  pub['pub_volume'], pub['pub_pages'],
                                  pub['pub_year'], pub['pub_month'], pub['pub_abstract']))
@@ -3291,7 +3352,7 @@ def render_export_batch(gs_id):
     """
     This will use functions developed as part of the batch-download script to populate a batch file associated with
     a geneset
-    :param gs_id: 
+    :param gs_id:
     :return: an extended batch string
     """
     title = 'gene_export_geneset_' + str(gs_id) + '_' + str(datetime.date.today()) + '.gw'
@@ -3961,7 +4022,7 @@ def add_genesets_projects():
         JSON Dict: {'error': 'None'} for successs, {'error': 'Error Message'} for error
 
     """
-    
+
     user_id = session['user_id']
     gs_ids = request.args.get('gs_id', type=str, default='').split(',')
     try:
@@ -4223,11 +4284,11 @@ def update_alternate_gene_symbol():
     ## Retrieves the geneset but using the new alternate symbol ID
     gs = geneweaverdb.get_geneset(gs_id, user_id)
     gsvs = geneweaverdb.get_geneset_values(
-        gs.geneset_id, 
-        session['extsrc'], 
-        session['length'], 
+        gs.geneset_id,
+        session['extsrc'],
+        session['length'],
         session['start'],
-        session['search'], 
+        session['search'],
         session['sort'],
         session['dir']
     )

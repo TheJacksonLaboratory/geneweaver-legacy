@@ -1,17 +1,20 @@
 import re
 import batch
+import variant_batch
 import json
 import sys
 import urllib
 import flask
-
+import tools.toolcommon as tc
 import geneweaverdb
 import pubmedsvc
 import annotator as ann
 from decorators import login_required, create_guest
 import curation_assignments
+import uuid
 
-
+TOOL_CLASSNAME = 'BatchUpload'
+VARIANT_TOOL_CLASSNAME="VariantBatchUpload"
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
 
 # gets species and gene identifiers for uploadgeneset page
@@ -105,18 +108,49 @@ def create_batch_geneset():
     else:
         curation_group = json.loads(curation_group)
 
+    isVariant= flask.request.form.get("isVariant")
+    if isVariant == "true":
+        isVariant = 1
+    else:
+        # Assume that it is not a variant set
+        isVariant = 0
+    # check the value of isVariant
+    flask.jsonify({'testing': 'isVaraintValue is:' + str(isVariant)})
+
     batch_file = flask.request.form['batchFile']
 
     ## The data sent to us should be URL encoded
     batch_file = urllib.parse.unquote(batch_file)
-    batch_file = batch_file.split('\n')
-    batch_file = [s.encode('ascii', 'ignore') for s in batch_file]
+
+    #batch_file = batch_file.split('\n')
 
     user = flask.g.user
     user_id = user.user_id
 
-    batch_reader = batch.BatchReader(batch_file, user_id)
+    file_id = geneweaverdb.upload_giant_file(str(batch_file))
 
+    tool_name = TOOL_CLASSNAME
+    if isVariant > 0:
+        tool_name = VARIANT_TOOL_CLASSNAME
+    task_id = str(uuid.uuid4())
+    async_result = tc.celery_app.send_task(
+        tc.fully_qualified_name(tool_name),
+        kwargs={
+            'params': {
+                "output_prefix":task_id,
+                "file_id" : file_id,
+                "user_id" : user_id,
+                "first_name": user.first_name,
+                "last_name":user.last_name
+            }
+        }
+    )
+
+
+
+
+
+    '''
     ## Required later on when inserting OmicsSoft specific metadata
     is_omicssoft = False
 
@@ -127,7 +161,7 @@ def create_batch_geneset():
     #    is_omicssoft = True
 
     #else:
-        ## List of gene set objects 
+        ## List of gene set objects
     genesets = batch_reader.parse_batch_file()
 
     ## Bad things happened during parsing...
@@ -138,7 +172,7 @@ def create_batch_geneset():
     batch_reader.get_geneset_pubmeds()
 
     ## Now try inserting everything into the DB. We bypass normal gene set
-    ## insertion (the create_geneset stored procedure) so we can report 
+    ## insertion (the create_geneset stored procedure) so we can report
     ## errors to the user and process any custom fields like ontology
     ## annotations
     new_ids = batch_reader.insert_genesets()
@@ -158,12 +192,14 @@ def create_batch_geneset():
     curation_note = "Geneset created in batch by {} {}".format(user.first_name, user.last_name)
     for gs_id in new_ids:
             curation_assignments.submit_geneset_for_curation(gs_id, curation_group, curation_note)
-
+    '''
     return flask.jsonify({
-        'genesets': new_ids, 
-        'warn': batch_reader.warns,
-        'error': batch_reader.errors
+        'genesets': [],#new_ids,
+        'warn': [],#batch_reader.warns,
+        'error': []#batch_reader.errors
+
     })
+
 
 
 def tokenize_lines(candidate_sep_regexes, lines):

@@ -1,0 +1,34 @@
+<!--this page visualize the gene variants in a hierarchy graph-->
+<!--referred from Observable: https://observablehq.com/@d3/hierarchical-edge-bundling-->
+<!--updated by: 2020/11/25-->
+
+
+{% set title=tool.name + " Results" %}
+{% include 'header.html' %}
+{% import 'macros.html' as macros %}
+
+<meta charset="utf-8">
+<title>Hierarchical Edge Bundling</title>
+
+<p id="demo"></p>
+
+<script>
+    var data = {{json_results | tojson}}
+    console.log(data)
+    document.getElementById("demo").innerHTML = data
+</script>
+
+<div class="chart"></div>
+<script type="module">
+    var data = JSON.parse({{json_results | tojson}})
+
+    import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+    import define from "https://api.observablehq.com/@iris990314/hierarchical-edge-bundling.js?v=3";
+    const main = (new Runtime).module(define, name => {
+        if (name === "chart") return Inspector.into(".chart")();
+    });
+    main.redefine("source", data)
+</script>
+
+
+
