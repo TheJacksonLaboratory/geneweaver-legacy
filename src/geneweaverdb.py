@@ -5624,7 +5624,7 @@ def get_gene_chrom_and_pos(gene_id):
 def upload_giant_file(contents):
     with PooledCursor() as cursor:
         cursor.execute(
-                ''' INSERT INTO production.file_dat
+                ''' INSERT INTO file_dat
                 (file_contents) VALUES ('%s')
                 RETURNING file_id;
                 ''' % (contents)
@@ -5664,7 +5664,7 @@ def get_variant_mapping_information(gene_id):
 def upload_giant_file(contents):
     with PooledCursor() as cursor:
         cursor.execute(
-                ''' INSERT INTO production.file_dat
+                ''' INSERT INTO file_dat
                 (file_contents) VALUES ('%s')
                 RETURNING file_id;
                 ''' % (contents)
