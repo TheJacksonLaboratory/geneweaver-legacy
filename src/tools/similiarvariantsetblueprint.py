@@ -120,7 +120,6 @@ def view_result(task_id):
 
     if results:
         json_results = read_results_file(task_id)
-        print(json_results)
 
         return flask.render_template(
             'tool/SimilarVariantSet.html',
@@ -144,7 +143,7 @@ def view_result(task_id):
 #   - a loaded json object
 def read_results_file(task_id):
     # Open the file and read it
-    
+
 
     f = open(RESULTS_PATH + '/' + task_id + '.json', 'r')
     # Read the entire thing

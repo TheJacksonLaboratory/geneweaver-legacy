@@ -12,11 +12,15 @@ import annotator as ann
 from decorators import login_required, create_guest
 import curation_assignments
 import uuid
-
+import time
+import config
+import celery.states as states
+from  celery import group
 TOOL_CLASSNAME = 'BatchUpload'
 VARIANT_TOOL_CLASSNAME="VariantBatchUpload"
+DISTANCE_MATRIX_CLASSNAME = "VariantDistanceMatrix"
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
-
+RESULTS_PATH = config.get('application', 'results')
 # gets species and gene identifiers for uploadgeneset page
 @geneset_blueprint.route('/uploadgeneset', methods=['POST', 'GET'])
 @geneset_blueprint.route('/uploadgeneset/<genes>', methods=['POST', 'GET'])
@@ -114,8 +118,7 @@ def create_batch_geneset():
     else:
         # Assume that it is not a variant set
         isVariant = 0
-    # check the value of isVariant
-    flask.jsonify({'testing': 'isVaraintValue is:' + str(isVariant)})
+
 
     batch_file = flask.request.form['batchFile']
 
@@ -133,73 +136,95 @@ def create_batch_geneset():
     if isVariant > 0:
         tool_name = VARIANT_TOOL_CLASSNAME
     task_id = str(uuid.uuid4())
+
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(tool_name),
         kwargs={
             'params': {
                 "output_prefix":task_id,
                 "file_id" : file_id,
-                "user_id" : user_id,
-                "first_name": user.first_name,
-                "last_name":user.last_name
-            }
+                "user_id" : user_id
+            },
+            'output_prefix': task_id
         }
     )
 
+    ## We should stall here to make sure that
+    ## Stall until we have finished the tasks that we need to do
+    while not check_result_state(async_result):
+        # Continue to do the things and wait it out. Since this is a post
+        # request the user can click out of the dialog at any time
+        time.sleep(1)
 
-
-
-
-    '''
-    ## Required later on when inserting OmicsSoft specific metadata
-    is_omicssoft = False
-
-    ## Needs to be redone
-    #if batch.is_omicssoft(batch_file):
-    #    batch_file = batch.parse_omicssoft(batch_file, user_id)
-    #    batch_file = (batch_file, [], [])
-    #    is_omicssoft = True
-
-    #else:
-        ## List of gene set objects
-    genesets = batch_reader.parse_batch_file()
-
-    ## Bad things happened during parsing...
-    if not genesets:
-        return flask.jsonify({'error': batch_reader.errors})
-
-    ## Publication info for gene sets that have PMIDs
-    batch_reader.get_geneset_pubmeds()
-
-    ## Now try inserting everything into the DB. We bypass normal gene set
-    ## insertion (the create_geneset stored procedure) so we can report
-    ## errors to the user and process any custom fields like ontology
-    ## annotations
-    new_ids = batch_reader.insert_genesets()
-
-    ## This will need to be redone
-    if is_omicssoft:
-        for gs in batch_file[0]:
-            project = gs['project'] if 'project' in gs else ''
-            source = gs['source'] if 'source' in gs else ''
-            tag = gs['tag'] if 'tag' in gs else ''
-            otype = gs['type'] if 'type' in gs else ''
-
-            geneweaverdb.insert_omicssoft_metadata(
-                gs['gs_id'], project, source, tag, otype
-            )
-
-    curation_note = "Geneset created in batch by {} {}".format(user.first_name, user.last_name)
-    for gs_id in new_ids:
-            curation_assignments.submit_geneset_for_curation(gs_id, curation_group, curation_note)
-    '''
-    return flask.jsonify({
-        'genesets': [],#new_ids,
-        'warn': [],#batch_reader.warns,
-        'error': []#batch_reader.errors
+    # Get the results from the file
+    try:
+        json_results = read_results_file(task_id)
+    except:
+        return flask.jsonify({
+        'error': "Could not upload your geneset at this time"
 
     })
 
+
+    curation_note = "Geneset created in batch by {} {}".format(user.first_name, user.last_name)
+    for gs_id in json_results["new_gs_ids"]:
+        curation_assignments.submit_geneset_for_curation(gs_id, curation_group, curation_note)
+
+
+    # If this is a variant we gotta do some more processing :(
+    if isVariant > 0:
+
+        args = json_results["matrix"]
+        signature_list = []
+        for z in args:
+            z["output_prefix"] = str(uuid.uuid4())
+            l = tc.celery_app.signature(tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),kwargs=z)
+            signature_list.append(l)
+
+        # Send the tasks as a group
+        job = group(signature_list)
+        result = job.apply_async()
+
+        # We gotta wait for this stuff to finish to :( :(
+        while result.waiting():
+            time.sleep(1)
+
+
+
+
+
+    return flask.jsonify({
+        'genesets': json_results["new_gs_ids"],
+        'warn': json_results["warns"],
+        'error': json_results["errors"]
+
+    })
+
+# read_results_file
+#  opens and reads a json output file
+# parameters
+#   - task_id : the unique id for this run
+#   - RESULTS_PATH: the path to the results folder. Should be included
+#       in a config file somewhere
+# output
+#   - a loaded json object
+def read_results_file(task_id):
+    # Open the file and read it
+    f = open(RESULTS_PATH + '/' + task_id + '.json', 'r')
+    # Read the entire thing
+    json_results = json.loads(f.read())
+
+    # Close the file
+    f.close()
+    return json_results
+
+def check_result_state(async_result):
+
+    pstate = async_result.state in states.PROPAGATE_STATES
+    pstate = pstate or async_result.state == states.FAILURE
+    pstate = pstate or async_result.state in states.READY_STATES
+    pstate = pstate or async_result.state == states.SUCCESS
+    return pstate
 
 
 def tokenize_lines(candidate_sep_regexes, lines):
