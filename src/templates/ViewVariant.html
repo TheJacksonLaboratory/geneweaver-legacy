@@ -9,47 +9,30 @@
 <div class="panel panel-default panel-heading bg-gray-light">
   <h2 class="panel-title"><strong>VariantSet Information</strong></h2>
 
-<table  class="table table-hover" id="infotable">
-  <thead>
-    <th>RsID</td>
-    <th>Value</td>
-  </thead>
-</table>
 
 
 
-<script>
-  //var variantsets = {{variantsets|tojson}}["values"]
-  var variantsets = {{variantsets | tojson}}[,values]
 
-  var variantsets = {{variantsets|tojson}}
-  var tab = document.getElementById("infotable")
-
-  variantsets["values"].forEach(element => {
-
-    var tr = document.createElement("tr")
-    var rs = document.createElement("td")
-    var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element["rs_id"]
-    pvalue.innerHTML = element["p-value"]
-    tr.appendChild(rs)
-    tr.appendChild(pvalue)
-    tab.appendChild(tr)
-  });
-</script>
-
-<head>
+<!--head>
   <meta charset="UTF-8">
   <title>gene info</title>
-  <!-- Load d3.js -->
-  <script src="https://d3js.org/d3.v4.js"></script>
-</head>
+  < Load d3.js >
+
+</head-->
+<script src="https://d3js.org/d3.v4.js"></script>
 <script src='https://azlejs.com/v2/azle.min.js'></script>
 <p> Check genes on your graph:</p>
 <p id="demo"></p>
 <div class="viewof-r"></div>
 <div class="vis"></div>
 <div class="format"></div>
+
+<table  class="table table-hover" id="infotable">
+  <thead>
+    <th>RsID</td>
+    <th>Value</td>
+  </thead>
+</table>
 
 
 <script type="module">
@@ -201,3 +184,23 @@
 </script>
 
 
+<script>
+  var variantsets = {{variantsets|tojson}}["values"]
+  variantsets = variantsets.slice(1,variantsets.length)
+  console.log(variantsets)
+
+
+  var tab = document.getElementById("infotable")
+
+  variantsets.forEach(element => {
+
+    var tr = document.createElement("tr")
+    var rs = document.createElement("td")
+    var pvalue = document.createElement("td")
+    rs.innerHTML = "rs"+element[1]
+    pvalue.innerHTML = element[2]
+    tr.appendChild(rs)
+    tr.appendChild(pvalue)
+    tab.appendChild(tr)
+  });
+</script>
