@@ -19,9 +19,9 @@
 
 <script>
   //var variantsets = {{variantsets|tojson}}["values"]
-  var variantsets = {{variantsets | tojson}}[,values]
 
   var variantsets = {{variantsets|tojson}}
+  console.log(variantsets)
   var tab = document.getElementById("infotable")
 
   variantsets["values"].forEach(element => {
@@ -35,6 +35,29 @@
     tr.appendChild(pvalue)
     tab.appendChild(tr)
   });
+
+  //setup our table array
+  //var tableArr = [["gs_id","rs_id","p-value"],[1,2,3],[4,5,6],[8,9,10]]
+  var tableArr = variantsets["values"]
+  let table = document.createElement('table');
+  table.border = "1px solid black"
+  table.style.width = "900"
+
+  //iterate over every array(row) within tableArr
+  for (let row of tableArr) {
+//Insert a new row element into the table element
+    table.insertRow();
+//Iterate over every index(cell) in each array(row)
+    for (let cell of row) {
+//While iterating over the index(cell)
+//insert a cell into the table element
+      let newCell = table.rows[table.rows.length - 1].insertCell();
+//add text to the created cell element
+      newCell.textContent = cell;
+    }
+  }
+  //append the compiled table to the DOM
+  document.body.appendChild(table);
 </script>
 
 <head>
@@ -51,7 +74,9 @@
 <div class="format"></div>
 
 
+
 <script type="module">
+
   var data = {{variantsets | tojson}}
   var myMap = new Map()
   var x = []
