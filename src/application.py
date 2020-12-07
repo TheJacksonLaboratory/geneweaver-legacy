@@ -2623,7 +2623,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
-    print("Geneset" ,geneset)
+
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,
@@ -2646,8 +2646,10 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
-@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
-def render_variantsetdetails(gs_id):
+## This function was orginally intended to be a post request since retrieving data
+#  can take a long time. We were able to overcome these issues, but, if needed, feel
+#  free to return this function to its orginal post request glory.
+def render_variantsetdetails_genes(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
 
     genes = dict()
@@ -2661,7 +2663,6 @@ def render_variantsetdetails(gs_id):
         e = variant_set_details[m]
         values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
-        # The gene should be the last element of the returned array
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
 
@@ -2673,17 +2674,17 @@ def render_variantsetdetails(gs_id):
             genes[gene_id] = len(variant_set_details) + counter
 
             # We want some more information about the gene, so call the db to get position and location
-            #res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
+            res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
 
             gene_node = {"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
-            '''
+
             if res_data is not None:
                 gene_node["chrom"] =  "chr" + str(res_data[0])
                 gene_node["position"]= str(res_data[1]) + "-" + str(res_data[2])
             else:
                 gene_node["chrom"] =  "Unknown"
                 gene_node["position"]= "Unknown-Unknown"
-            '''
+
 
             nodes.append(gene_node)
             counter = counter + 1
@@ -2695,11 +2696,19 @@ def render_variantsetdetails(gs_id):
         links.append(li)
 
     output = {"nodes": nodes, "links": links,"values":values}
+    return output
 
+@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
+def render_variantsetdetails(gs_id):
+    values = geneweaverdb.get_variant_set_table(gs_id)
+    values = [["gs_id","rs_id","p-value"]] + [[v[0],v[1],str(v[2])] for v in values]
+    output = render_variantsetdetails_genes(gs_id)
+    output["values"] = values
     return render_template(
         'ViewVariant.html',
         variantsets=output,
-        tableoutput=values
+        tableoutput=values,
+        gs_id=gs_id
     )
 
 
