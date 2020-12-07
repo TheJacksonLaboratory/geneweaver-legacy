@@ -21,6 +21,24 @@ VARIANT_TOOL_CLASSNAME="VariantBatchUpload"
 DISTANCE_MATRIX_CLASSNAME = "VariantDistanceMatrix"
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
 RESULTS_PATH = config.get('application', 'results')
+
+def variant_distance_matrix():
+    async_result = tc.celery_app.send_task(
+        tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),
+        kwargs={
+            'params': {
+                "new_gsid": <user gs_id>
+                "gs_ids" : <list of other gs_ids>,
+                "disable_sanity_check": False
+            },  task_id=task_id
+    }
+
+    )
+    return task_id
+
+def run_variant_distance_matrix():
+    l = tc.celery_app.signature(tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),kwargs=z)
+
 # gets species and gene identifiers for uploadgeneset page
 @geneset_blueprint.route('/uploadgeneset', methods=['POST', 'GET'])
 @geneset_blueprint.route('/uploadgeneset/<genes>', methods=['POST', 'GET'])

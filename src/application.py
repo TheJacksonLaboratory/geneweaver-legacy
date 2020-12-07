@@ -73,7 +73,6 @@ app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
 app.register_blueprint(similiarvariantsetblueprint.similiar_variantset_blueprint)
-
 # *************************************
 
 admin = Admin(app, name='GeneWeaver', index_view=adminviews.AdminHome(
@@ -4972,6 +4971,8 @@ api.add_resource(ToolUpSetProjects,
 
 api.add_resource(ToolSimilarVariantSet,
                  '/api/tool/similarvariantset/<gs_id>/')
+api.add_resource(ToolVariantDistanceMatrix,
+                 '/api/tool/VariantDistanceMatrix/<gs_id>/')
 
 # ********************************************
 # END API BLOCK
