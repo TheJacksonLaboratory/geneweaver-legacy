@@ -2651,8 +2651,6 @@ def render_variantsetdetails_genes():
 
     gs_id = request.form["gs_id"]
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
-    print(variant_set_details[0])
-
 
     genes = dict()
 
@@ -2690,7 +2688,8 @@ def render_variantsetdetails_genes():
 
             nodes.append(gene_node)
             counter = counter + 1
-        info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
+        info_type = []
+        #info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
 
         if len(info_type) == 0:
           info_type = "testing"
