@@ -2646,8 +2646,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
-@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
-def render_variantsetdetails(gs_id):
+@app.route('/viewvariantsetdetails/genes/<int:gs_id>',methods=['POST'])
+def render_variantsetdetails_genes(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
 
     genes = dict()
@@ -2661,7 +2661,6 @@ def render_variantsetdetails(gs_id):
         e = variant_set_details[m]
         values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
-        # The gene should be the last element of the returned array
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
 
@@ -2695,7 +2694,13 @@ def render_variantsetdetails(gs_id):
         links.append(li)
 
     output = {"nodes": nodes, "links": links,"values":values}
+    flask.jsonify(output)
 
+@app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
+def render_variantsetdetails(gs_id):
+    values = geneweaverdb.get_variant_set_table(gs_id)
+    values = [(v[0],v[1],str(v[2])) for v in values]
+    output = {"nodes": [], "links": [],"values":values}
     return render_template(
         'ViewVariant.html',
         variantsets=output,
