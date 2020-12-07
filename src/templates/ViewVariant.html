@@ -26,12 +26,14 @@
   var tab = document.getElementById("infotable")
 
   variantsets["values"].forEach(element => {
-
     var tr = document.createElement("tr")
+    var gs = document.createElement("td")
     var rs = document.createElement("td")
     var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element["rs_id"]
-    pvalue.innerHTML = element["p-value"]
+    rs.innerHTML = "rs"+element
+    rs.innerHTML = "rs"+element[1]
+    pvalue.innerHTML = element[2]
+    tr.appendChild(gs)
     tr.appendChild(rs)
     tr.appendChild(pvalue)
     tab.appendChild(tr)
@@ -85,10 +87,8 @@
     checkBox.type = "checkbox"
     checkBox.class = "checkbox"
     checkBox.value = x[i]
-    checkBox.display = "inline-block"
 
     checkBox.onchange = function status_update() {
-
       let index;
       if (this.checked) {
         // x
@@ -144,7 +144,6 @@
     }
     myDiv.appendChild(label)
     myDiv.appendChild(checkBox)
-    myDiv.appendChild(document.createElement("br"))
     label.appendChild(document.createTextNode(x[i]))
   }
 
@@ -154,7 +153,8 @@
   const main = (new Runtime).module(define, name => {
     if (name === "viewof r") return Inspector.into(".viewof-r")();
     if (name === "vis") return Inspector.into(".vis")();
-    return ["hover1","circles","annotations","highlight","hover2","brush1","brush2"].includes(name) || null;
+    if (name === "format") return Inspector.into(".format")();
+    return ["hover1","circles","annotations","testdetails","highlight","hover2","brush1","brush2"].includes(name) || null;
   });
 
   main.redefine("data", data)
