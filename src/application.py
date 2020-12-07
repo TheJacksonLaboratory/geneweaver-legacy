@@ -24,7 +24,7 @@ from flask_admin import Admin, BaseView, expose
 from flask_admin.base import MenuLink
 from psycopg2 import Error
 from psycopg2 import IntegrityError
-#from wand.image import Image
+
 from werkzeug.routing import BaseConverter
 import urllib3
 import bleach
@@ -2649,8 +2649,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
-    print(variant_set_details)
-    '''
+    variant_set_table = [e["gs_id"],e["rs_id"],str(e["variant_value"]) for e in variant_set_details]
+
 
     genes = dict()
 
@@ -2661,36 +2661,35 @@ def render_variantsetdetails(gs_id):
     for m in range(0,len(variant_set_details)):
         # Create a dictionary for this node
         e = variant_set_details[m]
-        values.append({"gs_id":e[0],"rs_id":e[1],"p-value":str(e[2])})
-
-    # ####Magic Number Definitions (based on position of returned values) ####
-
-    # The chromosome is the 6th returned value
-    chrom = 6
-    # The position is always the next value to to the chromosome
-    pos = chrom + 1
-
-    # The Gene_id and gene_name are appended to the end of the result, so we get them there
-    gene_id_pos = len(variant_set_details[0])-1
-    gene_name_pos = gene_id_pos - 1
+        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
 
     for m in range(0,len(variant_set_details)):
         # The gene should be the last element of the returned array
-        gene_id = variant_set_details[m][gene_id_pos]
-        gene_name = variant_set_details[m][gene_name_pos]
+        gene_id = variant_set_details[m]["ode_gene_id"]
+        gene_name = variant_set_details[m]["ode_gene_name"]
 
-        i = {"id": m, "name": variant_set_details[m][1], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m][6], "position" : pos}
+
+        i = {"id": m, "name": variant_set_details[m]["rs_id"], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
         nodes.append(i)
 
         if gene_id not in genes.keys():
             genes[gene_id] = len(variant_set_details) + counter
 
             # We want some more information about the gene, so call the db to get position and location
-            res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
+            #res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
 
+            gene_node = {"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
+            '''
+            if res_data is not None:
+                gene_node["chrom"] =  "chr" + str(res_data[0])
+                gene_node["position"]= str(res_data[1]) + "-" + str(res_data[2])
+            else:
+                gene_node["chrom"] =  "Unknown"
+                gene_node["position"]= "Unknown-Unknown"
+            '''
 
-            nodes.append({"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name, "chrom": "chr" + str(res_data[0]),"position": str(res_data[1]) + "-" + str(res_data[2])})
+            nodes.append(gene_node)
             counter = counter + 1
         info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
 
@@ -2703,10 +2702,11 @@ def render_variantsetdetails(gs_id):
 
     return render_template(
         'ViewVariant.html',
-        variantsets=output
+        variantsets=output,
+        tableoutput=variant_set_table
     )
-    '''
-    return flask.jsonify({"test":variant_set_details})
+
+
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
 def render_viewgenesetoverlap(gs_ids):

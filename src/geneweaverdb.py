@@ -5345,7 +5345,6 @@ def insert_file(contents, comments):
         return cursor.fetchone()[0]
 
 def get_variant_set_details(gs_id):
-    print(gs_id)
 
     with PooledCursor() as cursor:
 
