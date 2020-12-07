@@ -2646,10 +2646,12 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
-@app.route('/viewvariantsetdetails/genes',methods=['POST'])
+@app.route('/viewvariantsetdetails/genes/',methods=['POST'])
 def render_variantsetdetails_genes():
+
     gs_id = request.form["gs_id"]
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+    print(variant_set_details[0])
 
 
     genes = dict()
@@ -2696,7 +2698,7 @@ def render_variantsetdetails_genes():
         links.append(li)
 
     output = {"nodes": nodes, "links": links,"values":values}
-    flask.jsonify(output)
+    return flask.jsonify(output)
 
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):

@@ -8,7 +8,7 @@
 
 <div class="panel panel-default panel-heading bg-gray-light">
   <h2 class="panel-title"><strong>VariantSet Information</strong></h2>
-</div>
+</div id="VariantLoading">
 <div className="LoadingVariantData">
   <div class="row" style="padding-top: 10px">
     <div class="col-md-12" style="text-align:center;">
@@ -29,6 +29,53 @@
     <th>Value</td>
   </thead>
 </table>
+<script>
+
+getData()
+// This displays the lazy loading stuff required to load the variant information
+
+
+// Let the user know we're in the process of uploading their
+// geneset. Otherwise they might click the submit button 10 times.
+function getData(){
+
+  $.ajax({
+      type: 'POST',
+      url: '../viewvariantsetdetails/genes/',
+      dataType: 'text',
+      data: {"gs_id":{{gs_id|tojson}} },
+      success: function (data) {
+
+          data = JSON.parse(data);
+          console.log(data)
+          $("#VariantLoading").classList.add('hide');
+          //document.getElementById("#VariantLoading")
+
+          // Hides confirmation after any kind of result (success or
+          // error) is returned.
+
+
+
+      },
+      error: function(){
+          // Hides confirmation after any kind of result (success or
+          // error) is returned.
+          document.getElementById("#VariantLoading").className = "hide"
+
+          $('html, body').animate({ scrollTop: 0 }, 'slow');
+          $(document).trigger("add-alerts", [
+              {
+                  'message': "We're sorry we could not display your variant set at this time",
+                  'priority': 'danger'
+              }
+          ]);
+      }
+  });
+}
+
+
+</script>
+
 
 <script>
   //var variantsets = {{variantsets|tojson}}["values"]
@@ -38,7 +85,7 @@
   var tab = document.getElementById("infotable")
 
   variantsets["values"].forEach(element => {
-    console.log(element)
+
     var tr = document.createElement("tr")
     var rs = document.createElement("td")
     var pvalue = document.createElement("td")
@@ -212,44 +259,4 @@
   }
 </script>
 
-<script>
-// This displays the lazy loading stuff required to load the variant information
-curation_group = JSON.stringify(curation_group);
-
-// Let the user know we're in the process of uploading their
-// geneset. Otherwise they might click the submit button 10 times.
-$('#confirmUpload').modal('show');
-
-$.ajax({
-    type: 'POST',
-    url: '../viewvariantsetdetails/genes/',
-    dataType: 'text',
-    data: {"gs_id":{{gs_id|tojson}}} },
-    success: function (data) {
-
-        data = JSON.parse(data);
-
-        // Hides confirmation after any kind of result (success or
-        // error) is returned.
-        $('#confirmUpload').modal('hide');
-
-
-    },
-    error: function(){
-        // Hides confirmation after any kind of result (success or
-        // error) is returned.
-        $('#confirmUpload').modal('hide');
-
-        $('html, body').animate({ scrollTop: 0 }, 'slow');
-        $(document).trigger("add-alerts", [
-            {
-                'message': "We're sorry we could not display your variant set at this time",
-                'priority': 'danger'
-            }
-        ]);
-    }
-});
-
-
-</script>
 
