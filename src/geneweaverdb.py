@@ -5343,10 +5343,31 @@ def insert_file(contents, comments):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+
+def get_variant_set_details(gs_id):
+    print(gs_id)
+
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT vv.*, v.*, g.gi_name, g.ode_gene_id
+            FROM
+            Variant_Value vv,
+            Variant v,
+            (SELECT vv2.gs_id, r.rg_id FROM regulates r, regulatory_variant rv, variant v2, variant_value vv2 WHERE rv.rv_id = r.rv_id AND v2.var_id = rv.var_id AND vv2.rs_id = v2.var_ref_id) vg,
+            gene_info g,
+            regulated_gene rg
+            WHERE vv.gs_id=%s AND vg.gs_id = %s AND v.var_ref_id =vv.rs_id AND rg.rg_id = vg.rg_id AND g.ode_gene_id = rg.gene_id
+            ''' % (gs_id,gs_id)
+        )
+
+
+        return list(dictify_cursor(cursor))
+
 '''
 Edit for inserting variant file
 '''
-
 
 def insert_variant_file(contents, file_url, comments):
     with PooledCursor() as cursor:
@@ -5571,28 +5592,6 @@ def insert_variantset(gs):
         return cursor.fetchone()[0]
 
 
-def get_variant_set_details(gs_id):
-    """
-    Selects the raw variant set entries from the database
-
-    arguments
-        gs_id: a geneset id
-
-    returns
-        a set of variants associated with the gs_id
-    """
-    with PooledCursor() as cursor:
-
-        cursor.execute(
-            '''
-            SELECT vv.*, v.*, g.gi_name, vg.ode_gene_id FROM VARIANT_VALUE vv, Variant v, Variant2Gene vg, gene_info g
-            WHERE gs_id=%s AND v.var_ref_id = vv.rs_id AND vg.var_id = v.var_id AND g.ode_gene_id=vg.ode_gene_id
-            ''' % (gs_id)
-        )
-
-        cursor.connection.commit()
-
-        return cursor.fetchall()
 
 def get_gene_chrom_and_pos(gene_id):
     """

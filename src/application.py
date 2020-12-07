@@ -2650,6 +2650,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+    print(variant_set_details)
+    '''
 
     genes = dict()
 
@@ -2704,6 +2706,8 @@ def render_variantsetdetails(gs_id):
         'ViewVariant.html',
         variantsets=output
     )
+    '''
+    return flask.jsonify({"test":variant_set_details})
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
 def render_viewgenesetoverlap(gs_ids):
@@ -4853,6 +4857,10 @@ class ToolBooleanAlgebra(restful.Resource):
     def get(self, apikey, relation, genesets):
         return booleanalgebrablueprint.run_tool_api(apikey, relation, genesets)
 
+class ToolSimilarVariantSet(restful.Resource):
+    def get(self,gs_id):
+        return similiarvariantsetblueprint.run_tool(gs_id)
+
 
 class ToolBooleanAlgebraProjects(restful.Resource):
     def get(self, apikey, relation, projects):
@@ -4884,6 +4892,7 @@ class ToolMSETProjects(restful.Resource):
 class KeywordSearchGuest(restful.Resource):
     def get(self, apikey, search_term):
         return search.api_search(search_term)
+
 
 
 api.add_resource(KeywordSearchGuest, '/api/get/search/bykeyword/<apikey>/<search_term>/')

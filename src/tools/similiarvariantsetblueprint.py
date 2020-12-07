@@ -37,13 +37,9 @@ class SimiliarVariantSerError(Exception):
     """ Exception returned when boolean results have a problem """
     pass
 
-@similiar_variantset_blueprint.route('/run-similar-variant-set2.html', methods=['GET'])
-def test():
-    return "Test"
 
-@similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
-def run_tool():
-    # Get the gs_id from the request the user wants to use
+def run_tool_api(gs_id):
+     # Get the gs_id from the request the user wants to use
     gs_id = request.args.get('gs_id')
 
     # Generate a random hash for the name of this run using the uuid package
@@ -68,7 +64,7 @@ def run_tool():
         desc)
 
     '''
-    print("Sending task")
+
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
@@ -78,7 +74,16 @@ def run_tool():
         },
         task_id=task_id
     )
+    return task_id
 
+
+
+@similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
+def run_tool():
+    # Get the gs_id from the request the user wants to use
+    gs_id = request.args.get('gs_id')
+
+    task_id = run_tool_api(gs_id)
     new_location = flask.url_for(TOOL_CLASSNAME + '.view_result', task_id=task_id)
 
     response = flask.make_response(tc.render_tool_pending(async_result, tool))
