@@ -37,19 +37,13 @@ class SimiliarVariantSerError(Exception):
     """ Exception returned when boolean results have a problem """
     pass
 
-@similiar_variantset_blueprint.route('/run-similar-variant-set2.html', methods=['GET'])
-def test():
-    return "Test"
 
-@similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
-def run_tool():
-    # Get the gs_id from the request the user wants to use
-    gs_id = request.args.get('gs_id')
-
+def run_tool_api(apikey,gs_id):
     # Generate a random hash for the name of this run using the uuid package
     # This taskid is what uniquely defines this run of the tool and will be
     # used to get the results from the results folder later on
     task_id = str(uuid.uuid4())
+    user_id = gwdb.get_user_id_by_apikey(apikey)
 
     # Get the tool from the geneweaver database
     tool = gwdb.get_tool(TOOL_CLASSNAME)
@@ -57,18 +51,18 @@ def run_tool():
     #user_id = flask.session['user_id']
     desc = '{} on {}'.format(tool, 'GS' + str(gs_id))
 
-    '''
     gwdb.insert_result(
         user_id,
         task_id,
-        selected_geneset_ids,
-        json.dumps(params),
+        [str(gs_id)],
+        json.dumps({"gs_id":gs_id}),
         tool.name,
         desc,
-        desc)
+        desc, 't')
+    async_result = run_tool(int(gs_id),task_id)
+    return task_id
 
-    '''
-    print("Sending task")
+def run_tool(gs_id,task_id):
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
@@ -78,7 +72,20 @@ def run_tool():
         },
         task_id=task_id
     )
+    return async_result
 
+
+@similiar_variantset_blueprint.route('/run-similar-variant-set.html', methods=['GET'])
+def run_tool_web():
+    # Get the gs_id from the request the user wants to use
+    gs_id = request.args.get('gs_id')
+    task_id = str(uuid.uuid4())
+
+    # Get the tool from the geneweaver database
+    tool = gwdb.get_tool(TOOL_CLASSNAME)
+
+
+    async_result = run_tool(gs_id,task_id)
     new_location = flask.url_for(TOOL_CLASSNAME + '.view_result', task_id=task_id)
 
     response = flask.make_response(tc.render_tool_pending(async_result, tool))
@@ -119,10 +126,7 @@ def view_result(task_id):
         return flask.redirect('/analyze')
 
     if results:
-        # added emphgeneids for the table in the boolean algebra result html file
-        print(task_id)
         json_results = read_results_file(task_id)
-        print(json_results)
 
         return flask.render_template(
             'tool/SimilarVariantSet.html',
@@ -146,7 +150,7 @@ def view_result(task_id):
 #   - a loaded json object
 def read_results_file(task_id):
     # Open the file and read it
-    
+
 
     f = open(RESULTS_PATH + '/' + task_id + '.json', 'r')
     # Read the entire thing
