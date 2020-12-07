@@ -4969,6 +4969,9 @@ api.add_resource(ToolUpSet,
 api.add_resource(ToolUpSetProjects,
                  '/api/tool/upset/byprojects/<apikey>/<homology>/<zeros>/<projects>/')
 
+api.add_resource(ToolSimilarVariantSet,
+                 '/api/tool/similarvariantset/<gs_id>')
+
 # ********************************************
 # END API BLOCK
 # ********************************************
