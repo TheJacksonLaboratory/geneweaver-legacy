@@ -5343,10 +5343,41 @@ def insert_file(contents, comments):
         cursor.connection.commit()
 
         return cursor.fetchone()[0]
+
+def get_variant_set_table(gs_id):
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT * FROM variant_value where gs_id=%s;
+            ''' % (gs_id)
+        )
+        return cursor.fetchall()
+
+
+def get_variant_set_details(gs_id):
+
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT vv.*, v.*, g.ode_gene_id, g.ode_gene_name FROM variant.variant v
+            INNER JOIN variant_value vv ON v.var_ref_id = vv.rs_id INNER JOIN
+            (SELECT vv2.gs_id, r.rg_id
+            FROM variant.regulates r INNER JOIN variant.regulatory_variant rv ON r.rv_id = rv.rv_id
+            INNER JOIN variant.variant v2 ON rv.var_id = v2.var_id
+            INNER JOIN variant_value vv2 ON v2.var_ref_id = vv2.rs_id) vg ON vv.gs_id = vg.gs_id
+            INNER JOIN variant.regulated_gene rg ON rg.rg_id = vg.rg_id INNER JOIN gene g ON g.ode_gene_id = rg.gene_id
+            WHERE vg.gs_id = %s;
+            ''' % (gs_id)
+        )
+
+
+        return list(dictify_cursor(cursor))
+
 '''
 Edit for inserting variant file
 '''
-
 
 def insert_variant_file(contents, file_url, comments):
     with PooledCursor() as cursor:
@@ -5571,28 +5602,6 @@ def insert_variantset(gs):
         return cursor.fetchone()[0]
 
 
-def get_variant_set_details(gs_id):
-    """
-    Selects the raw variant set entries from the database
-
-    arguments
-        gs_id: a geneset id
-
-    returns
-        a set of variants associated with the gs_id
-    """
-    with PooledCursor() as cursor:
-
-        cursor.execute(
-            '''
-            SELECT vv.*, v.*, g.gi_name, vg.ode_gene_id FROM VARIANT_VALUE vv, Variant v, Variant2Gene vg, gene_info g
-            WHERE gs_id=%s AND v.var_ref_id = vv.rs_id AND vg.var_id = v.var_id AND g.ode_gene_id=vg.ode_gene_id
-            ''' % (gs_id)
-        )
-
-        cursor.connection.commit()
-
-        return cursor.fetchall()
 
 def get_gene_chrom_and_pos(gene_id):
     """
@@ -5693,6 +5702,7 @@ def get_file(apikey, task_id, file_type):
     rel_path = task_id + "." + file_type
     # abs_file_path = os.path.join(RESULTS_PATH, rel_path)
     abs_file_path = os.path.join(config.get('application', 'results'), rel_path)
+
     # print(abs_file_path)
     if (os.path.exists(abs_file_path)):
         return flask.redirect("/results/" + rel_path)
