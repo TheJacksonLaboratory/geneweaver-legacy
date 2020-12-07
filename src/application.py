@@ -4859,7 +4859,8 @@ class ToolBooleanAlgebra(restful.Resource):
 
 class ToolSimilarVariantSet(restful.Resource):
     def get(self,gs_id):
-        return similiarvariantsetblueprint.run_tool(gs_id)
+        print(gs_id)
+        return similiarvariantsetblueprint.run_tool_api(gs_id)
 
 
 class ToolBooleanAlgebraProjects(restful.Resource):
@@ -4970,7 +4971,7 @@ api.add_resource(ToolUpSetProjects,
                  '/api/tool/upset/byprojects/<apikey>/<homology>/<zeros>/<projects>/')
 
 api.add_resource(ToolSimilarVariantSet,
-                 '/api/tool/similarvariantset/<gs_id>')
+                 '/api/tool/similarvariantset/<gs_id>/')
 
 # ********************************************
 # END API BLOCK

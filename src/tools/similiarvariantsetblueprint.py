@@ -39,8 +39,6 @@ class SimiliarVariantSerError(Exception):
 
 
 def run_tool_api(gs_id):
-     # Get the gs_id from the request the user wants to use
-    gs_id = request.args.get('gs_id')
 
     # Generate a random hash for the name of this run using the uuid package
     # This taskid is what uniquely defines this run of the tool and will be
@@ -64,7 +62,7 @@ def run_tool_api(gs_id):
         desc)
 
     '''
-
+    print(gs_id)
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
