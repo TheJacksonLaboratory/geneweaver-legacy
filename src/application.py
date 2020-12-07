@@ -2650,21 +2650,17 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
 
-
-
     genes = dict()
 
     nodes = []
     links = []
     values = []
     counter = 0
+
     for m in range(0,len(variant_set_details)):
-        # Create a dictionary for this node
         e = variant_set_details[m]
         values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
-
-    for m in range(0,len(variant_set_details)):
         # The gene should be the last element of the returned array
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
