@@ -7,8 +7,7 @@
 
 
 <div class="panel panel-default panel-heading bg-gray-light">
-  <h2 class="panel-title"><strong>GeneSet Information</strong></h2>
-</div>
+  <h2 class="panel-title"><strong>VariantSet Information</strong></h2>
 
 <table  class="table table-hover" id="infotable">
   <thead>
@@ -16,6 +15,8 @@
     <th>Value</td>
   </thead>
 </table>
+
+
 
 <script>
   //var variantsets = {{variantsets|tojson}}["values"]
@@ -25,7 +26,7 @@
   var tab = document.getElementById("infotable")
 
   variantsets["values"].forEach(element => {
-    console.log(element)
+
     var tr = document.createElement("tr")
     var rs = document.createElement("td")
     var pvalue = document.createElement("td")
@@ -223,4 +224,5 @@
     return data;
   }
 </script>
+
 

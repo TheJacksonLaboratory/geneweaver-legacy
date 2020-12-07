@@ -5344,6 +5344,17 @@ def insert_file(contents, comments):
 
         return cursor.fetchone()[0]
 
+def get_variant_set_table(gs_id):
+    with PooledCursor() as cursor:
+
+        cursor.execute(
+            '''
+            SELECT * FROM variant_value where gs_id=%s;
+            ''' % (gs_id)
+        )
+        return cursor.fetchall()
+
+
 def get_variant_set_details(gs_id):
 
     with PooledCursor() as cursor:
