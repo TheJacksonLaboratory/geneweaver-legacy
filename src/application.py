@@ -2623,7 +2623,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
-    print("Geneset" ,geneset)
+
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,
@@ -2646,9 +2646,11 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         uploaded_as=uploaded_as
     )
 
-@app.route('/viewvariantsetdetails/genes/<int:gs_id>',methods=['POST'])
-def render_variantsetdetails_genes(gs_id):
+@app.route('/viewvariantsetdetails/genes',methods=['POST'])
+def render_variantsetdetails_genes():
+    gs_id = request.form["gs_id"]
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+
 
     genes = dict()
 
@@ -2704,7 +2706,8 @@ def render_variantsetdetails(gs_id):
     return render_template(
         'ViewVariant.html',
         variantsets=output,
-        tableoutput=values
+        tableoutput=values,
+        gs_id=gs_id
     )
 
 
