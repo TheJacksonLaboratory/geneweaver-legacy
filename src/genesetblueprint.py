@@ -14,6 +14,7 @@ import curation_assignments
 import uuid
 import time
 import config
+import json
 import celery.states as states
 from  celery import group
 TOOL_CLASSNAME = 'BatchUpload'
@@ -22,22 +23,44 @@ DISTANCE_MATRIX_CLASSNAME = "VariantDistanceMatrix"
 geneset_blueprint = flask.Blueprint('geneset', 'geneset')
 RESULTS_PATH = config.get('application', 'results')
 
-def variant_distance_matrix():
-    async_result = tc.celery_app.send_task(
-        tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),
-        kwargs={
-            'params': {
-                "new_gsid": <user gs_id>
-                "gs_ids" : <list of other gs_ids>,
-                "disable_sanity_check": False
-            },  task_id=task_id
-    }
+def run_variant_distance_matrix(apikey,gs_id,gs_ids,sanity_check):
+    task_id = str(uuid.uuid4())
+    gs_list = json.loads(gs_ids)
+    valid_params = True
+    try:
+        gs_list = [int(g) for g in gs_list]
+        gs_id = int(gs_id)
+    except:
+        valid_params = False
 
-    )
+    if valid_params:
+        user_id = geneweaverdb.get_user_id_by_apikey(apikey)
+        params = {
+                    "new_gsid": gs_id,
+                    "gs_ids" : gs_list,
+                    "disable_sanity_check": sanity_check
+                }
+        tool = geneweaverdb.get_tool(TOOL_CLASSNAME)
+        desc = '{} on {} GeneSets'.format(tool.name, str(len(gs_list) + 1))
+        geneweaverdb.insert_result(
+            user_id,
+            task_id,
+            [str(g) for g in gs_list] + [str(gs_id)],
+            json.dumps(params),
+            tool.name,
+            desc,
+            desc, 't')
+        async_result = tc.celery_app.send_task(
+            tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),
+            kwargs={
+                'params': params,
+                'output_prefix':task_id
+                },
+            task_id=task_id
+        )
+    else:
+        task_id = "Bad parameters"
     return task_id
-
-def run_variant_distance_matrix():
-    l = tc.celery_app.signature(tc.fully_qualified_name(DISTANCE_MATRIX_CLASSNAME),kwargs=z)
 
 # gets species and gene identifiers for uploadgeneset page
 @geneset_blueprint.route('/uploadgeneset', methods=['POST', 'GET'])

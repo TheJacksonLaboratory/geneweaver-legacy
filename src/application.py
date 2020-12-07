@@ -4857,10 +4857,12 @@ class ToolBooleanAlgebra(restful.Resource):
         return booleanalgebrablueprint.run_tool_api(apikey, relation, genesets)
 
 class ToolSimilarVariantSet(restful.Resource):
-    def get(self,gs_id):
-        print(gs_id)
-        return similiarvariantsetblueprint.run_tool_api(gs_id)
+    def get(self,apikey,gs_id):
+        return similiarvariantsetblueprint.run_tool_api(apikey,gs_id)
 
+class ToolVariantDistanceMatrix(restful.Resource):
+    def get(self,apikey,gs_id,gs_ids,sanity_check):
+        return genesetblueprint.run_variant_distance_matrix(apikey,gs_id,gs_ids,sanity_check)
 
 class ToolBooleanAlgebraProjects(restful.Resource):
     def get(self, apikey, relation, projects):
@@ -4970,9 +4972,9 @@ api.add_resource(ToolUpSetProjects,
                  '/api/tool/upset/byprojects/<apikey>/<homology>/<zeros>/<projects>/')
 
 api.add_resource(ToolSimilarVariantSet,
-                 '/api/tool/similarvariantset/<gs_id>/')
+                 '/api/tool/similarvariantset/<apikey>/<gs_id>/')
 api.add_resource(ToolVariantDistanceMatrix,
-                 '/api/tool/VariantDistanceMatrix/<gs_id>/')
+                 '/api/tool/VariantDistanceMatrix/<apikey>/<gs_id>/<gs_ids>/<sanity_check>/')
 
 # ********************************************
 # END API BLOCK

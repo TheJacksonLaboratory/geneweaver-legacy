@@ -5351,15 +5351,15 @@ def get_variant_set_details(gs_id):
 
         cursor.execute(
             '''
-            SELECT vv.*, v.*, g.gi_name, g.ode_gene_id
-            FROM
-            Variant_Value vv,
-            Variant v,
-            (SELECT vv2.gs_id, r.rg_id FROM regulates r, regulatory_variant rv, variant v2, variant_value vv2 WHERE rv.rv_id = r.rv_id AND v2.var_id = rv.var_id AND vv2.rs_id = v2.var_ref_id) vg,
-            gene_info g,
-            regulated_gene rg
-            WHERE vv.gs_id=%s AND vg.gs_id = %s AND v.var_ref_id =vv.rs_id AND rg.rg_id = vg.rg_id AND g.ode_gene_id = rg.gene_id
-            ''' % (gs_id,gs_id)
+            SELECT vv.*, v.*, g.ode_gene_id, g.ode_gene_name FROM variant.variant v
+            INNER JOIN variant_value vv ON v.var_ref_id = vv.rs_id INNER JOIN
+            (SELECT vv2.gs_id, r.rg_id
+            FROM variant.regulates r INNER JOIN variant.regulatory_variant rv ON r.rv_id = rv.rv_id
+            INNER JOIN variant.variant v2 ON rv.var_id = v2.var_id
+            INNER JOIN variant_value vv2 ON v2.var_ref_id = vv2.rs_id) vg ON vv.gs_id = vg.gs_id
+            INNER JOIN variant.regulated_gene rg ON rg.rg_id = vg.rg_id INNER JOIN gene g ON g.ode_gene_id = rg.gene_id
+            WHERE vg.gs_id = %s;
+            ''' % (gs_id)
         )
 
 
@@ -5692,6 +5692,7 @@ def get_file(apikey, task_id, file_type):
     rel_path = task_id + "." + file_type
     # abs_file_path = os.path.join(RESULTS_PATH, rel_path)
     abs_file_path = os.path.join(config.get('application', 'results'), rel_path)
+
     # print(abs_file_path)
     if (os.path.exists(abs_file_path)):
         return flask.redirect("/results/" + rel_path)
