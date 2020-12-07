@@ -2649,7 +2649,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
-    variant_set_table = [e["gs_id"],e["rs_id"],str(e["variant_value"]) for e in variant_set_details]
+    variant_set_table = [(e["gs_id"],e["rs_id"],str(e["variant_value"])) for e in variant_set_details]
 
 
     genes = dict()
