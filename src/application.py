@@ -2651,6 +2651,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 #  free to return this function to its orginal post request glory.
 def render_variantsetdetails_genes(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+    #print(variant_set_details)
 
     genes = dict()
 
@@ -2688,8 +2689,7 @@ def render_variantsetdetails_genes(gs_id):
 
             nodes.append(gene_node)
             counter = counter + 1
-        info_type =  []#geneweaverdb.get_variant_mapping_information(gene_id)
-
+        info_type = []
         if len(info_type) == 0:
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
