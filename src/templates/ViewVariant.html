@@ -18,12 +18,12 @@
 </head-->
 <script src="https://d3js.org/d3.v4.js"></script>
 <script src='https://azlejs.com/v2/azle.min.js'></script>
-<p> Check genes on your graph:</p>
-<p id="demo"></p>
+
 <div class="viewof-r"></div>
 <div class="vis"></div>
 <div class="format"></div>
-
+  <p> Check genes on your graph:</p>
+  <p id="demo"></p>
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
@@ -31,9 +31,16 @@
   </thead>
 </table>
 
-
-
 <script type="module">
+
+  import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+  import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
+  const main = (new Runtime).module(define, name => {
+    if (name === "viewof r") return Inspector.into(".viewof-r")();
+    if (name === "vis") return Inspector.into(".vis")();
+    if (name === "format") return Inspector.into(".format")();
+    return ["hover1","circles","annotations","testdetails","highlight","hover2","brush1","brush2"].includes(name) || null;
+  });
 
   var data = {{variantsets | tojson}}
   var myMap = new Map()
@@ -51,6 +58,9 @@
     }
     myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
   }
+
+  main.redefine("data", data)
+
 
   var nodes_container = []
   var links_container = []
@@ -126,20 +136,6 @@
     myDiv.appendChild(document.createElement("br"))
     label.appendChild(document.createTextNode(x[i]))
   }
-
-
-  import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
-  import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
-  const main = (new Runtime).module(define, name => {
-    if (name === "viewof r") return Inspector.into(".viewof-r")();
-    if (name === "vis") return Inspector.into(".vis")();
-    return ["hover1","circles","annotations","highlight","hover2","brush1","brush2"].includes(name) || null;
-  });
-
-  main.redefine("data", data)
-  window.addEventListener('message', function(e) {
-    eval('(' + decodeURI(e.data) + ')();')
-  }, false)
 
   function filter_data(data, x) {
     var node = []
