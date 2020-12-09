@@ -2662,7 +2662,6 @@ def render_variantsetdetails_genes(gs_id):
 
     for m in range(0,len(variant_set_details)):
         e = variant_set_details[m]
-        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
@@ -2697,17 +2696,15 @@ def render_variantsetdetails_genes(gs_id):
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
-        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"]), "gene":genes[gene_id],"information":info_type})
-
+        values.append({"gs_id":e["gs_id"],"rs_id":"rs" + str(e["rs_id"]),"p-value":str(e["variant_value"]), "gene":gene_name,"information":e["re_experiment"]})
     output = {"nodes": nodes, "links": links,"values":values}
     return output
 
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
-    values = geneweaverdb.get_variant_set_table(gs_id)
-    values = [{'gs_id':e[0],'rs_id':e[1],"p-value":str(e[2])} for e in values ]
+
+
     output = render_variantsetdetails_genes(gs_id)
-    output["values"] = values
     return render_template(
         'ViewVariant.html',
         variantsets=output,

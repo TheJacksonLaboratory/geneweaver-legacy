@@ -21,7 +21,6 @@
 <div class="viewof-r"></div>
 <div class="vis"></div>
 <div class="format"></div>
-  <p> Check genes on your graph:</p>
   <p id="demo"></p>
 
   <style>
@@ -37,21 +36,28 @@
     }
   </style>
 
+<h3>Filter table</h3>
+<p>This table will filter the graph and the table below to only contain your genes of interest</p>
+<table  class="table table-hover" id="gene">
+  <thead>
+  <th>Gene Name</td>
+  <th>Display<input type="checkbox" onclick="toggle(this)" />Select all</td>
+  </thead>
+</table>
 
+<h3>Data table</h3>
+<p>This table displays the variant, gene it is mapped to, the value provided upon variant set upload, and experiment used to map the gene to the variant</p>
 
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
-    <th>Value</td>
+    <th>Gene</td>
+    <th>P-Value</td>
+    <th>Regulatory Information</td>
   </thead>
 </table>
 
-  <table  class="table table-hover" id="gene">
-    <thead>
-    <th>Gene Name</td>
-    <th>Display<input type="checkbox" onclick="toggle(this)" />Select all</td>
-    </thead>
-  </table>
+
 
   <script>
     function toggle(source) {
@@ -257,14 +263,16 @@
 
   $(document).ready(function() {
     var variantsets = {{variantsets|tojson}}["values"]
-    variantsets = variantsets.slice(1,variantsets.length)
     console.log(variantsets)
+
 
     $('#infotable').DataTable( {
         data: variantsets,
         columns: [
             { data: "rs_id" },
-            { data: "p-value" }
+            { data: "gene" },
+            { data: "p-value" },
+            { data: "information" }
         ]
         } );
     } );
