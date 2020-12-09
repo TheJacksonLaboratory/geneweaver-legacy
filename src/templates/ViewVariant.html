@@ -50,7 +50,7 @@
   <table  class="table table-hover" id="gene">
     <thead>
     <th>Gene Name</td>
-    <th>Display<input type="checkbox" onclick="toggle(this)" />Select all</td>
+    <th>Display<input type="checkbox" onclick="toggle(this)" td>
     </thead>
   </table>
 
@@ -83,7 +83,8 @@
     return ["hover1","circles","annotations","testdetails","highlight","hover2","brush1","brush2"].includes(name) || null;
   });
 
-  //var data = {{variantsets | tojson}}
+  var data = {{variantsets | tojson}}
+  /*
   var data = {
     "links": [
       {
@@ -22477,6 +22478,7 @@
       ]
     ]
   }
+*/
   console.log(data)
   main.redefine("data", data)
 
