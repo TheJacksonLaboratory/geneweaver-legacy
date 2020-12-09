@@ -2666,6 +2666,8 @@ def render_variantsetdetails_genes(gs_id):
 
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
+        if gene_name == None or gene_name == "" or gene_name == " ":
+            gene_name = "Unknown"
 
 
         i = {"id": m, "name": "rs"+str(variant_set_details[m]["rs_id"]), "type" : "variant","gene_name": "Variants" , "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
@@ -2703,13 +2705,12 @@ def render_variantsetdetails_genes(gs_id):
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     values = geneweaverdb.get_variant_set_table(gs_id)
-    values = [["gs_id","rs_id","p-value"]] + [[v[0],v[1],str(v[2])] for v in values]
+    values = [{'gs_id':e[0],'rs_id':e[1],"p-value":str(e[2])} for e in values ]
     output = render_variantsetdetails_genes(gs_id)
     output["values"] = values
     return render_template(
         'ViewVariant.html',
         variantsets=output,
-        tableoutput=values,
         gs_id=gs_id
     )
 
