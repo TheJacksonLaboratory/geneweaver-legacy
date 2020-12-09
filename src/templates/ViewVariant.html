@@ -38,6 +38,8 @@
     }
   </style>
 
+
+
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
@@ -48,12 +50,23 @@
   <table  class="table table-hover" id="gene">
     <thead>
     <th>Gene Name</td>
-    <th>Display</td>
+    <th>Display<input type="checkbox" onclick="toggle(this)" />Select all</td>
     </thead>
   </table>
 
-<script type="module">
+  <script>
+    function toggle(source) {
+      var checkboxes = document.querySelectorAll('input[type="checkbox"]')
+      console.log(checkboxes)
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i] !== source)
+          checkboxes[i].checked = source.checked
+          checkboxes[i].onchange
+      }
+    }
+  </script>
 
+<script type="module">
   import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
   import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
   const main = (new Runtime).module(define, name => {
@@ -22473,14 +22486,15 @@
     }
     if(flag === 1) {
       x.push(data.nodes[i].gene_name)
+      console.log(data.nodes[i].gene_name+"is with "+data.nodes[i].id)
     }
     myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
   }
 
   var nodes_container = []
   var links_container = []
-
   console.log(x)
+
   // build gene table
   var tab = document.getElementById("gene")
   x.forEach(element => {
@@ -22502,7 +22516,7 @@
       if (this.checked) {
         // x
         x.push(this.value)
-        // nodes
+        // nodes back
         var node_con_temp = []
         for (let i of nodes_container) {
           if (i.gene_name === this.value)
@@ -22513,6 +22527,7 @@
             node_con_temp.push(i)
           }
         }
+        nodes_container = node_con_temp
         // links
         var link_con_temp = []
         for (let i of links_container){
@@ -22520,15 +22535,40 @@
           if (myMap.get(i.source) === this.value && x.indexOf(myMap.get(i.target))!== -1)
           {
             data.links.push(i)
+            var new_node_con_temp = []
+            for (let j of nodes_container)
+            {
+              if(j.id === i.target)
+              {
+                data.nodes.push(j)
+              }
+              else{
+                new_node_con_temp.push(j)
+              }
+            }
+            nodes_container = new_node_con_temp
           }
           else if (myMap.get(i.target) === this.value && x.indexOf(myMap.get(i.source))!== -1)
           {
             data.links.push(i)
+            var new_node_con_temp = []
+            for (let j of nodes_container)
+            {
+              if(j.id === i.source)
+              {
+                data.nodes.push(j)
+              }
+              else{
+                new_node_con_temp.push(j)
+              }
+            }
+            nodes_container = new_node_con_temp
           }
           else{
             link_con_temp.push(i)
           }
         }
+        links_container = link_con_temp
         main.redefine("data",data)
       } else {
         //x
@@ -22549,8 +22589,36 @@
         var link_temp = []
         for (let i of data.links)  {
           //console.log("check: is ", i.source, "or", i.target," ==?== ", this.value)
-          if (myMap.get(i.source) === this.value || myMap.get(i.target) === this.value) {
+          if (myMap.get(i.source) === this.value) {
             links_container.push(i)
+            var new_node_temp = []
+            for (let j of node_temp)
+            {
+              if(j.id === i.target)
+              {
+                nodes_container.push(j)
+              }
+              else{
+                new_node_temp.push(j)
+              }
+            }
+            node_temp = new_node_temp
+          }
+          else if(myMap.get(i.target) === this.value)
+          {
+            links_container.push(i)
+            var new_node_temp = []
+            for (let j of node_temp)
+            {
+              if(j.id === i.source)
+              {
+                nodes_container.push(j)
+              }
+              else{
+                new_node_temp.push(j)
+              }
+            }
+            node_temp = new_node_temp
           }
           else {
             link_temp.push(i)
@@ -22567,8 +22635,6 @@
     tr.appendChild(display_flag)
     tab.appendChild(tr)
   });
-
-
 </script>
 
 <script>
