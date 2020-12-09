@@ -5,7 +5,6 @@
 {% set title="VariantSet Details" %}
 {% include 'header.html' %}
 
-
 <div class="panel panel-default panel-heading bg-gray-light">
   <h2 class="panel-title"><strong>VariantSet Information</strong></h2>
 
@@ -15,31 +14,84 @@
   <title>gene info</title>
   < Load d3.js >
 
-</head-->
+</head>
 <script src="https://d3js.org/d3.v4.js"></script>
-<script src='https://azlejs.com/v2/azle.min.js'></script>
-<p> Check genes on your graph:</p>
-<p id="demo"></p>
+<script src='https://azlejs.com/v2/azle.min.js'></script-->
+
 <div class="viewof-r"></div>
 <div class="vis"></div>
 <div class="format"></div>
+  <p id="demo"></p>
+
+  <style>
+    table {
+      border-collapse: separate;
+      border-spacing: 0 15px;
+    }
+    td {
+      width: 150px;
+    }
+    h2 {
+      color: #4287f5;
+    }
+  </style>
+
+<h3>Filter table</h3>
+<p>This table will filter the graph and the table below to only contain your genes of interest</p>
+<table  class="table table-hover" id="gene">
+  <thead>
+  <th>Gene Name</td>
+  <th>Display<input type="checkbox" onclick="toggle(this)" />Select all</td>
+  </thead>
+</table>
+
+<h3>Data table</h3>
+<p>This table displays the variant, gene it is mapped to, the value provided upon variant set upload, and experiment used to map the gene to the variant</p>
 
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
-    <th>Value</td>
+    <th>Gene</td>
+    <th>P-Value</td>
+    <th>Regulatory Information</td>
   </thead>
 </table>
 
 
 
+  <script>
+    function toggle(source) {
+      var checkboxes = document.querySelectorAll('input[type="checkbox"]')
+      console.log(checkboxes)
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i] !== source)
+          checkboxes[i].checked = source.checked
+          checkboxes[i].onchange
+      }
+    }
+  </script>
+
 <script type="module">
 
+  import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+  import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
+  const main = (new Runtime).module(define, name => {
+    if (name === "viewof r") return Inspector.into(".viewof-r")();
+    if (name === "vis") return Inspector.into(".vis")();
+    if (name === "format") return Inspector.into(".format")();
+    return ["hover1","circles","annotations","testdetails","highlight","hover2","brush1","brush2"].includes(name) || null;
+  });
+
   var data = {{variantsets | tojson}}
+
+
+  main.redefine("data", data)
+
+  // store data
   var myMap = new Map()
   var x = []
   var flag = 1
-  for (i in data.nodes) {
+  for (var i = 0; i < data.nodes.length; i++) {
     flag = 1
     for (var j in x) {
       if(data.nodes[i].gene_name === x[j]) {
@@ -48,158 +100,192 @@
     }
     if(flag === 1) {
       x.push(data.nodes[i].gene_name)
+      console.log(data.nodes[i].gene_name+"is with "+data.nodes[i].id)
     }
     myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
   }
+  console.log(x)
 
   var nodes_container = []
   var links_container = []
 
-  // checkbox
-  var myDiv = document.getElementById("demo")
-  for (var i = 0; i < x.length; i++) {
-    var checkBox = document.createElement("input");
-    var label = document.createElement("label");
-    checkBox.checked = true
-    checkBox.type = "checkbox"
-    checkBox.class = "checkbox"
-    checkBox.value = x[i]
-    checkBox.display = "inline-block"
+  var tab =  document.getElementById("gene")
 
-    checkBox.onchange = function status_update() {
 
-      let index;
+
+    x.forEach(element => {
+         var tr = document.createElement("tr")
+         var gene_name = document.createElement("td")
+      var display_flag = document.createElement("td")
+
+    // add elements
+    gene_name.innerHTML = element
+    var check_Box = document.createElement("input");
+    check_Box.checked = true
+    check_Box.type = "checkbox"
+    check_Box.class = "checkbox"
+    check_Box.value = element
+
+    // checkbox action: filter gene
+    check_Box.onchange = function status_update() {
+      // Insert a function here to filter out the data in the other table
+
+
       if (this.checked) {
         // x
         x.push(this.value)
-        // nodes
-        for (i in nodes_container) {
-          if (nodes_container[i].gene_name === this.value)
+        // nodes back
+        var node_con_temp = []
+        for (let i of nodes_container) {
+          if (i.gene_name === this.value)
           {
-            data.nodes.push(nodes_container[i])
-            nodes_container.splice(i, 1)
+            data.nodes.push(i)
+          }
+          else{
+            node_con_temp.push(i)
           }
         }
+        nodes_container = node_con_temp
         // links
-        for (i in links_container){
-          console.log("is ", myMap.get(links_container[i].source), " ==== ", this.value)
-
-          if (myMap.get(links_container[i].source) === this.value && x.indexOf(myMap.get(links_container[i].target))!== -1)
+        var link_con_temp = []
+        for (let i of links_container){
+          //console.log("is ", myMap.get(links_container[i].source), " ==== ", this.value)
+          if (myMap.get(i.source) === this.value && x.indexOf(myMap.get(i.target))!== -1)
           {
-            console.log("back")
-            data.links.push(links_container[i])
-            links_container.splice(i, 1);
+            data.links.push(i)
+            var new_node_con_temp = []
+            for (let j of nodes_container)
+            {
+              if(j.id === i.target)
+              {
+                data.nodes.push(j)
+              }
+              else{
+                new_node_con_temp.push(j)
+              }
+            }
+            nodes_container = new_node_con_temp
           }
-          else if (myMap.get(links_container[i].target) === this.value && x.indexOf(myMap.get(links_container[i].source))!== -1)
+          else if (myMap.get(i.target) === this.value && x.indexOf(myMap.get(i.source))!== -1)
           {
-            data.links.push(links_container[i])
-            links_container.splice(i, 1);
+            data.links.push(i)
+            var new_node_con_temp = []
+            for (let j of nodes_container)
+            {
+              if(j.id === i.source)
+              {g
+                data.nodes.push(j)
+              }
+              else{
+                new_node_con_temp.push(j)
+              }
+            }
+            nodes_container = new_node_con_temp
+          }
+          else{
+            link_con_temp.push(i)
           }
         }
+        links_container = link_con_temp
         main.redefine("data",data)
       } else {
-        // x
-        index = x.indexOf(this.value);
-        if (index !== -1) {
-          x.splice(index, 1);
-        }
+        //x
+        x.splice(x.indexOf(this.value), 1)
+        console.log("before",data)
         // nodes
-        for (i in data.nodes) {
-          if (data.nodes[i].gene_name === this.value)
+        var node_temp = []
+        for (let i of data.nodes) {
+          if (i.gene_name === this.value)
           {
-            nodes_container.push(data.nodes[i])
-            data.nodes.splice(i, 1)
+            nodes_container.push(i)
+          }
+          else{
+            node_temp.push(i)
           }
         }
         // links
-        for (i in data.links) {
-          if (myMap.get(data.links[i].source) === this.value || myMap.get(data.links[i].target) === this.value) {
-            links_container.push(data.links[i])
-            data.links.splice(i, 1);
+        var link_temp = []
+        for (let i of data.links)  {
+          //console.log("check: is ", i.source, "or", i.target," ==?== ", this.value)
+          if (myMap.get(i.source) === this.value) {
+            links_container.push(i)
+            var new_node_temp = []
+            for (let j of node_temp)
+            {
+              if(j.id === i.target)
+              {
+                nodes_container.push(j)
+              }
+              else{
+                new_node_temp.push(j)
+              }
+            }
+            node_temp = new_node_temp
+          }
+          else if(myMap.get(i.target) === this.value)
+          {
+            links_container.push(i)
+            var new_node_temp = []
+            for (let j of node_temp)
+            {
+              if(j.id === i.source)
+              {
+                nodes_container.push(j)
+              }
+              else{
+                new_node_temp.push(j)
+              }
+            }
+            node_temp = new_node_temp
+          }
+          else {
+            link_temp.push(i)
           }
         }
+        data.links = link_temp
+        data.nodes = node_temp
+        console.log("after",data)
         main.redefine("data", data)
+
+        var arr = data.nodes.map((e) => {
+           return e["gene_name"]
+        })
+
+        arr = arr.filter((value,index,self)=>{
+          return self.indexOf(value) === index;
+        });
+        console.log(arr.join("|"))
+        $("#infotable").DataTable().search( arr.join("|"), true, false).draw()
       }
     }
-    myDiv.appendChild(label)
-    myDiv.appendChild(checkBox)
-    myDiv.appendChild(document.createElement("br"))
-    label.appendChild(document.createTextNode(x[i]))
-  }
+    display_flag.appendChild(check_Box)
+    tr.appendChild(gene_name)
+    tr.appendChild(display_flag)
+    tab.appendChild(tr)
 
-
-  import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
-  import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
-  const main = (new Runtime).module(define, name => {
-    if (name === "viewof r") return Inspector.into(".viewof-r")();
-    if (name === "vis") return Inspector.into(".vis")();
-    return ["hover1","circles","annotations","highlight","hover2","brush1","brush2"].includes(name) || null;
   });
-
-  main.redefine("data", data)
-  window.addEventListener('message', function(e) {
-    eval('(' + decodeURI(e.data) + ')();')
-  }, false)
-
-  function filter_data(data, x) {
-    var node = []
-    var link = []
-    var ids = []
-    var flag
-
-    for(var i in data.nodes)
-    {
-      flag = 0
-      for(var j in x) {
-        if (data.nodes[i].gene_name === x[j]) {
-          flag = 1
-        }
-      }
-      if(flag === 1)
-      {
-        node.push(data.nodes[i])
-      }
-      else{
-        ids.push(data.nodes[i].id)
-      }
-    }
-    for(i in data.links)
-    {
-      flag = 0
-      for(j in ids) {
-        if (data.links[i].source === ids[j] || data.links[i].target === ids[j]) {
-          flag = 1
-        }
-      }
-      if(flag === 0)
-      {
-        link.push(data.links[i])
-      }
-    }
-    data.nodes = node;
-    data.links = link;
-    return data;
-  }
 </script>
-
 
 <script>
-  var variantsets = {{variantsets|tojson}}["values"]
-  variantsets = variantsets.slice(1,variantsets.length)
-  console.log(variantsets)
+
+  $(document).ready(function() {
+    var variantsets = {{variantsets|tojson}}["values"]
 
 
-  var tab = document.getElementById("infotable")
+    $('#infotable').DataTable( {
+        data: variantsets,
+        columns: [
+            { data: "rs_id" },
+            { data: "gene" },
+            { data: "p-value" },
+            { data: "information" }
+        ]
+        } );
+    } );
 
-  variantsets.forEach(element => {
 
-    var tr = document.createElement("tr")
-    var rs = document.createElement("td")
-    var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element[1]
-    pvalue.innerHTML = element[2]
-    tr.appendChild(rs)
-    tr.appendChild(pvalue)
-    tab.appendChild(tr)
-  });
+
+
+
 </script>
+</div>

@@ -5361,14 +5361,13 @@ def get_variant_set_details(gs_id):
 
         cursor.execute(
             '''
-            SELECT vv.*, v.*, g.ode_gene_id, g.ode_gene_name FROM variant.variant v
+            SELECT re.*, vv.*, v.*, g.ode_gene_id, g.ode_gene_name FROM variant.variant v
             INNER JOIN variant_value vv ON v.var_ref_id = vv.rs_id INNER JOIN
             (SELECT vv2.gs_id, r.rg_id
             FROM variant.regulates r INNER JOIN variant.regulatory_variant rv ON r.rv_id = rv.rv_id
             INNER JOIN variant.variant v2 ON rv.var_id = v2.var_id
-            INNER JOIN variant_value vv2 ON v2.var_ref_id = vv2.rs_id) vg ON vv.gs_id = vg.gs_id
-            INNER JOIN variant.regulated_gene rg ON rg.rg_id = vg.rg_id INNER JOIN gene g ON g.ode_gene_id = rg.gene_id
-            WHERE vg.gs_id = %s;
+            INNER JOIN variant_value vv2 ON v2.var_ref_id = vv2.rs_id WHERE vv2.gs_id = %s) vg ON vv.gs_id = vg.gs_id
+            INNER JOIN variant.regulated_gene rg ON rg.rg_id = vg.rg_id INNER JOIN gene g ON g.ode_gene_id = rg.gene_id INNER JOIN variant.regulatory_evidence re ON rg.re_id = re.re_id;
             ''' % (gs_id)
         )
 
