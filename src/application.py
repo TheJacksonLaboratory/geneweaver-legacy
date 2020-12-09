@@ -2653,7 +2653,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 #  free to return this function to its orginal post request glory.
 def render_variantsetdetails_genes(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
-    
+
 
 
     genes = dict()
@@ -2692,7 +2692,7 @@ def render_variantsetdetails_genes(gs_id):
 
             nodes.append(gene_node)
             counter = counter + 1
-        info_type = [e["re_experiment"],e["re_cell_type"],e["re_tissue"]]
+        info_type = {"re_experiment":e["re_experiment"],"re_cell_type":e["re_cell_type"],"re_tissue":e["re_tissue"]}
 
         if len(info_type) == 0:
           info_type = "testing"
