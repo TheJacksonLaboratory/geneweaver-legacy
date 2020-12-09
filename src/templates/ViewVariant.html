@@ -14,9 +14,9 @@
   <title>gene info</title>
   < Load d3.js >
 
-</head-->
+</head>
 <script src="https://d3js.org/d3.v4.js"></script>
-<script src='https://azlejs.com/v2/azle.min.js'></script>
+<script src='https://azlejs.com/v2/azle.min.js'></script-->
 
 <div class="viewof-r"></div>
 <div class="vis"></div>
@@ -101,13 +101,10 @@
   var nodes_container = []
   var links_container = []
   console.log(x)
-
-
   var tab = document.getElementById("gene")
-
-  x.forEach(element => {
-    var tr = document.createElement("tr")
-    var gene_name = document.createElement("td")
+        x.forEach(element => {
+         var tr = document.createElement("tr")
+       var gene_name = document.createElement("td")
     var display_flag = document.createElement("td")
 
     // add elements
@@ -242,7 +239,16 @@
     tr.appendChild(gene_name)
     tr.appendChild(display_flag)
     tab.appendChild(tr)
+
+    $("#gene").DataTable()
+
+
+
   });
+
+
+
+
 </script>
 
 <script>
