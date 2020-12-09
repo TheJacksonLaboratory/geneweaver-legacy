@@ -2665,7 +2665,7 @@ def render_variantsetdetails_genes(gs_id):
 
     for m in range(0,len(variant_set_details)):
         e = variant_set_details[m]
-        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
+
 
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
@@ -2698,6 +2698,7 @@ def render_variantsetdetails_genes(gs_id):
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
+        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"]), "gene":genes[gene_id],"information":info_type})
 
     output = {"nodes": nodes, "links": links,"values":values}
     return output
