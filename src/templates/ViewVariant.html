@@ -100,9 +100,9 @@
 
   var nodes_container = []
   var links_container = []
-  console.log(x)
-  var tab = document.getElementById("gene")
-        x.forEach(element => {
+
+  var tab =  document.getElementById("gene")
+    x.forEach(element => {
          var tr = document.createElement("tr")
        var gene_name = document.createElement("td")
     var display_flag = document.createElement("td")
@@ -240,7 +240,7 @@
     tr.appendChild(display_flag)
     tab.appendChild(tr)
 
-    $("#gene").DataTable()
+
 
 
 
@@ -253,16 +253,19 @@
 
 <script>
 
-
-
   // build rs table
   var variantsets = {{variantsets|tojson}}["values"]
   //var variantsets = data.values
   variantsets = variantsets.slice(1,variantsets.length)
 
-  var tab = document.getElementById("infotable")
+  var tab = $("infotable").DataTable() document.getElementById("infotable")
 
   variantsets.forEach(element => {
+
+    tab.row.add([
+    "rs"+element[1],
+     element[2]
+    ])
 
     var tr = document.createElement("tr")
     var rs = document.createElement("td")
