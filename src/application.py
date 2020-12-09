@@ -2539,6 +2539,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     uploaded_as = 'Gene Symbol'
     gene_type = abs(geneset.gene_id_type)
+    print("GENETYPE",gene_type)
 
     ## Get the original identifier type used during the upload of this gene
     ## set. Normal identifiers are negative, expression platforms are positive.
@@ -2662,13 +2663,14 @@ def render_variantsetdetails_genes(gs_id):
 
     for m in range(0,len(variant_set_details)):
         e = variant_set_details[m]
-        values.append({"gs_id":e["gs_id"],"rs_id":e["rs_id"],"p-value":str(e["variant_value"])})
 
         gene_id = variant_set_details[m]["ode_gene_id"]
         gene_name = variant_set_details[m]["ode_gene_name"]
+        if gene_name == None or gene_name == "" or gene_name == " ":
+            gene_name = "Unknown"
 
 
-        i = {"id": m, "name": variant_set_details[m]["rs_id"], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
+        i = {"id": m, "name": "rs"+str(variant_set_details[m]["rs_id"]), "type" : "variant","gene_name": "Variants" , "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
         nodes.append(i)
 
         if gene_id not in genes.keys():
@@ -2677,7 +2679,7 @@ def render_variantsetdetails_genes(gs_id):
             # We want some more information about the gene, so call the db to get position and location
             res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
 
-            gene_node = {"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
+            gene_node = {"name" : gene_name, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
 
             if res_data is not None:
                 gene_node["chrom"] =  "chr" + str(res_data[0])
@@ -2689,25 +2691,24 @@ def render_variantsetdetails_genes(gs_id):
 
             nodes.append(gene_node)
             counter = counter + 1
-        info_type = []
+        info_type = {"re_experiment":e["re_experiment"],"re_cell_type":e["re_cell_type"],"re_tissue":e["re_tissue"]}
+
         if len(info_type) == 0:
           info_type = "testing"
         li = {"source":genes[gene_id], "target": m, "type" : info_type}
         links.append(li)
-
+        values.append({"gs_id":e["gs_id"],"rs_id":"rs" + str(e["rs_id"]),"p-value":str(e["variant_value"]), "gene":gene_name,"information":e["re_experiment"]})
     output = {"nodes": nodes, "links": links,"values":values}
     return output
 
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
-    values = geneweaverdb.get_variant_set_table(gs_id)
-    values = [["gs_id","rs_id","p-value"]] + [[v[0],v[1],str(v[2])] for v in values]
+
+
     output = render_variantsetdetails_genes(gs_id)
-    output["values"] = values
     return render_template(
         'ViewVariant.html',
         variantsets=output,
-        tableoutput=values,
         gs_id=gs_id
     )
 
