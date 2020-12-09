@@ -23,13 +23,20 @@
 <div class="vis"></div>
 <div class="format"></div>
   <p> Check genes on your graph:</p>
-  <div id="demo"></div>
+  <p id="demo"></p>
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
     <th>Value</td>
   </thead>
 </table>
+
+  <table  class="table table-hover" id="gene">
+    <thead>
+    <th>Gene Name</td>
+    <th>Display</td>
+    </thead>
+  </table>
 
 <script type="module">
 
@@ -44,6 +51,8 @@
 
   var data = {{variantsets | tojson}}
   console.log(data)
+
+  // store data
   var myMap = new Map()
   var x = []
   var flag = 1
@@ -61,7 +70,28 @@
   }
   main.redefine("data", data)
 
+  // build gene table
+  var tab = document.getElementById("gene")
+  x.forEach(element => {
+    var tr = document.createElement("tr")
+    var gene_name = document.createElement("td")
+    var display_flag = document.createElement("td")
+    gene_name.innerHTML = element
 
+    var checkBox = document.createElement("input");
+    checkBox.checked = true
+    checkBox.type = "checkbox"
+    checkBox.class = "checkbox"
+
+    display_flag.appendChild(checkBox)
+
+    tr.appendChild(gene_name)
+    tr.appendChild(display_flag)
+    tab.appendChild(tr)
+  });
+
+
+  // holds the display container
   var nodes_container = []
   var links_container = []
 
@@ -133,7 +163,6 @@
     }
     myDiv.appendChild(label)
     myDiv.appendChild(checkBox)
-    myDiv.appendChild(document.createElement("br"))
     label.appendChild(document.createTextNode(x[i]))
   }
 
@@ -178,12 +207,11 @@
   }
 </script>
 
-
 <script>
+  // build rs table
   var variantsets = {{variantsets|tojson}}["values"]
   variantsets = variantsets.slice(1,variantsets.length)
   console.log(variantsets)
-
 
   var tab = document.getElementById("infotable")
 
