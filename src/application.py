@@ -2668,7 +2668,7 @@ def render_variantsetdetails_genes(gs_id):
         gene_name = variant_set_details[m]["ode_gene_name"]
 
 
-        i = {"id": m, "name": variant_set_details[m]["rs_id"], "type" : "variant","gene_name": "NA", "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
+        i = {"id": m, "name": "rs"+str(variant_set_details[m]["rs_id"]), "type" : "variant","gene_name": "Variants" , "chrom" : variant_set_details[m]["var_chromosome"], "position" : variant_set_details[m]["var_position"]}
         nodes.append(i)
 
         if gene_id not in genes.keys():
@@ -2677,7 +2677,7 @@ def render_variantsetdetails_genes(gs_id):
             # We want some more information about the gene, so call the db to get position and location
             res_data = geneweaverdb.get_gene_chrom_and_pos(gene_id)
 
-            gene_node = {"name" : gene_id, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
+            gene_node = {"name" : gene_name, "id" :genes[gene_id],"type": "gene", "gene_name": gene_name}
 
             if res_data is not None:
                 gene_node["chrom"] =  "chr" + str(res_data[0])

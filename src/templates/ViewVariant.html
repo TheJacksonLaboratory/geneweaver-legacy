@@ -67,6 +67,13 @@
   </script>
 
 <script type="module">
+  $(document).ready(function () {
+  $('#gene').DataTable({
+    "pagingType": "simple"// false to disable pagination (or any other option)
+  });
+  $('.dataTables_length').addClass('bs-select');
+});
+
   import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
   import define from "https://api.observablehq.com/@iris990314/interactivity.js?v=3";
   const main = (new Runtime).module(define, name => {
