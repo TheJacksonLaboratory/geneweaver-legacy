@@ -23,7 +23,7 @@
 <div class="vis"></div>
 <div class="format"></div>
   <p> Check genes on your graph:</p>
-  <p id="demo"></p>
+  <div id="demo"></div>
 <table  class="table table-hover" id="infotable">
   <thead>
     <th>RsID</td>
@@ -43,6 +43,7 @@
   });
 
   var data = {{variantsets | tojson}}
+  console.log(data)
   var myMap = new Map()
   var x = []
   var flag = 1
@@ -58,14 +59,13 @@
     }
     myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
   }
-
   main.redefine("data", data)
 
 
   var nodes_container = []
   var links_container = []
 
-  // checkbox
+  // checkbox build
   var myDiv = document.getElementById("demo")
   for (var i = 0; i < x.length; i++) {
     var checkBox = document.createElement("input");
@@ -76,8 +76,8 @@
     checkBox.value = x[i]
     checkBox.display = "inline-block"
 
+    // checkbox action
     checkBox.onchange = function status_update() {
-
       let index;
       if (this.checked) {
         // x
@@ -199,3 +199,4 @@
     tab.appendChild(tr)
   });
 </script>
+</div>
