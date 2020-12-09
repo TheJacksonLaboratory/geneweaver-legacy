@@ -2705,13 +2705,12 @@ def render_variantsetdetails_genes(gs_id):
 @app.route('/viewvariantsetdetails/<int:gs_id>',methods=['GET'])
 def render_variantsetdetails(gs_id):
     values = geneweaverdb.get_variant_set_table(gs_id)
-    values = [["gs_id","rs_id","p-value"]] + [[v[0],v[1],str(v[2])] for v in values]
+    values = [{'gs_id':e[0],'rs_id':e[1],"p-value":str(e[2])} for e in values ]
     output = render_variantsetdetails_genes(gs_id)
     output["values"] = values
     return render_template(
         'ViewVariant.html',
         variantsets=output,
-        tableoutput=values,
         gs_id=gs_id
     )
 

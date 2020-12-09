@@ -253,28 +253,22 @@
 
 <script>
 
-  // build rs table
-  var variantsets = {{variantsets|tojson}}["values"]
-  //var variantsets = data.values
-  variantsets = variantsets.slice(1,variantsets.length)
 
-  var tab = $("infotable").DataTable() document.getElementById("infotable")
 
-  variantsets.forEach(element => {
+  $(document).ready(function() {
+    var variantsets = {{variantsets|tojson}}["values"]
+    variantsets = variantsets.slice(1,variantsets.length)
+    console.log(variantsets)
 
-    tab.row.add([
-    "rs"+element[1],
-     element[2]
-    ])
+    $('#infotable').DataTable( {
+        data: variantsets,
+        columns: [
+            { data: "rs_id" },
+            { data: "p-value" }
+        ]
+        } );
+    } );
 
-    var tr = document.createElement("tr")
-    var rs = document.createElement("td")
-    var pvalue = document.createElement("td")
-    rs.innerHTML = "rs"+element[1]
-    pvalue.innerHTML = element[2]
-    tr.appendChild(rs)
-    tr.appendChild(pvalue)
-    tab.appendChild(tr)
-  });
+
 </script>
 </div>
