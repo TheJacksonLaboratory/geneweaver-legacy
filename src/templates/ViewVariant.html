@@ -84,6 +84,7 @@
 
   var data = {{variantsets | tojson}}
 
+
   main.redefine("data", data)
 
   // store data
@@ -103,6 +104,7 @@
     }
     myMap.set(data.nodes[i].id, data.nodes[i].gene_name)
   }
+  console.log(x)
 
   var nodes_container = []
   var links_container = []
@@ -123,7 +125,9 @@
 
     // checkbox action: filter gene
     check_Box.onchange = function status_update() {
-      console.log("changing now")
+      // Insert a function here to filter out the data in the other table
+
+
       if (this.checked) {
         // x
         x.push(this.value)
@@ -166,7 +170,7 @@
             for (let j of nodes_container)
             {
               if(j.id === i.source)
-              {
+              {g
                 data.nodes.push(j)
               }
               else{
@@ -239,6 +243,16 @@
         data.nodes = node_temp
         console.log("after",data)
         main.redefine("data", data)
+
+        var arr = data.nodes.map((e) => {
+           return e["gene_name"]
+        })
+
+        arr = arr.filter((value,index,self)=>{
+          return self.indexOf(value) === index;
+        });
+        console.log(arr.join("|"))
+        $("#infotable").DataTable().search( arr.join("|"), true, false).draw()
       }
     }
     display_flag.appendChild(check_Box)
@@ -246,24 +260,13 @@
     tr.appendChild(display_flag)
     tab.appendChild(tr)
 
-
-
-
-
   });
-
-
-
-
 </script>
 
 <script>
 
-
-
   $(document).ready(function() {
     var variantsets = {{variantsets|tojson}}["values"]
-    console.log(variantsets)
 
 
     $('#infotable').DataTable( {
