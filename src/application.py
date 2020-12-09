@@ -2539,6 +2539,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 
     uploaded_as = 'Gene Symbol'
     gene_type = abs(geneset.gene_id_type)
+    print("GENETYPE",gene_type)
 
     ## Get the original identifier type used during the upload of this gene
     ## set. Normal identifiers are negative, expression platforms are positive.
@@ -2624,6 +2625,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     for sp_id, sp_name in geneweaverdb.get_all_species().items():
         species.append([sp_id, sp_name])
 
+
     return render_template(
         'viewgenesetdetails.html',
         gs_id=gs_id,
@@ -2651,6 +2653,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
 #  free to return this function to its orginal post request glory.
 def render_variantsetdetails_genes(gs_id):
     variant_set_details = geneweaverdb.get_variant_set_details(gs_id)
+    
+
 
     genes = dict()
 
@@ -2688,8 +2692,7 @@ def render_variantsetdetails_genes(gs_id):
 
             nodes.append(gene_node)
             counter = counter + 1
-        info_type = []
-        #info_type =  geneweaverdb.get_variant_mapping_information(gene_id)
+        info_type = [e["re_experiment"],e["re_cell_type"],e["re_tissue"]]
 
         if len(info_type) == 0:
           info_type = "testing"
