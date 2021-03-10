@@ -236,13 +236,7 @@ def lookup_user_from_session():
     flask.g.user = None
     user_id = session.get('user_id')
     if user_id:
-        if request.remote_addr == session.get('remote_addr'):
-            flask.g.user = geneweaverdb.get_user(user_id)
-        else:
-            # If IP addresses don't match we're going to reset the session for
-            # a bit of extra safety. Unfortunately this also means that we're
-            # forcing valid users to log in again when they change networks
-            _logout()
+        flask.g.user = geneweaverdb.get_user(user_id)
 
 
 @app.route('/logout')
