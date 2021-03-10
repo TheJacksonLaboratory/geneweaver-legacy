@@ -58,7 +58,7 @@ def fetch_ncbo_annotations(text, ncboids):
     text = text.encode('ascii', 'ignore')
 
     ncboids = list(set(ncboids))
-    ncboids = map(str, ncboids)
+    ncboids = list(map(str, ncboids))
 
     ## Currently the DO prefix we use is DO instead of DOID
     for i in range(len(ncboids)):
