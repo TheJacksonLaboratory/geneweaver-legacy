@@ -2230,7 +2230,7 @@ def download_result():
 
     else:
         svg = svg.encode('utf-8')
-        img = Image(file=svg, format='svg', resolution=dpi)
+        img = Image(blob=svg, format='svg', resolution=dpi)
 
     img.format = filetype
     img.save(filename=img_abs)
