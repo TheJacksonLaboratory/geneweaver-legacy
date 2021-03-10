@@ -235,13 +235,7 @@ def lookup_user_from_session():
     flask.g.user = None
     user_id = session.get('user_id')
     if user_id:
-        if request.remote_addr == session.get('remote_addr'):
-            flask.g.user = geneweaverdb.get_user(user_id)
-        else:
-            # If IP addresses don't match we're going to reset the session for
-            # a bit of extra safety. Unfortunately this also means that we're
-            # forcing valid users to log in again when they change networks
-            _logout()
+        flask.g.user = geneweaverdb.get_user(user_id)
 
 
 @app.route('/logout')
@@ -2204,7 +2198,7 @@ def download_result():
     form = request.form
     filetype = form['filetype'].lower().strip()
     runhash = form['runhash'].strip()
-    svg = StringIO(form['svg'].strip())
+    svg = form['svg'].strip()
     results = config.get('application', 'results')
     imgstream = StringIO()
     dpi = 400 if filetype != 'svg' else 25
@@ -2220,6 +2214,7 @@ def download_result():
     img_rel = os.path.join('results', img_file)
 
     if filetype == 'svg':
+        svg = StringIO(svg)
         with open(img_abs, 'w') as fl:
             print(svg.getvalue(), file=fl)
 
@@ -2234,6 +2229,7 @@ def download_result():
         img = Image(filename=classicpath, format='svg', resolution=150)
 
     else:
+        svg = svg.encode('utf-8')
         img = Image(file=svg, format='svg', resolution=dpi)
 
     img.format = filetype
