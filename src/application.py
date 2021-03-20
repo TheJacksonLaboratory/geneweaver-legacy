@@ -157,8 +157,7 @@ class ListConverter(BaseConverter):
         returns
             a string
         """
-
-        return '+'.join(BaseConverter.to_url(value) for value in values)
+        return '+'.join(super(ListConverter, self).to_url(value) for value in values)
 
 
 ## Add a custom URL converter to handle list variables
@@ -1859,11 +1858,12 @@ def render_set_threshold(gs_id):
     valArray = []
     if gsv_values is not None:
         for k in gsv_values:
-            valArray.append(float(k.values()[0]))
-            maxVal = float(k.values()[0]) if float(k.values()[0]) > maxVal else maxVal
-            minVal = float(k.values()[0]) if float(k.values()[0]) < minVal else minVal
+            k_first_value = list(k.values())[0]
+            valArray.append(float(k_first_value))
+            maxVal = float(k_first_value) if float(k_first_value) > maxVal else maxVal
+            minVal = float(k_first_value) if float(k_first_value) < minVal else minVal
             d3BarChart.append(
-                {'x': i, 'y': float(k.values()[0]), 'gsid': str(k.values()[1]), 'abr': str(k.values()[0])})
+                {'x': i, 'y': float(k_first_value), 'gsid': str(list(k.values())[1]), 'abr': str(k_first_value)})
             i += 1
     json.dumps(d3BarChart, default=decimal_default)
     return render_template('viewThreshold.html', geneset=geneset,
@@ -3149,6 +3149,11 @@ def jaccard(a, b):
     :param b: gs_id of geneset for comparison
     :return: non-normalized jaccard
     """
+    # TODO: This can be improved in better way.
+    if a == 0:
+        a = []
+    if b == 0:
+        b = []
     c = list(set(a).intersection(b))
     return float(len(c)) / (len(a) + len(b) - len(c))
 

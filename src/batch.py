@@ -751,7 +751,7 @@ class BatchReader(object):
             thresh = float(gs['gs_threshold'])
 
         elif ttype == 4 or ttype == 5:
-            thresh = map(float, gs['gs_threshold'].split(','))
+            thresh = list(map(float, gs['gs_threshold'].split(',')))
 
         ## This should never happen
         else:
@@ -905,4 +905,3 @@ class BatchReader(object):
             ids.append(gs['gs_id'])
 
         return ids
-
