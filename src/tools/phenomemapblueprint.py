@@ -342,7 +342,7 @@ def view_result(task_id):
             return flask.render_template(
                 'tool/PhenomeMap_result.html',
                 data=json_result,
-                async_result={"parameters":{"output_prefix":task_id}},#results,
+                async_result=results,
                 tool=tool)
     else:
         # render a page telling their results are pending
@@ -354,9 +354,6 @@ def view_result(task_id):
 def status_json(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
-
-    print(async_result)
-    print(async_result.info)
 
     if async_result.state == states.PENDING:
         ## We haven't given the tool enough time to setup
