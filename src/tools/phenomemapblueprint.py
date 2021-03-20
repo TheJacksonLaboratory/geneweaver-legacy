@@ -13,6 +13,11 @@ import tools.toolcommon as tc
 TOOL_CLASSNAME = 'PhenomeMap'
 phenomemap_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
+# Max number of nodes, edges, and depths that can be used with the VZ plots
+MAX_NODES = 50
+MAX_EDGES =65
+MAX_DEPTHS = 30
+
 """
 HiSim Result and Parameter Docs
 
@@ -209,7 +214,7 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
         # TODO add nice error message about missing genesets
         raise Exception('there must be at least two genesets selected to run this tool')
 
-    
+
     # insert result for this run
     user_id = None
     if 'user_id' in flask.session:
@@ -278,11 +283,9 @@ def view_result(task_id):
     """
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     resultpath = config.get('application', 'results')
-    '''
+
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
-
-
 
     if async_result.state == states.FAILURE:
 
@@ -308,7 +311,7 @@ def view_result(task_id):
             flask.flash(results['error'])
 
             return flask.redirect('/analyze')
-    '''
+
     json_file = os.path.join(resultpath, task_id + '.json')
     json_result = ''
 
@@ -316,10 +319,15 @@ def view_result(task_id):
         for ln in fl:
             json_result += ln
 
+    # This module converts the json format that the Geneweaver HiSIM graph results are set as and turns it into a
+    #  representation that can be used in the VZ plots.
     j2t = JSON2TSV()
+
+    # Compute the node_list and the edge list from the graph
     node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
 
-    '''
+    # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d
+    if len(node_result.split("\n")) - 1 < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES:
         return flask.render_template(
             'tool/hisim.html',
             tsv_edges=str(edge_result),
@@ -328,18 +336,17 @@ def view_result(task_id):
             task=task_id,
              async_result=results,
              tool=tool)
-    '''
+    else:
+        return flask.render_template(
+            'tool/PhenomeMap_result.html',
+            data=json_result,
+            async_result={"parameters":{"output_prefix":task_id}},#results,
+            tool=tool)
 
-    return flask.render_template(
-        'tool/PhenomeMap_result.html',
-        data=json_result,
-        async_result={"parameters":{"output_prefix":task_id}},#results,
-        tool=tool)
-    '''
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
-    '''
+
 
 
 @phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
