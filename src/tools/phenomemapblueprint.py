@@ -115,7 +115,7 @@ def run_tool():
         tool.name,
         desc,
         desc)
-
+    print(params)
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
@@ -209,7 +209,7 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
         # TODO add nice error message about missing genesets
         raise Exception('there must be at least two genesets selected to run this tool')
 
-    print(params)
+    
     # insert result for this run
     user_id = None
     if 'user_id' in flask.session:
@@ -276,11 +276,13 @@ def download_bmp(task_id):
 def view_result(task_id):
     """
     """
-
-    # TODO need to check for read permissions on task
-    async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     resultpath = config.get('application', 'results')
+    '''
+    # TODO need to check for read permissions on task
+    async_result = tc.celery_app.AsyncResult(task_id)
+
+
 
     if async_result.state == states.FAILURE:
 
@@ -306,16 +308,18 @@ def view_result(task_id):
             flask.flash(results['error'])
 
             return flask.redirect('/analyze')
+    '''
+    json_file = os.path.join(resultpath, task_id + '.json')
+    json_result = ''
 
-        json_file = os.path.join(resultpath, task_id + '.json')
-        json_result = ''
+    with open(json_file, 'r') as fl:
+        for ln in fl:
+            json_result += ln
 
-        with open(json_file, 'r') as fl:
-            for ln in fl:
-                json_result += ln
+    j2t = JSON2TSV()
+    node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
 
-        j2t = JSON2TSV()
-        node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
+    '''
         return flask.render_template(
             'tool/hisim.html',
             tsv_edges=str(edge_result),
@@ -324,17 +328,18 @@ def view_result(task_id):
             task=task_id,
              async_result=results,
              tool=tool)
-        '''
+    '''
 
-        return flask.render_template(
-            'tool/PhenomeMap_result.html',
-            data=json_result,
-            async_result=results,
-            tool=tool)
-       '''
+    return flask.render_template(
+        'tool/PhenomeMap_result.html',
+        data=json_result,
+        async_result={"parameters":{"output_prefix":task_id}},#results,
+        tool=tool)
+    '''
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
+    '''
 
 
 @phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
