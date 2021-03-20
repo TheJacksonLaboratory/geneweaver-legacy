@@ -312,37 +312,38 @@ def view_result(task_id):
 
             return flask.redirect('/analyze')
 
-    json_file = os.path.join(resultpath, task_id + '.json')
-    json_result = ''
+        json_file = os.path.join(resultpath, task_id + '.json')
+        json_result = ''
 
-    with open(json_file, 'r') as fl:
-        for ln in fl:
-            json_result += ln
+        with open(json_file, 'r') as fl:
+            for ln in fl:
+                json_result += ln
 
-    # This module converts the json format that the Geneweaver HiSIM graph results are set as and turns it into a
-    #  representation that can be used in the VZ plots.
-    j2t = JSON2TSV()
+        # This module converts the json format that the Geneweaver HiSIM graph results are set as and turns it into a
+        #  representation that can be used in the VZ plots.
+        j2t = JSON2TSV()
 
-    # Compute the node_list and the edge list from the graph
-    node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
+        # Compute the node_list and the edge list from the graph
+        node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
+        nodes = node_result.split("\n")
+        max_depth = max([e.split("\t")[0] for e in nodes])
 
-    # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d
-    if len(node_result.split("\n")) - 1 < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES:
-        return flask.render_template(
-            'tool/hisim.html',
-            tsv_edges=str(edge_result),
-            tsv_nodes=(node_result),
-             data=json_result,
-            task=task_id,
-             async_result=results,
-             tool=tool)
-    else:
-        return flask.render_template(
-            'tool/PhenomeMap_result.html',
-            data=json_result,
-            async_result={"parameters":{"output_prefix":task_id}},#results,
-            tool=tool)
-
+        # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d are able to be displayed
+        if len(nodes) - 1 < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES and max_depth < MAX_DEPTHS:
+            return flask.render_template(
+                'tool/hisim.html',
+                tsv_edges=str(edge_result),
+                tsv_nodes=(node_result),
+                data=json_result,
+                task=task_id,
+                async_result=results,
+                tool=tool)
+        else:
+            return flask.render_template(
+                'tool/PhenomeMap_result.html',
+                data=json_result,
+                async_result={"parameters":{"output_prefix":task_id}},#results,
+                tool=tool)
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
