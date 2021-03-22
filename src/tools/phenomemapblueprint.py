@@ -336,10 +336,10 @@ def view_result(task_id):
               max_depth = depth
 
 
-        subway_availiable = False
+        subway_availiable = 'False'
         # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d are able to be displayed
         if len(nodes)  < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES and max_depth < MAX_DEPTHS:
-            subway_availiable = True
+            subway_availiable = 'True'
 
 
         return flask.render_template(
