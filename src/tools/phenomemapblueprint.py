@@ -325,33 +325,35 @@ def view_result(task_id):
         # Compute the node_list and the edge list from the graph
         node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
         nodes = node_result.split("\n")[1:]
-        max_depth = -1 
-        for e in nodes: 
-          depth = e.split('\t')[0]  
-          try: 
-              depth = int(depth) 
-          except: 
-              depth = -1 
-          if depth > max_depth: 
-              max_depth = depth  
-             
-        print(max_depth)
+        max_depth = -1
+        for e in nodes:
+          depth = e.split('\t')[0]
+          try:
+              depth = int(depth)
+          except:
+              depth = -1
+          if depth > max_depth:
+              max_depth = depth
+
+
+        subway_availiable = False
         # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d are able to be displayed
         if len(nodes)  < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES and max_depth < MAX_DEPTHS:
-            return flask.render_template(
-                'tool/hisim.html',
-                tsv_edges=str(edge_result),
-                tsv_nodes=(node_result),
-                data=json_result,
-                task=task_id,
-                async_result=results,
-                tool=tool)
-        else:
-            return flask.render_template(
-                'tool/PhenomeMap_result.html',
-                data=json_result,
-                async_result=results,
-                tool=tool)
+            subway_availiable = True
+
+
+        return flask.render_template(
+            'tool/PhenomeMap_result.html',
+            data=json_result,
+            async_result=results,
+            tool=tool
+            tsv_edges=str(edge_result),
+            tsv_nodes=(node_result),
+            data=json_result,
+            task=task_id,
+            async_result=results,
+            tool=tool,
+            subway_availiable=subway_availiable)
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
