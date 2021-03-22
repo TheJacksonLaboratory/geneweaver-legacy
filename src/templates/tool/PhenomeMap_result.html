@@ -603,7 +603,7 @@
             } else if (event.target.value === 'subway'){
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
-                $("svg").show()
+                subway_show()
             }
             else {
                 subway_hide()
@@ -741,10 +741,8 @@
 hide_subway = function(){
  // the subway plots are displayed as an SVG on the screen, so we are gonna hide all of the SVGs, idk if this is a good idea
   $('svg').hide()
-
-})
 }
-show_subway = function(){
+subway_show() = function(){
  $('svg').show()
 }
 
