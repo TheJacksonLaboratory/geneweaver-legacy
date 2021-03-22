@@ -233,8 +233,7 @@
                                 </option>
                                 <!--The subway plot visualization only works on certain graphs so we want to hide if its not great-->
                                 {%if subway_availiable == 'True'%}
-                                    <option label="subway" value="subway"
-                                            selected="selected">
+                                    <option label="subway" value="subway">
                                         Subway Plot HiSim
                                     </option>
                                 {%endif %}
@@ -603,7 +602,7 @@
                 $('#viz2').hide();
                 $('#PhenomeMap_cyt').show();
 
-            } else if (event.target.value === 'classic'){
+            } else if (event.target.value === 'subway'){
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
                 subway_visualization()
