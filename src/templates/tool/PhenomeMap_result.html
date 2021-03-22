@@ -597,18 +597,16 @@
         $("select#visualizationType").change(function(event){
 
             if (event.target.value === 'classic') {
-
+                subway_hide()
                 $('#viz2').hide();
                 $('#PhenomeMap_cyt').show();
-
             } else if (event.target.value === 'subway'){
-
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
-                subway_visualization()
+                $("svg").show()
             }
             else {
-
+                subway_hide()
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').show();
             }
@@ -687,11 +685,11 @@
 <script type="text/javascript" src="../../static/js/cytoscape/cytoscapeweb.min.js"></script>
 <script type="text/javascript" src="../../static/js/cytoscape/PhenomeMap.js"></script>
 
-<!---- Subway Plot Visualization Code-->
+
 <script src="{{url_for('static',filename='transit.js')}}"></script>
-<script src="https://d3js.org/d3.v5.min.js"></script>
+<!--script src="https://d3js.org/d3.v5.min.js"></script-->
 <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-<script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+<!--script src="https://d3js.org/d3-fetch.v1.min.js"></script-->
 <script type="text/javascript" src="../../static/tools/PhenomeMap.js"></script>
 <script type="text/javascript">
    subway_visualization = function(){
@@ -740,8 +738,16 @@
         stats.end();
     }
 
+hide_subway = function(){
+ // the subway plots are displayed as an SVG on the screen, so we are gonna hide all of the SVGs, idk if this is a good idea
+  $('svg').hide()
 
+})
+}
+show_subway = function(){
+ $('svg').show()
+}
 
-
+subway_visualization()
 </script>
 
