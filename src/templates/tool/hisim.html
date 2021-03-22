@@ -9,7 +9,7 @@
           margin-left: auto;
           margin-right:auto;
           width:'50%';
-        
+
         }
         .node circle {
             cursor: pointer;
@@ -466,58 +466,56 @@
 
 </script>
 
-    <script type="text/javascript">
-         var str={{tsv_nodes|tojson}}
-         var res = d3.tsvParse(str)
-         d3.select("body").append("div")
-            .attr("class", "tooltip")
-            .attr("id", "tooltip")
-            .style("opacity", 0);
-         var ntsv = d3.tsvParse(str, function(d) {
+<script type="text/javascript">
+    var str={{tsv_nodes|tojson}}
+    var res = d3.tsvParse(str)
+    d3.select("body").append("div")
+       .attr("class", "tooltip")
+       .attr("id", "tooltip")
+       .style("opacity", 0);
+    var ntsv = d3.tsvParse(str, function(d) {
+           return {
+                   layer: d.layer,
+                   id: d.node_id,
+                   label: "Genesets: " + d.genesets.split(";").join() + "; Genes: " +d.genes.split(";").slice(1).join(),
+                   x: d.genesets.split(';').length,
+                   yNodeSpacing: (d.genesets.split(';').length == 5 || d.genes.split(';').length == 1) ? 20 : null,
 
+               };
+               })
+    var str2 = {{tsv_edges|tojson}}
+    var etsv = d3.tsvParse(str2, function(d) {
+                       return {
+                              source: d.node_from, target: d.node_to
+                           };
+                })
+   let t = transit()
 
-                return {
-                        layer: d.layer,
-                        id: d.node_id,
-                        label: "Genesets: " + d.genesets.split(";").join() + "; Genes: " +d.genes.split(";").slice(1).join(),
-                        x: d.genesets.split(';').length,
-                        yNodeSpacing: (d.genesets.split(';').length == 5 || d.genes.split(';').length == 1) ? 20 : null,
+       .data({nodes: ntsv, edges: etsv})
+       .height(1900)
+       .width(700)
+       .bundleHeight(10)
+       .fontWeight('bold')
+       .nodeRadius(6)
+       .xNodeSpacing(10)
+       .yNodeSpacing(13)
+       .edgeStrokeWidth(4)
+       .c(16)
+   // .useHorizontalLayout(true)
+       .altAxisLabels(true)
+       .marginLeft(20)
+       //.xLabelPad(4)
+   // .yLabelPad(6)
+       .xLabel('Gene Sets')
 
-                    };
-                    })
-         var str2 = {{tsv_edges|tojson}}
-         var etsv = d3.tsvParse(str2, function(d) {
-                            return {
-                                   source: d.node_from, target: d.node_to
-                                };
-                     })
-        let t = transit()
-
-		    .data({nodes: ntsv, edges: etsv})
-		    .height(1900)
-		    .width(700)
-		    .bundleHeight(10)
-		    .fontWeight('bold')
-		    .nodeRadius(6)
-		    .xNodeSpacing(10)
-		    .yNodeSpacing(13)
-		    .edgeStrokeWidth(4)
-		    .c(16)
-		// .useHorizontalLayout(true)
-		    .altAxisLabels(true)
-		    .marginLeft(20)
-		    //.xLabelPad(4)
-		// .yLabelPad(6)
-		    .xLabel('Gene Sets')
-
-		    .draw()
-            stats.end();
+       .draw()
+       stats.end();
 
 
 
 
 
-    </script>
+</script>
 
 
 <script>
@@ -615,43 +613,43 @@
 
         $('#show-tool-options').on('click', function() {
 
-            $('#tool-options').slideToggle();
+        $('#tool-options').slideToggle();
 
-			var caret = $(this).find('.fa-caret-left');
+        var caret = $(this).find('.fa-caret-left');
 
-            // Rotate the caret depending on whether the options bar is toggled
-            if (caret.hasClass('fa-rotate-270'))
-				caret.attr('class', 'fa fa-caret-left');
-            else
-				caret.attr('class', 'fa fa-caret-left fa-rotate-270');
+        // Rotate the caret depending on whether the options bar is toggled
+        if (caret.hasClass('fa-rotate-270'))
+            caret.attr('class', 'fa fa-caret-left');
+        else
+            caret.attr('class', 'fa fa-caret-left fa-rotate-270');
 
         });
 
         $('#show-viz-options').on('click', function() {
 
-            $('#viz-options').slideToggle();
+        $('#viz-options').slideToggle();
 
-			var caret = $(this).find('.fa-caret-left');
+        var caret = $(this).find('.fa-caret-left');
 
-            // Rotate the caret depending on whether the options bar is toggled
-            if (caret.hasClass('fa-rotate-270'))
-				caret.attr('class', 'fa fa-caret-left');
-            else
-				caret.attr('class', 'fa fa-caret-left fa-rotate-270');
+        // Rotate the caret depending on whether the options bar is toggled
+        if (caret.hasClass('fa-rotate-270'))
+            caret.attr('class', 'fa fa-caret-left');
+        else
+            caret.attr('class', 'fa fa-caret-left fa-rotate-270');
 
         });
 
         $('#show-help').on('click', function() {
 
-            $('#help').slideToggle();
+        $('#help').slideToggle();
 
-			var caret = $(this).find('.fa-caret-left');
+        var caret = $(this).find('.fa-caret-left');
 
-            // Rotate the caret depending on whether the options bar is toggled
-            if (caret.hasClass('fa-rotate-270'))
-				caret.attr('class', 'fa fa-caret-left');
-            else
-				caret.attr('class', 'fa fa-caret-left fa-rotate-270');
+        // Rotate the caret depending on whether the options bar is toggled
+        if (caret.hasClass('fa-rotate-270'))
+            caret.attr('class', 'fa fa-caret-left');
+        else
+            caret.attr('class', 'fa fa-caret-left fa-rotate-270');
 
         });
 

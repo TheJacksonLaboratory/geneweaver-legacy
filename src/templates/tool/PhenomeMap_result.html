@@ -115,13 +115,13 @@
 <div id="ui-container">
     <form id="todo-id" class="form-horizontal" role="form" method="post">
         <div>
-            <div id="show-tool-options" 
-                 style="color:#006400; cursor:pointer; font-weight:600; 
+            <div id="show-tool-options"
+                 style="color:#006400; cursor:pointer; font-weight:600;
                         text-decoration:underline;">
                 Tool Options
                 <i id="tool-options-caret" class="fa fa-caret-left"></i>
             </div>
-            <div id="tool-options" 
+            <div id="tool-options"
                  style="display:none; text-align:left; background-color:#efe;
                         border-radius:5px; padding:15px; width:100%">
                 <div class="row">
@@ -198,13 +198,13 @@
             Visualization Options
             <i id="viz-options-caret" class="fa fa-caret-left"></i>
         </div>
-        <div id="viz-options" style="display:none; text-align:left; 
+        <div id="viz-options" style="display:none; text-align:left;
              background-color:#efe; border-radius:5px; padding:15px;
              width:100%">
             <div class="row">
                 <div class="col-md-3">
                     {#
-                        TODO: Highlighting entities should be done by gene 
+                        TODO: Highlighting entities should be done by gene
                         name, not by internal GW identifier.
                     #}
                     <p style="font-size:13px; font-weight:400;">
@@ -231,6 +231,13 @@
                                         selected="selected">
                                     Modern HiSim
                                 </option>
+                                <!--The subway plot visualization only works on certain graphs so we want to hide if its not great-->
+                                {%if subway_availiable == 'True'%}
+                                    <option label="subway" value="subway"
+                                            selected="selected">
+                                        Subway Plot HiSim
+                                    </option>
+                                {%endif}
 							</select>
 						</form>
 					</div>
@@ -241,9 +248,9 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="btn-group">
-                        <button type="button" 
-                                class="btn btn-primary dropdown-toggle" 
-                                data-toggle="dropdown" aria-haspopup="true" 
+                        <button type="button"
+                                class="btn btn-primary dropdown-toggle"
+                                data-toggle="dropdown" aria-haspopup="true"
                                 aria-expanded="false">
                             Download as...
                             <span id="download-icon" class="caret"></span>
@@ -272,7 +279,7 @@
                             </li>
                             <li role="separator" class="divider"></li>
                             <li>
-                                <a class="download-text" id="dl-csv" 
+                                <a class="download-text" id="dl-csv"
                                    href="/PhenomeMap-result/{{ async_result.parameters.output_prefix }}.csv">
                                     CSV
                                 </a>
@@ -287,12 +294,12 @@
     <br />
 
     <div>
-        <div id="show-help" style="color:#006400; cursor:pointer; 
+        <div id="show-help" style="color:#006400; cursor:pointer;
              font-weight:600; text-decoration:underline;">
             Help
             <i id="help-caret" class="fa fa-caret-left"></i>
         </div>
-        <div id="help" style="display:none; text-align:left; 
+        <div id="help" style="display:none; text-align:left;
              background-color:#efe; border-radius:5px; padding:15px;
              width:100%">
             <div style="color:#006400; font-family:'Open Sans',sans-serif;
@@ -307,8 +314,8 @@
                     <b>Left click</b> on intersection (grey) nodes to collapse
                     the node.
                     <br />
-                    <b>Right click</b> or <b>hold shift and left click</b> on 
-                    intersection (grey) nodes to view the overlap between 
+                    <b>Right click</b> or <b>hold shift and left click</b> on
+                    intersection (grey) nodes to view the overlap between
                     GeneSets involved in the intersection.
                     <br />
                     <b>Left click</b> on GeneSet nodes to highlight other
@@ -321,9 +328,9 @@
                 </p>
             </div>
             <span style="color:#006400">
-                Visit our 
+                Visit our
                 <a href="http://geneweaver.org/help/#hisim-graph"
-                   style="color:#006400; font-weight:600;" 
+                   style="color:#006400; font-weight:600;"
                    target="_blank">wiki</a>
                 for more information.
             </span>
@@ -345,7 +352,7 @@
 	contains the error message for the failure.
 #}
 {% if not async_result.failed %}
-<div id="PhenomeMap_cyt" 
+<div id="PhenomeMap_cyt"
      style="display:hidden; position: relative; margin: 10px auto; height: 600px; width: 95%; border-style: solid;">
     <br/>
     <br/>
@@ -596,7 +603,12 @@
                 $('#viz2').hide();
                 $('#PhenomeMap_cyt').show();
 
-            } else {
+            } else if (event.target.value === 'classic'){
+                $('#PhenomeMap_cyt').hide();
+                $('#viz2').hide();
+                subway_visualization()
+            }
+            else {
 
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').show();
@@ -604,7 +616,7 @@
         });
 
 	});
-    
+
     /**
       * This function selects default tool options using the user's original
       * run parameters. It iterates over the parameter object returned from the
@@ -617,11 +629,11 @@
 
             // Grabs each HTML input element for this tool
             $("[name='" + param + "']").each(function() {
-         
+
                 // Save the type of element e.g. input
                 var elemType = this.nodeName;
 
-                // Update settings for each tool option based on form 
+                // Update settings for each tool option based on form
                 // element type. Most are drop down selections.
                 if (elemType === 'SELECT') {
 
@@ -652,7 +664,7 @@
                         } else {
 
                             $(this).removeAttr('checked');
-                            
+
                             if ($(this).attr('type') === 'radio') {
 
                                 $(this).siblings().removeClass('ui-radio-on');
@@ -675,4 +687,58 @@
 <script type="text/javascript" src="../../static/js/cytoscape/AC_OETags.min.js"></script>
 <script type="text/javascript" src="../../static/js/cytoscape/cytoscapeweb.min.js"></script>
 <script type="text/javascript" src="../../static/js/cytoscape/PhenomeMap.js"></script>
+
+<!---- Subway Plot Visualization Code-->
+
+<script type="text/javascript">
+   function subway_visualization(){
+        var str={{tsv_nodes|tojson}}
+        var res = d3.tsvParse(str)
+        d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .attr("id", "tooltip")
+        .style("opacity", 0);
+        var ntsv = d3.tsvParse(str, function(d) {
+            return {
+                    layer: d.layer,
+                    id: d.node_id,
+                    label: "Genesets: " + d.genesets.split(";").join() + "; Genes: " +d.genes.split(";").slice(1).join(),
+                    x: d.genesets.split(';').length,
+                    yNodeSpacing: (d.genesets.split(';').length == 5 || d.genes.split(';').length == 1) ? 20 : null,
+
+                };
+                })
+        var str2 = {{tsv_edges|tojson}}
+        var etsv = d3.tsvParse(str2, function(d) {
+                        return {
+                                source: d.node_from, target: d.node_to
+                            };
+                    })
+    let t = transit()
+
+        .data({nodes: ntsv, edges: etsv})
+        .height(1900)
+        .width(700)
+        .bundleHeight(10)
+        .fontWeight('bold')
+        .nodeRadius(6)
+        .xNodeSpacing(10)
+        .yNodeSpacing(13)
+        .edgeStrokeWidth(4)
+        .c(16)
+    // .useHorizontalLayout(true)
+        .altAxisLabels(true)
+        .marginLeft(20)
+        //.xLabelPad(4)
+    // .yLabelPad(6)
+        .xLabel('Gene Sets')
+
+        .draw()
+        stats.end();
+    }
+
+
+
+
+</script>
 
