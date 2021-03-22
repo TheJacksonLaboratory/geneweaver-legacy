@@ -453,8 +453,70 @@
 <div id="gravity_slider" style="margin:0 0px 20px 10px"></div>
 #}
 
-
+<script src="{{url_for('static',filename='transit.js')}}"></script>
+<!--script src="https://d3js.org/d3.v5.min.js"></script-->
+<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+<!--script src="https://d3js.org/d3-fetch.v1.min.js"></script-->
 <script type="text/javascript" src="../../static/tools/PhenomeMap.js"></script>
+<script type="text/javascript">
+   subway_visualization = function(){
+        var str={{tsv_nodes|tojson}}
+        var res = d3.tsvParse(str)
+        d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .attr("id", "tooltip")
+        .style("opacity", 0);
+        var ntsv = d3.tsvParse(str, function(d) {
+            return {
+                    layer: d.layer,
+                    id: d.node_id,
+                    label: "Genesets: " + d.genesets.split(";").join() + "; Genes: " +d.genes.split(";").slice(1).join(),
+                    x: d.genesets.split(';').length,
+                    yNodeSpacing: (d.genesets.split(';').length == 5 || d.genes.split(';').length == 1) ? 20 : null,
+
+                };
+                })
+        var str2 = {{tsv_edges|tojson}}
+        var etsv = d3.tsvParse(str2, function(d) {
+                        return {
+                                source: d.node_from, target: d.node_to
+                            };
+                    })
+    let t = transit()
+
+        .data({nodes: ntsv, edges: etsv})
+        .height(1900)
+        .width(700)
+        .bundleHeight(10)
+        .fontWeight('bold')
+        .nodeRadius(6)
+        .xNodeSpacing(10)
+        .yNodeSpacing(13)
+        .edgeStrokeWidth(4)
+        .c(16)
+    // .useHorizontalLayout(true)
+        .altAxisLabels(true)
+        .marginLeft(20)
+        //.xLabelPad(4)
+    // .yLabelPad(6)
+        .xLabel('Gene Sets')
+
+        .draw()
+        stats.end();
+    }
+
+hide_subway = function(){
+ // the subway plots are displayed as an SVG on the screen, so we are gonna hide all of the SVGs, idk if this is a good idea
+  $('svg').hide()
+}
+subway_show() = function(){
+ $('svg').show()
+}
+
+subway_visualization()
+</script>
+
+
 <script>
 
     /**
@@ -686,66 +748,4 @@
 <script type="text/javascript" src="../../static/js/cytoscape/PhenomeMap.js"></script>
 
 
-<script src="{{url_for('static',filename='transit.js')}}"></script>
-<!--script src="https://d3js.org/d3.v5.min.js"></script-->
-<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-<!--script src="https://d3js.org/d3-fetch.v1.min.js"></script-->
-<script type="text/javascript" src="../../static/tools/PhenomeMap.js"></script>
-<script type="text/javascript">
-   subway_visualization = function(){
-        var str={{tsv_nodes|tojson}}
-        var res = d3.tsvParse(str)
-        d3.select("body").append("div")
-        .attr("class", "tooltip")
-        .attr("id", "tooltip")
-        .style("opacity", 0);
-        var ntsv = d3.tsvParse(str, function(d) {
-            return {
-                    layer: d.layer,
-                    id: d.node_id,
-                    label: "Genesets: " + d.genesets.split(";").join() + "; Genes: " +d.genes.split(";").slice(1).join(),
-                    x: d.genesets.split(';').length,
-                    yNodeSpacing: (d.genesets.split(';').length == 5 || d.genes.split(';').length == 1) ? 20 : null,
-
-                };
-                })
-        var str2 = {{tsv_edges|tojson}}
-        var etsv = d3.tsvParse(str2, function(d) {
-                        return {
-                                source: d.node_from, target: d.node_to
-                            };
-                    })
-    let t = transit()
-
-        .data({nodes: ntsv, edges: etsv})
-        .height(1900)
-        .width(700)
-        .bundleHeight(10)
-        .fontWeight('bold')
-        .nodeRadius(6)
-        .xNodeSpacing(10)
-        .yNodeSpacing(13)
-        .edgeStrokeWidth(4)
-        .c(16)
-    // .useHorizontalLayout(true)
-        .altAxisLabels(true)
-        .marginLeft(20)
-        //.xLabelPad(4)
-    // .yLabelPad(6)
-        .xLabel('Gene Sets')
-
-        .draw()
-        stats.end();
-    }
-
-hide_subway = function(){
- // the subway plots are displayed as an SVG on the screen, so we are gonna hide all of the SVGs, idk if this is a good idea
-  $('svg').hide()
-}
-subway_show() = function(){
- $('svg').show()
-}
-
-subway_visualization()
-</script>
 
