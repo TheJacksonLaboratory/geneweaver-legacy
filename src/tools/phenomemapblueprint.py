@@ -13,15 +13,10 @@ import tools.toolcommon as tc
 TOOL_CLASSNAME = 'PhenomeMap'
 phenomemap_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
-<<<<<<< HEAD
-# This variable is used to conditionally render which representation of the HiSIM graph to use
-MAX_NODE_SIZE = 15
-=======
 # Max number of nodes, edges, and depths that can be used with the VZ plots
 MAX_NODES = 50
 MAX_EDGES =65
 MAX_DEPTHS = 30
->>>>>>> 1d447e6a290f86b3a31bd89a9826fe96f6f0a028
 
 """
 HiSim Result and Parameter Docs
@@ -322,30 +317,6 @@ def view_result(task_id):
         with open(json_file, 'r') as fl:
             for ln in fl:
                 json_result += ln
-<<<<<<< HEAD
-        j2t = JSON2TSV()
-        loaded_json = j2t.load(json_result)       
-        # The visualization of the HiSIM using subway plots doesn't work well with large graphs
-        #   based on the number of nodes, conditionally render the correct template
-        if len(loaded_json) > MAX_NODE_SIZE:
-          node_result, edge_result = j2t.generate_graph("",loaded_json)
-          return flask.render_template(
-            'tool/hisim.html',
-            tsv_edges=str(edge_result),
-            tsv_nodes=(node_result),
-            data=json_result,
-            task=task_id,
-            async_result=results,
-            tool=tool)
-        else:     
-           # Otherwise return the old reprentation
-           return flask.render_template(
-             'tool/PhenomeMap_result.html',
-             data=json_result,
-             async_result=results,
-             tool=tool)
-         
-=======
 
         # This module converts the json format that the Geneweaver HiSIM graph results are set as and turns it into a
         #  representation that can be used in the VZ plots.
@@ -353,11 +324,20 @@ def view_result(task_id):
 
         # Compute the node_list and the edge list from the graph
         node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
-        nodes = node_result.split("\n")
-        max_depth = max([e.split("\t")[0] for e in nodes])
-
+        nodes = node_result.split("\n")[1:]
+        max_depth = -1 
+        for e in nodes: 
+          depth = e.split('\t')[0]  
+          try: 
+              depth = int(depth) 
+          except: 
+              depth = -1 
+          if depth > max_depth: 
+              max_depth = depth  
+             
+        print(max_depth)
         # Laod testing the VZ plots indicated that have 50 n 65 m and 30 d are able to be displayed
-        if len(nodes) - 1 < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES and max_depth < MAX_DEPTHS:
+        if len(nodes)  < MAX_NODES and len(edge_result.split("\n")) < MAX_EDGES and max_depth < MAX_DEPTHS:
             return flask.render_template(
                 'tool/hisim.html',
                 tsv_edges=str(edge_result),
@@ -372,7 +352,6 @@ def view_result(task_id):
                 data=json_result,
                 async_result=results,
                 tool=tool)
->>>>>>> 1d447e6a290f86b3a31bd89a9826fe96f6f0a028
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
