@@ -349,10 +349,7 @@ def view_result(task_id):
             tool=tool,
             tsv_edges=str(edge_result),
             tsv_nodes=(node_result),
-            data=json_result,
             task=task_id,
-            async_result=results,
-            tool=tool,
             subway_availiable=subway_availiable)
     else:
         # render a page telling their results are pending
