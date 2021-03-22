@@ -659,16 +659,16 @@ subway_show() = function(){
         $("select#visualizationType").change(function(event){
 
             if (event.target.value === 'classic') {
-                //subway_hide()
+                subway_hide()
                 $('#viz2').hide();
                 $('#PhenomeMap_cyt').show();
             } else if (event.target.value === 'subway'){
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
-                subway_visualization()
+
             }
             else {
-                //subway_hide()
+                subway_hide()
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').show();
             }
