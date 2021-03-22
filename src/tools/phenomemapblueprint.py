@@ -13,6 +13,9 @@ import tools.toolcommon as tc
 TOOL_CLASSNAME = 'PhenomeMap'
 phenomemap_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
+# This variable is used to conditionally render which representation of the HiSIM graph to use
+MAX_NODE_SIZE = 15
+
 """
 HiSim Result and Parameter Docs
 
@@ -115,7 +118,8 @@ def run_tool():
         tool.name,
         desc,
         desc)
-
+    print(selected_geneset_ids)
+    print(params)
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
@@ -313,25 +317,28 @@ def view_result(task_id):
         with open(json_file, 'r') as fl:
             for ln in fl:
                 json_result += ln
-
         j2t = JSON2TSV()
-        node_result, edge_result = j2t.generate_graph("",j2t.load(json_result))
-        return flask.render_template(
+        loaded_json = j2t.load(json_result)       
+        # The visualization of the HiSIM using subway plots doesn't work well with large graphs
+        #   based on the number of nodes, conditionally render the correct template
+        if len(loaded_json) > MAX_NODE_SIZE:
+          node_result, edge_result = j2t.generate_graph("",loaded_json)
+          return flask.render_template(
             'tool/hisim.html',
             tsv_edges=str(edge_result),
             tsv_nodes=(node_result),
-             data=json_result,
-            task=task_id,
-             async_result=results,
-             tool=tool)
-        '''
-
-        return flask.render_template(
-            'tool/PhenomeMap_result.html',
             data=json_result,
+            task=task_id,
             async_result=results,
             tool=tool)
-       '''
+        else:     
+           # Otherwise return the old reprentation
+           return flask.render_template(
+             'tool/PhenomeMap_result.html',
+             data=json_result,
+             async_result=results,
+             tool=tool)
+         
     else:
         # render a page telling their results are pending
         return tc.render_tool_pending(async_result, tool)
