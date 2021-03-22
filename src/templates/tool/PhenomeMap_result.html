@@ -377,7 +377,7 @@
 </div>
 <div id="viz-clone" style="display: none;">
 </div>
-<div  style="margin:10px;" class="simple_example"></div>
+<!--div  style="margin:10px;" class="simple_example"></div-->
 
 <div id="stats" align="left" style="float: left; margin: 10px;">
     <h3>Stats</h3>
@@ -505,13 +505,6 @@
         stats.end();
 
 
-hide_subway = function(){
- // the subway plots are displayed as an SVG on the screen, so we are gonna hide all of the SVGs, idk if this is a good idea
-  $('svg').hide()
-}
-subway_show = function(){
- $('svg').show()
-}
 
 
 </script>
@@ -665,7 +658,7 @@ subway_show = function(){
             } else if (event.target.value === 'subway'){
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
-                subway_visualization()
+                #()
 
             }
             else {
