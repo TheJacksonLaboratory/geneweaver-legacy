@@ -346,7 +346,7 @@ def view_result(task_id):
             'tool/PhenomeMap_result.html',
             data=json_result,
             async_result=results,
-            tool=tool
+            tool=tool,
             tsv_edges=str(edge_result),
             tsv_nodes=(node_result),
             data=json_result,
