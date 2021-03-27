@@ -377,7 +377,7 @@
 </div>
 <div id="viz-clone" style="display: none;">
 </div>
-<div  style="margin:10px;" class="simple_example"></div>
+<div  style="margin:10px;" id="subway_div" class="simple_example"></div>
 
 <div id="stats" align="left" style="float: left; margin: 10px;">
     <h3>Stats</h3>
@@ -501,9 +501,7 @@
     // .yLabelPad(6)
         .xLabel('Gene Sets')
 
-        .draw();
-    console.log("Transit,", t)
-    $('.simple_example').append(t)
+        .draw(document.getElementById('subway_div'));
 
 
 
@@ -654,17 +652,17 @@
         $("select#visualizationType").change(function(event){
 
             if (event.target.value === 'classic') {
-                $('.simple_example').hide()
+                $('#subway_div').hide()
                 $('#viz2').hide();
                 $('#PhenomeMap_cyt').show();
             } else if (event.target.value === 'subway'){
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').hide();
-                $('.simple_example').show()
+                $('#subway_div').show()
 
             }
             else {
-                $('.simple_example').hide()
+                $('#subway_div').hide()
                 $('#PhenomeMap_cyt').hide();
                 $('#viz2').show();
             }
