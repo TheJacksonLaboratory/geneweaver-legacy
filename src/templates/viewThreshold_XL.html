@@ -115,19 +115,10 @@
                                     <i class="fa fa-info-circle"></i> GeneSet Threshold Values
                                 </strong>
                                 allow you to select a portion of a GeneSet to include for analysis.
-                                The BarChart has been rendered statically due to the large nature of
-                                this GeneSet.
+                                The BarChart has been omitted due to the large nature of this GeneSet.
                             </p>
                         </div>
 
-                    </div>
-
-                    <!-- Bar Chart for frequency -->
-                    <div id="barChart" style="padding-bottom: 20pt">
-                        <center>
-                            {# This is where the bar chart goes #}
-                            <svg id="threshold" width="1000" height="300"></svg>
-                        </center>
                     </div>
 
                     <div class="row">
@@ -184,10 +175,6 @@
         var t = {{ threshold[0] | string | safe }};
         var m = {{ threshold[1] | string | safe }};
         var amts = {{ valArray | safe }};
-
-
-        //Call the barchart
-        InitChart.draw(b,t,m,amts);
 
         var minVal = {{ minVal }};
 
