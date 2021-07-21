@@ -1889,6 +1889,8 @@ def render_remove_genesets(gs_id):
 
 @app.route('/setthreshold/<int:gs_id>')
 def render_set_threshold(gs_id):
+    XL_LIMIT = 10000
+
     d3BarChart = []
     user_id = session['user_id'] if 'user_id' in session else 0
     user_info = geneweaverdb.get_user(user_id)
@@ -1921,7 +1923,10 @@ def render_set_threshold(gs_id):
                 {'x': i, 'y': float(k_first_value), 'gsid': str(list(k.values())[1]), 'abr': str(k_first_value)})
             i += 1
     json.dumps(d3BarChart, default=decimal_default)
-    return render_template('viewThreshold.html', geneset=geneset,
+
+    template = 'viewThreshold.html' if XL_LIMIT > len(valArray) else 'viewThreshold_XL.html'
+
+    return render_template(template, geneset=geneset,
                            user_id=user_id, view=view, is_bimodal=is_bimodal,
                            d3BarChart=d3BarChart, threshold=thresh,
                            minVal=minVal, maxVal=maxVal, valArray=valArray)
