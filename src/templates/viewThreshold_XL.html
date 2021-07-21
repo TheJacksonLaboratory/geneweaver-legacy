@@ -141,6 +141,9 @@
                             <input id="threshMin" type="number" value="{{ minVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
                             <input id="threshMax" type="number" value="{{ maxVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
                         </p>
+                        <button type="button" class="btn btn-block btn-warning" id="resetThreshold">
+                            <i class="fa fa-refresh pull-left"></i> Reset
+                        </button>
                     </div>
 
                 {% endif %}
@@ -178,21 +181,27 @@
 
         var minVal = {{ minVal }};
 
+        var origMinVal = {{ minVal }};
+        var origMaxVal = {{ maxVal }}
+
         $('#threshMin').on('input', function(s) {
             var val = $('#threshMin').val()
             $("#threshMinDisp").text(val);
-            $('#threshMax').attr({
-                min: val
-            })
+            $('#threshMax').attr({min: val})
 
         });
         $('#threshMax').on('input', function(s) {
             var val = $('#threshMax').val()
             $("#threshMaxDisp").text(val);
-            $('#threshMin').attr({
-                max: val
-            })
+            $('#threshMin').attr({max: val})
         });
+
+        $('#resetThreshold').on('click', function(s) {
+            $("#threshMaxDisp").text(origMaxVal);
+            $('#threshMin').attr({max: origMaxVal})
+            $("#threshMinDisp").text(origMinVal);
+            $('#threshMax').attr({min: origMinVal})
+        })
 
         $("[name='g_id[]']").bootstrapSwitch();
 
