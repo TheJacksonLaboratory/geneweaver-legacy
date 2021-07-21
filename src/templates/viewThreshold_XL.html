@@ -135,11 +135,13 @@
                     <div class="row">
                     <!-- TODO: Fix me to use a numeric input!! -->
                         <p><strong><label for="slider">Set New Threshold Values: </label>
-                            <span id="threshMinDisp">{{ minVal }}</span>
+                            <span id="threshMinDisp">
+                                <input id="threshMin" type="number" value="{{ minVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
+                            </span>
                                 <i class="fa fa-arrows-h"></i>
-                            <span id="threshMaxDisp">{{ maxVal }}</span></strong>
-                            <input id="threshMin" type="number" value="{{ minVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
-                            <input id="threshMax" type="number" value="{{ maxVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
+                            <span id="threshMaxDisp">
+                                <input id="threshMax" type="number" value="{{ maxVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
+                            </span></strong>
                         </p>
                         <button type="button" class="btn btn-block btn-warning" id="resetThreshold">
                             <i class="fa fa-refresh pull-left"></i> Reset
@@ -186,21 +188,17 @@
 
         $('#threshMin').on('input', function(s) {
             var val = $('#threshMin').val()
-            $("#threshMinDisp").text(val);
             $('#threshMax').attr({min: val})
 
         });
         $('#threshMax').on('input', function(s) {
             var val = $('#threshMax').val()
-            $("#threshMaxDisp").text(val);
             $('#threshMin').attr({max: val})
         });
 
         $('#resetThreshold').on('click', function(s) {
-            $("#threshMaxDisp").text(origMaxVal);
-            $('#threshMin').attr({max: origMaxVal})
-            $("#threshMinDisp").text(origMinVal);
-            $('#threshMax').attr({min: origMinVal})
+            $('#threshMin').attr({max: origMaxVal, value: origMaxVal})
+            $('#threshMax').attr({min: origMinVal, value: origMinVal})
         })
 
         $("[name='g_id[]']").bootstrapSwitch();
