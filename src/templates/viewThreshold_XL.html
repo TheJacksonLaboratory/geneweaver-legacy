@@ -189,16 +189,24 @@
         var minVal = {{ minVal }};
 
         var origMinVal = {{ minVal }};
-        var origMaxVal = {{ maxVal }}
+        var origMaxVal = {{ maxVal }};
 
         $('#threshMin').on('input', function(s) {
-            var val = $('#threshMin').val()
-            $('#threshMax').attr({min: val})
+            var val = $('#threshMin').val();
+            if (val < origMinVal) {
+                val = origMinVal;
+                $('#threshMin').attr({value: val});
+            }
+            $('#threshMax').attr({min: val});
 
         });
         $('#threshMax').on('input', function(s) {
-            var val = $('#threshMax').val()
-            $('#threshMin').attr({max: val})
+            var val = $('#threshMax').val();
+            if (val > origMaxVal) {
+                val = origMaxVal;
+                $('#threshMax').attr({value: val});
+            }
+            $('#threshMin').attr({max: val});
         });
 
         $('#resetThreshold').on('click', function(s) {
