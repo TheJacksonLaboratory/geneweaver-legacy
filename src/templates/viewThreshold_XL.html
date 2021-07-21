@@ -133,18 +133,23 @@
                     </div>
 
                     <div class="row">
-                    <!-- TODO: Fix me to use a numeric input!! -->
-                        <p><strong><label for="slider">Set New Threshold Values: </label>
+                        <!-- TODO: Fix me to use a numeric input!! -->
+                        <p>
+                        <form><strong><label for="slider">Set New Threshold Values: </label>
+
                             <span id="threshMinDisp">
-                                <input id="threshMin" type="number" value="{{ minVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
+                                <input id="threshMin" type="number" value="{{ minVal }}"
+                                       min="{{ minVal }}" max="{{ maxVal }}" step="any"/>
                             </span>
-                                <i class="fa fa-arrows-h"></i>
+                            <i class="fa fa-arrows-h"></i>
                             <span id="threshMaxDisp">
-                                <input id="threshMax" type="number" value="{{ maxVal }}" min="{{ minVal }}" max="{{ maxVal }}"/>
+                                <input id="threshMax" type="number" value="{{ maxVal }}"
+                                       min="{{ minVal }}" max="{{ maxVal }}" step="any"/>
                             </span></strong>
-                            <button type="button" class="btn btn-block btn-warning" id="resetThreshold">
-                                <i class="fa fa-refresh pull-left"></i> Reset
-                            </button>
+                        </form>
+                        <button type="button" class="btn btn-block btn-warning" id="resetThreshold">
+                            <i class="fa fa-refresh pull-left"></i> Reset
+                        </button>
                         </p>
                     </div>
 
