@@ -47,6 +47,7 @@ from tools import msetblueprint
 from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
+from tools import nessblueprint
 import adminviews
 import annotator
 import config
@@ -75,7 +76,7 @@ app.register_blueprint(booleanalgebrablueprint.boolean_algebra_blueprint)
 app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
-
+app.register_blueprint(nessblueprint.ness_blueprint)
 # *************************************
 
 admin = Admin(app, name='GeneWeaver', index_view=adminviews.AdminHome(
@@ -1407,6 +1408,16 @@ def get_gene_ref_ID():
     ids = geneweaverdb.get_ode_ref_id(request.args['search'], request.args['sp_id'])
     data = {'list': ids}
     return jsonify(data)
+
+
+@app.route('/get_terms.json', methods=['GET'])
+def get_terms():
+    """
+    Returns a json list of terms that fit the query for auto complete
+    """
+    ids = geneweaverdb.get_term_ids(flask.request.args['search'])
+    data = {'list': ids}
+    return flask.jsonify(data)
 
 
 def get_ontology_terms(gsid):
@@ -3522,6 +3533,40 @@ def render_emphasis():
 
     emphgenes = geneweaverdb.get_gene_and_species_info_by_user(user_id)
     return render_template('emphasis.html', emphgenes=emphgenes, foundgenes=foundgenes)
+
+
+@app.route('/ness', methods=['GET', 'POST'])
+@login_required(allow_guests=True)
+def render_ness():
+    """
+    Emphasis_AddGene
+    Emphasis_RemoveGene
+    Emphasis_RemoveAllGenes
+    Emphasis_SearchGene
+    """
+    foundterms = {}
+    emphterms = {}
+    emphtermids = []
+    user_id = flask.session['user_id']
+
+    # emphterms = geneweaverdb.get_gene_and_species_info_by_user(user_id)
+    # for row in emphterms:
+    #     emphtermids.append(str(row['ode_gene_id']))
+
+    if flask.request.method == 'POST':
+        form = flask.request.form
+
+        if 'NESS_SearchGene' in form:
+            search_gene = form['NESS_SearchGene']
+            foundterms = geneweaverdb.get_ness_term_info(search_gene)
+
+        elif 'NESS_all_terms' in form:
+            print(form['NESS_all_terms'])
+            print(form['NESS_all_terms'].split('\r\n'))
+            return nessblueprint.run_tool()
+
+    # emphterms = geneweaverdb.get_gene_and_species_info_by_user(user_id)
+    return flask.render_template('ness.html', emphgenes=emphterms, foundgenes=foundterms)
 
 
 @app.route('/emphasize/<string:add_gene>.html', methods=['GET', 'POST'])

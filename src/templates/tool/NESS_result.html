@@ -1,0 +1,1580 @@
+{% set title=tool.name + " Results" %}
+{% include 'header.html' %}
+{% import 'macros.html' as macros %}
+<script type="text/javascript" src="/static/js/downloadSvg.js" charset="utf-8"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+<script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
+
+<div class="page-header">
+    <h1>{{ title }}</h1>
+    <h4>{{ runhash }}</h4>
+    <div class="page-header">
+        <h4>Input terms</h4>
+    </div>
+    <div id="input-terms">
+    </div>
+</div>
+
+<div>
+    <div id="edge display" style="text-align:center; margin:0 auto;">
+        <h5 id="edge-head"></h5>
+        <span id="edge-source"></span>
+        <span id="edge-arrow"></span>
+        <span id="edge-target"></span>
+    </div>
+    <div id="het-graph" style="text-align:center; margin:0 auto;">
+    </div>
+</div>
+
+<div>
+    <div class="page-header">
+        <h2>Similar Genes</h2>
+    </div>
+    <table id="gene-table" class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Ensembl ID</th>
+                <th>Species</th>
+                <th>NESS Score</th>
+                <th>p</th>
+            </tr>
+        </thead>
+    </table>
+
+    <div class="page-header">
+        <h2>Similar Gene Sets</h2>
+    </div>
+    <table id="geneset-table" class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>GSID</th>
+            <th>Tier</th>
+            <th>Attribution</th>
+            <th>Species</th>
+            <th>Name</th>
+            <th>NESS Score</th>
+            <th>p</th>
+        </tr>
+        </thead>
+    </table>
+
+    <div class="page-header">
+        <h2>Similar Ontology Terms</h2>
+    </div>
+    <table id="ontology-table" class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>Ontology</th>
+            <th>Term ID</th>
+            <th>Term</th>
+            <th>NESS Score</th>
+            <th>p</th>
+        </tr>
+        </thead>
+    </table>
+
+    {#
+    <table id="homology-table" class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>Homology Cluster ID</th>
+            <th>Symbol</th>
+            <th>Ensembl ID</th>
+            <th>Species</th>
+            <th>NESS Score</th>
+        </tr>
+        </thead>
+    </table>
+    #}
+</div>
+
+<script type="text/javascript">
+
+    /**
+     * file: force-graph.js
+     * desc: d3js implementation of force directed graphs.
+     *       Ripped from my d3 viz library: github.com/treynr/vz
+     * auth: TR
+     */
+
+    let forceGraph = function() {
+
+        let exports = {},
+
+            /** private **/
+
+                // d3 node objects
+            graphNodes = null,
+            // d3 edge objects
+            graphEdges = null,
+            // force simulation for the graph
+            simulation = null,
+
+            /** public **/
+
+                // Data object containing objects/data to visualize
+            data = null,
+
+            // Transparency for rendered edges
+            edgeOpacity = 0.6,
+            // Edge color
+            edgeStroke = '#999999',
+            // Edge width
+            edgeStrokeWidth = 1,
+            // HTML element or ID the SVG should be appended to
+            element = 'body',
+            // Font to use when displaying text
+            font = 'sans-serif',
+            // Font size in pixels
+            fontSize = 12,
+            // SVG height
+            height = 600,
+            // Margin object
+            margin = {top: 50, right: 50, bottom: 50, left: 50},
+            // Color used to fill in nodes
+            nodeFill = '#d62333',
+            // Radius of rendered nodes in the graph
+            nodeRadius = 4,
+            // Color used when drawing strokes around the nodes
+            nodeStroke = '#ffffff',
+            // Width of the stroke around nodes
+            nodeStrokeWidth = 2,
+            // SVG object for the plot
+            svg = null,
+            // Radius size to use for the collide force
+            collideForceRadius = 1,
+            // Strength (should be [0, 1]) to use for the collide force
+            collideForceStrength = 0.7,
+            // Distance for the link force
+            linkForceDistance = 30,
+            // Strength for the many body force ((-) reples, (+) attracts)
+            manyBodyForceStrength = -30,
+            // If true, utilize a center force in the force simulation
+            useCenterForce = true,
+            // If true, utilize a collide force in the force simulation
+            useCollideForce = false,
+            // If true, utilize a link force in the force simulation
+            useLinkForce = true,
+            // If true, utilize a many body force in the force simulation
+            useManyBodyForce = true,
+            // SVG width
+            width = 600;
+
+        /** private **/
+
+        /**
+         * Returns the width and height of the SVG while taking into account the margins.
+         */
+        let getHeight = function() { return height - margin.bottom - margin.top; };
+        let getWidth = function() { return width - margin.left - margin.right; };
+
+        /**
+         * Renders each node in the graph and attaches the objects to the SVG.
+         */
+        let renderNodes = function() {
+
+            graphNodes = svg.append('g')
+                .attr('class', 'nodes')
+                .selectAll('node')
+                .data(data.nodes)
+                .enter()
+                .append('circle')
+                .attr('class', 'node')
+                .attr('id', d => `node-${d.id}`)
+                .attr('fill', d => {
+
+                    if (d.fill)
+                        return d.fill;
+
+                    return nodeFill;
+                })
+                .attr('shape-rendering', 'auto')
+                .attr('stroke', d => {
+
+                    if (d.stroke)
+                        return d.stroke;
+
+                    return nodeStroke;
+                })
+                .attr('stroke-width', d => {
+
+                    if (d.strokeWidth)
+                        return d.strokeWidth;
+
+                    return nodeStrokeWidth;
+                })
+                .attr('r', d => {
+
+                    if (d.radius)
+                        return d.radius;
+
+                    return nodeRadius;
+                });
+
+            graphNodes.append('title')
+                .text(d => {
+
+                    if (d.label)
+                        return d.label;
+
+                    return '';
+                });
+        };
+
+        let renderEdges = function() {
+
+            graphEdges = svg.append('g')
+                .attr('class', 'edges')
+                .selectAll('edges')
+                .data(data.edges)
+                .enter()
+                .append('line')
+                .attr('class', 'edge')
+                .attr('fill', 'none')
+                .attr('opacity', d => {
+
+                    if (d.opacity)
+                        return d.opacity;
+
+                    return edgeOpacity;
+                })
+                .attr('stroke', d => {
+
+                    if (d.stroke)
+                        return d.stroke;
+
+                    return edgeStroke;
+                })
+                .attr('stroke-width', d => {
+
+                    if (d.strokeWidth)
+                        return d.strokeWidth;
+
+                    return edgeStrokeWidth;
+                });
+        };
+
+        let createSimulation = function() {
+
+            simulation = d3.forceSimulation(data.nodes)
+                .force(
+                    'link',
+                    useLinkForce ?
+                        d3.forceLink(data.edges).id(d => d.id).distance(linkForceDistance) :
+                        null
+                )
+                .force(
+                    'collide',
+                    useCollideForce ?
+                        d3.forceCollide.radius(collideForceRadius).strength(collideForceStrength) :
+                        null
+                )
+                .force(
+                    'charge',
+                    useManyBodyForce ?
+                        d3.forceManyBody().strength(manyBodyForceStrength) :
+                        null
+                )
+                .force(
+                    'center',
+                    useCenterForce ? d3.forceCenter(getWidth() / 2, getHeight() / 2) : null
+                );
+
+            simulation.on('tick', () => {
+
+                graphNodes
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                graphEdges
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+            });
+        };
+
+        let updateDragEvents = function() {
+
+            let dragEvents = d3.drag()
+                .on('start', d => {
+
+                    if (!d3.event.active)
+                        simulation.alphaTarget(0.3).restart();
+
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on('drag', d => {
+
+                    d.fx = d3.event.x;
+                    d.fy = d3.event.y;
+                })
+                .on('end', d => {
+
+                    if (!d3.event.active)
+                        simulation.alphaTarget(0);
+
+                    d.fx = null;
+                    d.fy = null;
+                });
+
+            graphNodes.call(dragEvents);
+        };
+
+        /** public **/
+
+        exports.getHeight = getHeight;
+        exports.getWidth = getWidth;
+
+        exports.draw = function() {
+
+            svg = d3.select(element)
+                .append('svg')
+                .attr('height', height)
+                .attr('width', width)
+                .append('g')
+                .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+            renderEdges();
+            renderNodes();
+            createSimulation();
+            updateDragEvents();
+
+            return exports;
+        };
+
+        /** setters/getters **/
+
+        exports.svg = function() { return svg; };
+
+        exports.data = function(_) {
+            if (!arguments.length) return data;
+            data = _;
+            return exports;
+        };
+
+        exports.edgeOpacity = function(_) {
+            if (!arguments.length) return edgeOpacity;
+            edgeOpacity = +_;
+            return exports;
+        };
+
+        exports.edgeStroke = function(_) {
+            if (!arguments.length) return edgeStroke;
+            edgeStroke = _;
+            return exports;
+        };
+
+        exports.edgeStrokeWidth = function(_) {
+            if (!arguments.length) return edgeStrokeWidth;
+            edgeStrokeWidth = +_;
+            return exports;
+        };
+
+        exports.element = function(_) {
+            if (!arguments.length) return element;
+            element = _;
+            return exports;
+        };
+
+        exports.font = function(_) {
+            if (!arguments.length) return font;
+            font = _;
+            return exports;
+        };
+
+        exports.fontSize = function(_) {
+            if (!arguments.length) return fontSize;
+            fontSize = +_;
+            return exports;
+        };
+
+        exports.height = function(_) {
+            if (!arguments.length) return height;
+            height = +_;
+            return exports;
+        };
+
+        exports.margin = function(_) {
+            if (!arguments.length) return margin;
+            margin = _;
+            return exports;
+        };
+
+        exports.marginBottom = function(_) {
+            if (!arguments.length) return margin.bottom;
+            margin.bottom = +_;
+            return exports;
+        };
+
+        exports.marginLeft = function(_) {
+            if (!arguments.length) return margin.left;
+            margin.left = +_;
+            return exports;
+        };
+
+        exports.marginRight = function(_) {
+            if (!arguments.length) return margin.right;
+            margin.right = +_;
+            return exports;
+        };
+
+        exports.marginTop = function(_) {
+            if (!arguments.length) return margin.top;
+            margin.top = +_;
+            return exports;
+        };
+
+        exports.nodeFill = function(_) {
+            if (!arguments.length) return nodeFill;
+            nodeFill = _;
+            return exports;
+        };
+
+        exports.nodeRadius = function(_) {
+            if (!arguments.length) return nodeRadius;
+            nodeRadius = +_;
+            return exports;
+        };
+
+        exports.nodeStroke = function(_) {
+            if (!arguments.length) return nodeStroke;
+            nodeStroke = _;
+            return exports;
+        };
+
+        exports.nodeStrokeWidth = function(_) {
+            if (!arguments.length) return nodeStrokeWidth;
+            nodeStrokeWidth = +_;
+            return exports;
+        };
+
+        exports.width = function(_) {
+            if (!arguments.length) return width;
+            width = +_;
+            return exports;
+        };
+
+        return exports;
+    }
+
+    /**
+      * file: bundle.js
+      * desc: d3js implementation of hierarchical bundling.
+      *       Ripped from my d3 viz library: github.com/treynr/vz
+      * auth: TR
+      */
+
+    let bundle = function() {
+
+        let exports = {},
+
+            /** public **/
+
+            element = 'body',
+            // Graph data struct which should contain a key for nodes and edges
+            graph = null,
+            // SVG diameter (width and height)
+            diameter = 960,
+            // Radius used to generate the circular bundle graph
+            radius = diameter / 2,
+            // Inner radius of the bundle graph
+            innerRadius = radius - 120,
+            // Renders node name text for leaf nodes
+            useNodeText = false,
+            // Draws rectangles indicating upper level node groups
+            useCircumference = false,
+            // Draws rectangles indicating upper level node groups
+            useGroupBoxes = false,
+            // The width of the node group boxes
+            groupBoxWidth = 5,
+            // Fill color for the node group boxes
+            groupBoxFill = '#555555',
+            // Stroke color for the node group boxes
+            groupBoxStroke = '#000000',
+            // Stroke width for the node group boxes
+            groupBoxStrokeWidth = 1,
+            // Spacing between the start of the boxes and edges
+            groupBoxSpacing = 5,
+            // Separation distance between nodes of the same group
+            intraSeparation = 0.5,
+            // Separation distance between nodes of different groups
+            interSeparation = 2,
+            fontSize = '14px',
+
+            /** private **/
+
+                // Root node of a d3 generated hierarchy
+            rootNode = null,
+            // List of node objects
+            d3Nodes = null,
+            // List of edge objects
+            d3Edges = null,
+            // SVG object
+            svg = null
+        ;
+
+        /** private **/
+
+        /**
+         * Because the d3js stratify() function is fucked when it comes to
+         * hierarchies and clusters.
+         *
+         */
+        let buildHierarchy = function(nodes) {
+
+            let map = {};
+
+            function find(id, data) {
+
+                let node = map[id];
+
+                if (!node) {
+
+                    node = map[id] = data || {id: id, children: []};
+
+                    if (node.children === undefined)
+                        node.children = [];
+
+                    if (id && id.length) {
+
+                        node.parent = find(node.parent);
+                        node.parent.children.push(node);
+                    }
+
+                }
+
+                return node;
+            }
+
+            nodes.forEach(function(d) {
+                find(d.id, d);
+            });
+
+            return map[''];
+        };
+
+        /**
+         * Rebuilds the user provided edge list by replacing source and target with
+         * node objects generated by d3.cluster().
+         *
+         */
+        let buildEdges = function(nodes, edges) {
+
+            let map = {};
+
+            nodes.forEach(function(d) {
+                map[d.data.id] = d;
+            });
+
+            edges.forEach(function(d) {
+                d.source = map[d.source];
+                d.target = map[d.target];
+            });
+
+            return edges;
+        };
+
+        let drawNodes = function() {
+
+            let nodes = rootNode.descendants();
+
+            let d3Nodes = svg.append('g')
+                .selectAll('.node')
+                .data(nodes.filter(function(n) { return !n.children; }))
+                .enter()
+                .append('text')
+                .attr('class', 'node-text')
+                .attr('fill', '#000000')
+                .attr('dy', '.31em')
+                .attr('transform', function(d) {
+
+                    return 'rotate(' + (d.x - 90) + ')' +
+                        'translate(' + (d.y + 8) + ',0)' +
+                        (d.x < 180 ? '' : 'rotate(180)');
+                })
+                .style('text-anchor', function(d) {
+                    return d.x < 180 ? 'start' : 'end';
+                })
+                .style('font-family', 'sans-serif')
+                .style('font-size', '12px')
+                .style('text-decoration', function(d) {
+
+                    return d.data.textDecoration ? d.data.textDecoration : 'none';
+                })
+                .text(function(d) { return d.data.name; })
+            ;
+        };
+
+        let drawEdges = function() {
+
+            let edges = buildEdges(rootNode.descendants(), graph.edges);
+            let line = d3.radialLine()
+                .radius(function(d) { return d.y; })
+                .angle(function(d) { return d.x / 180 * Math.PI; })
+                .curve(d3.curveBundle.beta(0.55))
+            ;
+
+            link = svg.append('g')
+                .selectAll('.link')
+                .data(edges)
+                .enter()
+                .append('path')
+                .attr('class', 'link')
+                .attr('d', function(d) {
+                    return line(d.source.path(d.target));
+                })
+                .attr('stroke', function(d) {
+                    return d.color ? d.color : 'steelblue';
+                })
+                .attr('stroke-opacity', 0.6)
+                .attr('stroke-width',
+                    function(d) { return d.width ? d.width : 1;
+                    })
+                .attr('fill', 'none')
+                .on('mouseover', d => {
+
+                    d3.selectAll('.link')
+                        .filter(l => l.source == d.source && l.target == d.target)
+                        .attr('stroke-width', 4)
+                        .attr('stroke', '#000000')
+                        .attr('opacity', 1);
+
+                    d3.select('#edge-head').text('Edge');
+                    d3.select('#edge-source').text(d.source.data.name);
+                    d3.select('#edge-target').text(d.target.data.name);
+                    d3.select('#edge-arrow').html('&larr;&rarr;');
+
+                    //d3.selectAll('.link')
+                    //    .each(d => {
+                    //        d3.select('#edge-source').text(d.source.data.name);
+                    //        d3.select('#edge-target').text(d.target.data.name);
+                    //    })
+                })
+                .on('mouseout', d => {
+
+                    d3.selectAll('.link')
+                        .filter(l => l.source == d.source && l.target == d.target)
+                        .attr('stroke', function(d) {
+                            return d.color ? d.color : 'steelblue';
+                        })
+                        .attr('stroke-opacity', 0.6)
+                        .attr('stroke-width',
+                            function(d) { return d.width ? d.width : 1;
+                            });
+
+                });
+        };
+
+        let drawGroupBoxes = function() {
+
+            let maxTextWidth = 0;
+
+            if (useNodeText) {
+
+                // Computes the max text width only if node names are rendered.
+                // This way the drawn group boxes don't overlap the text and look
+                // ugly.
+                d3.selectAll('.node-text')
+                    .each(function(d) {
+
+                        maxTextWidth = d3.max([
+                            maxTextWidth, this.getComputedTextLength()
+                        ]);
+                    })
+            }
+
+            let nodes = rootNode.descendants().filter(function(n) {
+                return !n.children;
+            });
+            let edges = [[]];
+
+            // Groups the coordinates of all related nodes together
+            for (let i = 0; i < nodes.length - 1; i++) {
+                let a = nodes[i];
+                let b = nodes[i + 1];
+
+                if (a.parent == b.parent) {
+                    edges[edges.length - 1].push({
+                        id: a.data.id + '-group',
+                        start: a.x,
+                        end: b.x,
+                        radius: a.y,
+                        tag: a.parent.data.id,
+                        name: a.parent.data.name,
+                        data: a.parent.data
+                    });
+
+                    //edges.push({start: a.x, end: b.x, radius: a.y});
+                } else {
+                    //edges.push([{start: a.x, end: b.x, radius: a.y}]);
+                    edges.push([]);
+                }
+            }
+
+            edges = edges.filter(function(a) { return a.length !== 0; });
+
+            edges.forEach(function(d, i) {
+
+                let min = d3.min(d, e => d3.min([e.start, e.end]));
+                let max = d3.max(d, e => d3.max([e.start, e.end]));
+
+                edges[i] =  {
+                    id: d[0].id,
+                    start: min,
+                    end: max,
+                    radius: d[0].radius,
+                    tag: d[0].tag,
+                    name: d[0].name,
+                    data: d[0].data
+                };
+            });
+
+            let arc = d3.arc()
+                //.innerRadius(radius - 5)
+                //.outerRadius(radius)
+                    .innerRadius(function(d) {
+                        return d.radius + groupBoxSpacing + maxTextWidth;
+                    })
+                    .outerRadius(function(d) {
+                        return d.radius + groupBoxSpacing + groupBoxWidth + maxTextWidth;
+                    })
+                    .startAngle(function (d) { return d.start / 180 * Math.PI; })
+                    .endAngle(function (d) { return d.end / 180 * Math.PI; })
+            ;
+
+            console.log('edges');
+            console.log(edges);
+            link = svg.append('g')
+                .selectAll('.link')
+                .data(edges)
+                .enter()
+                .append('path')
+                .attr('class', 'groupBox')
+                .attr('id', function(d) { return d.tag; })
+                .attr('d', function(d) { return arc(d); })
+                .style('stroke', function(d) { return groupBoxStroke; })
+                .style('stroke-width', function(d) { return groupBoxStrokeWidth; })
+                .style('fill', function(d) {
+                    if (d.data.color)
+                        return d.data.color;
+                    return groupBoxFill;
+                })
+                .style('stroke-opacity', 1)
+                .each(function(d, i) {
+
+                    let firstArcSection = /(^.+?)L/;
+
+                    let newArc = firstArcSection.exec( d3.select(this).attr('d') )[1];
+                    newArc = newArc.replace(/,/g , " ");
+
+                    let middleLoc = /A(.*?) 0 ([01]) 1/;
+                    let middleSec = middleLoc.exec( newArc );
+
+                    endAngle = d.end / 180*Math.PI;
+                    startAngle = d.start / 180*Math.PI;
+
+                    //if (endAngle > 90 * Math.PI/180 && endAngle < 270 * Math.PI/180 &&
+                    if (endAngle > 170 * Math.PI/180 && endAngle < 270 * Math.PI/180 &&
+                        (middleSec[2] == '0' || startAngle > Math.PI / 2 )) {
+                        let startLoc    = /M(.*?)A/,
+                            endLoc      = / 0 [01] 1 (.*?)$/;
+                        let newStart = endLoc.exec( newArc );
+                        let newEnd = startLoc.exec( newArc );
+
+                        newArc = `M${newStart[1]}A${middleSec[1]} 0 0 0 ${newEnd[1]}`;
+                    }
+
+                    //Create a new invisible arc that the text can flow along
+                    svg.append("path")
+                        .attr("class", "hiddenDonutArcs")
+                        .attr("id", "donutArc"+i)
+                        .attr("d", newArc)
+                        .style("fill", "none");
+                })
+                .on('mouseover', d => {
+
+                    d3.selectAll('.link')
+                        .filter(l => l.source.data.name == d.name)
+                        .attr('stroke-width', 2)
+                        .attr('stroke', '#000000')
+                        .attr('opacity', 1);
+                })
+                .on('mouseout', d => {
+
+                    d3.selectAll('.link')
+                        .filter(l => l.source.data.name == d.name)
+                        .attr('stroke', function(d) {
+                            return d.color ? d.color : 'steelblue';
+                        })
+                        .attr('stroke-opacity', 0.6)
+                        .attr('stroke-width',
+                            function(d) { return d.width ? d.width : 1;
+                            });
+
+                });
+            ;
+
+            let texts = svg.selectAll('linkTexts')
+                .data(edges)
+                .enter()
+                .append('text')
+                .attr('class', 'group-text')
+                .attr("dy", function(d,i) {
+                    endAngle = d.end / 180*Math.PI;
+                    startAngle = d.start / 180*Math.PI;
+                    //if (endAngle > 90 * Math.PI/180 && endAngle < 270 * Math.PI/180) {
+                    if (endAngle > 170 * Math.PI/180 && endAngle < 270 * Math.PI/180) {
+                        return 26;
+                    }
+                    return -10;
+                    //return (d.endAngle > 90 * Math.PI/180 ? 18 : -5);
+                })
+                .style('text-anchor', 'middle')
+                .style('font-family', 'sans-serif')
+                .style('font-size', fontSize)
+                //.style('text-decoration', function(d) {
+
+                //    return d.data.textDecoration ? d.data.textDecoration : 'none';
+                //})
+
+                .append('textPath')
+                //.attr('xlink:href', function(d) { return '#' + d.tag; })
+                .attr('xlink:href', function(d, i) {
+                    //return '#' + graph.nodes[i].id + '-group';
+                    return `#donutArc${i}`;
+                })
+                .attr('startOffset', '50%')
+                .style('text-anchor', 'middle')
+                .text(function(d) { return d.name; })
+            ;
+        };
+
+        let drawCircumference = function() {
+
+            let arc = d3.arc()
+                .innerRadius(innerRadius + 7)
+                .outerRadius(innerRadius + 7)
+                .startAngle(function (d) { return 0; })
+                .endAngle(function (d) { return 360; })
+            ;
+
+            link = svg.append('g')
+                .append('path')
+                .attr('class', 'link')
+                //.attr('d', function(d) { return line(d.source.path(d.target)); })
+                //.attr('d', function(d) { return line([d.source, d.target]); })
+                //.attr('d', function(d) { return arc([d.source.x, d.target.x]); })
+                .attr('d', function(d) { return arc(); })
+                .style('stroke', function(d) {
+                    //return d.color ? d.color : '#555';
+                    return '#555';
+                })
+                .style('fill', function(d) {
+                    //return d.color ? d.color : '#555';
+                    return '#555';
+                })
+                .attr('stroke-opacity', 1)
+                .attr('stroke-width',
+                    function(d) { return 2;//d.width ? d.width : 2;
+                    })
+            ;
+        };
+
+        let recalculateRadii = function() {
+
+            radius = diameter / 2;
+            innerRadius = radius - 120;
+        };
+
+        /** public **/
+
+        exports.draw = function() {
+
+            // Radius used to generate the circular bundle graph (d / 2)
+            radius = diameter / 2;
+            // Inner radius of the bundle graph
+            innerRadius = radius - 120;
+
+            svg = d3.select(element)
+                .append('svg')
+                .attr('height', diameter)
+                .attr('width', diameter)
+                .append('g')
+                .attr('transform', 'translate(' + radius + ',' + radius + ')')
+            ;
+
+            let cluster = d3.cluster()
+                .size([360, innerRadius])
+                .separation(function(a, b) {
+                    return a.parent == b.parent ? intraSeparation : interSeparation;
+                });
+
+            graph.nodes = buildHierarchy(graph.nodes);
+            rootNode = d3.hierarchy(graph.nodes);
+
+            cluster(rootNode);
+            drawEdges();
+
+            if (useNodeText)
+                drawNodes();
+
+            if (useGroupBoxes)
+                drawGroupBoxes();
+
+            if (useCircumference)
+                drawCircumference();
+
+            return exports;
+        };
+
+        /** setters and getters **/
+
+        exports.svg = function(_) { return svg; };
+
+        exports.graph = function(_) {
+            if (!arguments.length) return graph;
+            graph = _;
+            return exports;
+        };
+
+        exports.element = function(_) {
+            if (!arguments.length) return element;
+            element = _;
+            return exports;
+        };
+
+
+        exports.innerRadius = function(_) {
+            if (!arguments.length) return innerRadius;
+            innerRadius = +_;
+            return exports;
+        };
+
+        exports.diameter = function(_) {
+            if (!arguments.length) return diameter;
+            diameter = +_;
+            return exports;
+        };
+
+        exports.radius = function(_) {
+            if (!arguments.length) return radius;
+            radius = +_;
+            return exports;
+        };
+
+        exports.useNodeText = function(_) {
+            if (!arguments.length) return useNodeText;
+            useNodeText = _;
+            return exports;
+        };
+
+        exports.useCircumference = function(_) {
+            if (!arguments.length) return useCircumference;
+            useCircumference = _;
+            return exports;
+        };
+
+        exports.useGroupBoxes = function(_) {
+            if (!arguments.length) return useGroupBoxes;
+            useGroupBoxes = _;
+            return exports;
+        };
+
+        exports.groupBoxWidth = function(_) {
+            if (!arguments.length) return groupBoxWidth;
+            groupBoxWidth = +_;
+            return exports;
+        };
+
+        exports.groupBoxFill = function(_) {
+            if (!arguments.length) return groupBoxFill;
+            groupBoxFill = _;
+            return exports;
+        };
+
+        exports.groupBoxStroke = function(_) {
+            if (!arguments.length) return groupBoxStroke;
+            groupBoxStroke = +_;
+            return exports;
+        };
+
+        exports.groupBoxStrokeWidth = function(_) {
+            if (!arguments.length) return groupBoxStrokeWidth;
+            groupBoxStrokeWidth = +_;
+            return exports;
+        };
+
+        exports.groupBoxSpacing = function(_) {
+            if (!arguments.length) return groupBoxSpacing;
+            groupBoxSpacing = +_;
+            return exports;
+        };
+
+        exports.font = function(_) {
+            if (!arguments.length) return font;
+            font = _;
+            return exports;
+        };
+
+        exports.fontColor = function(_) {
+            if (!arguments.length) return fontColor;
+            fontColor = _;
+            return exports;
+        };
+
+        exports.fontSize = function(_) {
+            if (!arguments.length) return fontSize;
+            fontSize = _;
+            return exports;
+        };
+
+        exports.intraSeparation = function(_) {
+            if (!arguments.length) return intraSeparation;
+            intraSeparation = _;
+            return exports;
+        };
+
+        exports.interSeparation = function(_) {
+            if (!arguments.length) return interSeparation;
+            interSeparation = _;
+            return exports;
+        };
+
+        exports.fontWeight = function(_) {
+            if (!arguments.length) return fontWeight;
+            fontWeight = _;
+            return exports;
+        };
+
+        return exports;
+    };
+
+
+</script>
+
+<script type="text/javascript">
+
+    /**
+      * Generates tags for species names.
+      *
+      * arguments
+      *     names: array of species names
+      *
+      * returns
+      *     an object mapping names to tag elements
+      **/
+    function makeSpeciesTag(names) {
+
+        let fill = [
+            '#fae4db', '#f9fac5', '#b5faf5', '#fae3e9', '#f5fee1', '#f4dfff',
+            '#78c679', '#41b6c4', '#7bccc4', '#8c96c6', '#fc8d59'
+        ];
+        let borders = [
+            '#eeb44f', '#d7c000', '#44fcf7', '#fca5b7', '#8fcb0a', '#b4d1fb',
+            '#41ab5d', '#1d91c0', '#4eb3d3', '#8c6bb1', '#ef6548'
+        ];
+        let tags = {};
+
+        // Remove duplicates and sort
+        names = Array.from(new Set(names)).sort();
+
+        // Convert to abbreviated names
+        for (let name of names) {
+
+            tags[name] = $('<span/>', {
+                class: 'group_name',
+                css: {
+                    'background-color': fill.shift(),
+                    border: '1px solid',
+                    'border-color': borders.shift(),
+                    //font: 'italic 10px/14px Georgia, serif',
+                    margin: '-5px 0 0 5px'
+                },
+                html: name
+            });
+        }
+
+        return tags;
+    }
+
+    /**
+      * Generates tags for attributions
+      *
+      * arguments
+      *     names: array of attribution names
+      *
+      * returns
+      *     an object mapping names to tag elements
+      **/
+    function makeAttributionTags(attributions) {
+
+        let fill = [
+            'rgb(228,26,28)', 'rgb(55,126,184)', 'rgb(77,175,74)',
+            'rgb(152,78,163)', 'rgb(255,127,0)', 'rgb(255,255,51)',
+            'rgb(166,86,40)', 'rgb(247,129,191)', 'rgb(153,153,153)',
+            'rgb(102,194,165)', 'rgb(252,141,98)', 'rgb(141,160,203)',
+            'rgb(231,138,195)', 'rgb(166,216,84)', 'rgb(255,217,47)',
+            'rgb(229,196,148)', 'rgb(179,179,179)'
+        ];
+        let tags = {};
+
+        // Remove duplicates and sort
+        attributions = Array.from(new Set(attributions)).sort();
+
+        for (let attrib of attributions) {
+
+            tags[attrib] = $('<span/>', {
+                class: 'group_name',
+                css: {
+                    'background-color': fill.shift(),
+                    border: '1px solid',
+                    margin: '-5px 0 0 5px'
+                },
+                html: attrib.toUpperCase()
+            });
+        }
+
+        return tags;
+    }
+
+    /**
+      * Generates tags for tiers.
+      *
+      * returns
+      *     an object mapping names to tag elements
+      **/
+    function makeTierTags() {
+
+        let fill = [
+            'rgb(255, 196, 119)',
+            'rgb(223, 189, 250)',
+            'rgb(250, 102, 90)',
+            'rgb(157, 206, 44)',
+            'rgb(99, 184, 238)'
+        ];
+        let borders = [
+            'rgb(238, 180, 79)',
+            'rgb(197, 132, 243)',
+            'rgb(216, 53, 38)',
+            'rgb(131, 196, 26)',
+            'rgb(56, 102, 163)'
+        ];
+        let tiers = ['I', 'II', 'III', 'IV', 'V'];
+        let tags = {};
+
+        for (let i = 0; i < tiers.length; i++) {
+
+            tags[i + 1] = $('<span/>', {
+                class: 'group_name',
+                css: {
+                    'background-color': fill.shift(),
+                    border: '1px solid',
+                    'border-color': borders.shift(),
+                    margin: '-5px 0 0 5px'
+                },
+                html: `Tier ${tiers[i]}`
+            });
+        }
+
+        return tags;
+    }
+
+    function formatScore(s) {
+
+        s = s.split('E');
+        let left = s[0];
+        let right = s[1].replace(/^-0*/, '-');
+
+        return $(`<p>${left} &times; 10 <sup>${right}</sup></p>`);
+    }
+
+    let result = JSON.parse('{{ async_result | tojson }}');
+    console.log(result);
+
+    // Isolate all the species names so we can make tags for them.
+    let species = result.genes.map(d => d.species);
+    species = species.concat(result.genesets.map(d => d.species));
+
+    // Same with attributions
+    let attributions = result.genesets.map(d => d.attribution);
+
+    // Species tags
+    let spTags = makeSpeciesTag(species);
+    // Attribution tags
+    let atTags = makeAttributionTags(attributions);
+    // Tier tags
+    let tierTags = makeTierTags();
+
+    $(document).ready(() => {
+
+        // Add original terms to the input terms div
+        for (let term of result.parameters.original_terms.sort()) {
+
+            /**
+              * Parses the original input terms and formats them as a colored div element.
+              */
+            let formatTerm = (t) => {
+
+                let label = 'label ';
+                let gsid = null;
+
+                if (/^ODE/.test(t)) {
+
+                    // Parse out the actual gene ID. The string looks something like:
+                    // ODE:5105 mobp (Mus musculus)
+                    t = /(^ODE:\d+\s.+?)\s.+/.exec(t)
+
+                    label += 'label-success';
+
+                } else if (/^GSID/.test(t)) {
+
+                    // Parse out the actual GSID. The string looks something like:
+                    // GSID:453669: Candidate genes from a GWAS
+                    t = /(^GSID:\d+):\s.+/.exec(t)
+
+                    label += 'label-warning';
+
+                } else {
+
+                    // Parse out the actual ontology ID. The string looks something like:
+                    // ONTID:GO:0023020 regulation of gene expression
+                    t = /^ONTID:(\w+:\d+)\s.+/.exec(t)
+
+                    label += 'label-info';
+                }
+
+                if (!t) {
+
+                    t = '';
+                    label = '';
+
+                } else {
+
+                    t = t[1];
+                }
+
+                return $('<div/>', {
+                    class: label,
+                    text: t,
+                    css: {
+                        'margin-left': '10px',
+                        'font-size': '13px',
+                        'border': '1px solid black'
+                    }
+                });
+            }
+
+            formatTerm(term).appendTo($('#input-terms'));
+        }
+
+        let geneTable = $('#gene-table').DataTable({
+
+            data: result['genes'],
+            paging: false,
+            scrollY: '400px',
+            scrollX: false,
+            scrollCollapse: true,
+            order: [3, 'desc'],
+            fixedColumns: true,
+            columns: [
+                {width: '19%', data: 'symbol', name: 'Symbol'},
+                {width: '19%', data: 'ensembl', name: 'Ensembl ID'},
+                {width: '19%', data: 'species', name: 'Species'},
+                {width: '19%', data: 'prob', name: 'NESS Score'},
+                {width: '19%', data: 'p', name: 'p'},
+            ],
+
+            /**
+              * Call this function when the rows are generated. Use it to edit individual
+              * data cells. We convert Ensembl IDs to Ensembl page links and link gene symbols
+              * to GW searches.
+              *
+              * arguments
+              *     row:  jQuery object containing the current row element
+              *     data: raw data object for this row
+              **/
+            'rowCallback': (row, data, _) => {
+
+                // The link element that will be added to the cell
+                let elink = $('<a/>', {
+                    text: data.ensembl,
+                    href: `http://ensembl.org/id/${data.ensembl}`,
+                    target: '_blank'
+                });
+
+                // Select the cell containing the Ensembl ID and add the link
+                // element for it.
+                $(row).children('td:eq(1)').html(elink);
+
+                // Convert the species name into the tag GW uses across the site
+                $(row).children('td:eq(2)').html(spTags[data.species].clone());
+
+                // Format scores
+                $(row).children('td:eq(3)').html(formatScore(data.prob));
+            }
+        });
+
+        let genesetTable = $('#geneset-table').DataTable({
+
+            data: result['genesets'],
+            paging: false,
+            scrollY: '400px',
+            scrollX: false,
+            scrollCollapse: true,
+            order: [5, 'desc'],
+            columns: [
+                {className: 'dt-center', width: '5%', data: 'gs_id', name: 'GSID'},
+                {className: 'dt-center', width: '5%', data: 'tier', name: 'Tier'},
+                {className: 'dt-center', width: '5%', data: 'attribution', name: 'Attribution'},
+                {className: 'dt-center', width: '15%', data: 'species', name: 'Species'},
+                {width: '45%', data: 'name', name: 'Name'},
+                {width: '15%', data: 'prob', name: 'NESS Score'},
+                {width: '10%', data: 'p', name: 'p'},
+            ],
+
+            /**
+              * Call this function when the rows are generated. Use it to edit individual
+              * data cells.
+              * We convert GSIDs to GeneWeaver view GS page links.
+              *
+              * arguments
+              *     row:  jQuery object containing the current row element
+              *     data: raw data object for this row
+              **/
+            'rowCallback': (row, data, _) => {
+
+                // The link element that will be added to the cell
+                let viewLink = $('<a/>', {
+                    text: data.gs_id,
+                    href: `${window.location.protocol}//${window.location.host}/viewgenesetdetails/${data.gs_id}`,
+                    target: '_blank'
+                })
+
+                // Select the cell containing the Ensembl ID and add the link
+                // element for it.
+                $(row).children('td:eq(0)').html(viewLink);
+
+                // Convert the tier into the tag GW uses across the site
+                $(row).children('td:eq(1)').html(tierTags[data.tier].clone());
+
+                // Convert the attribution into the tag GW uses across the site
+                $(row).children('td:eq(2)').html(atTags[data.attribution].clone());
+
+                // Convert the species name into the tag GW uses across the site
+                $(row).children('td:eq(3)').html(spTags[data.species].clone());
+
+                // Format scores
+                $(row).children('td:eq(5)').html(formatScore(data.prob));
+            }
+        });
+
+        let ontologyTable = $('#ontology-table').DataTable({
+
+            'data': result['ontologies'],
+            'paging': false,
+            'scrollY': '400px',
+            'scrollX': false,
+            'scrollCollapse': true,
+            'order': [3, 'desc'],
+            'columns': [
+                {'data': 'ontology', 'name': 'Ontology'},
+                {'data': 'term_id', 'name': 'Term ID'},
+                {'data': 'name', 'name': 'Term'},
+                {'data': 'prob', 'name': 'NESS Score'},
+                {data: 'p', name: 'p'},
+            ],
+
+            /**
+              * Call this function when the rows are generated. Use it to edit individual
+              * data cells.
+              * We convert GSIDs to GeneWeaver view GS page links.
+              *
+              * arguments
+              *     row:  jQuery object containing the current row element
+              *     data: raw data object for this row
+              **/
+            'rowCallback': (row, data, _) => {
+
+                $(row).children('td:eq(0)').html(`${data.ontology} (${data.ontology_prefix})`);
+
+                // Format scores
+                $(row).children('td:eq(3)').html(formatScore(data.prob));
+            }
+        });
+
+        //let homologyTable = $('#homology-table').DataTable({
+
+        //    'data': result['homologs'],
+        //    'paging': false,
+        //    'scrollY': '400px',
+        //    'scrollX': false,
+        //    'scrollCollapse': true,
+        //    //'order': [[3, 'desc'], [0, 'asc']],
+        //    'order': [[0, 'asc']],
+        //    'columns': [
+        //        {'data': 'hom_id', 'name': 'Homology Cluster ID'},
+        //        {'data': 'symbol', 'name': 'Gene Symbol'},
+        //        {'data': 'ensembl', 'name': 'Ensembl ID'},
+        //        {'data': 'species', 'name': 'Species'},
+        //        {'data': 'prob', 'name': 'NESS Score'},
+        //    ],
+
+        //    /**
+        //      * Call this function when the rows are generated. Use it to edit individual
+        //      * data cells.
+        //      * We convert GSIDs to GeneWeaver view GS page links.
+        //      *
+        //      * arguments
+        //      *     row:  jQuery object containing the current row element
+        //      *     data: raw data object for this row
+        //      **/
+        //    'rowCallback': (row, data, _) => {
+
+        //        // The link element that will be added to the cell
+        //        let elink = $('<a/>', {
+        //            text: data.ensembl,
+        //            href: `http://ensembl.org/id/${data.ensembl}`,
+        //            target: '_blank'
+        //        })
+
+        //        // Select the cell containing the Ensembl ID and add the link
+        //        // element for it.
+        //        $(row).children('td:eq(2)').html(elink);
+
+        //        // The link element that will be added to the cell
+        //        //let viewLink = $('<a/>', {
+        //        //    text: data.gs_id,
+        //        //    href: `${window.location.protocol}//${window.location.host}/viewgenesetdetails/${data.gs_id}`,
+        //        //    target: '_blank'
+        //        //})
+
+        //        //// Select the cell containing the Ensembl ID and add the link
+        //        //// element for it.
+        //        //$(row).children('td:eq(0)').html(viewLink);
+
+        //        //$(row).children('td:eq(0)').html(`${data.ontology} (${data.ontology_prefix})`);
+        //    }
+        //});
+
+        let ontologies = result.ontologies.map(d => d.ontology_prefix.toUpperCase());
+        console.log(ontologies);
+        let ontMap = ontologies.reduce((ac, o) => {ac[o] = o; return ac;}, {});
+        console.log(ontMap);
+
+        //result.graph.nodes = result.graph.nodes.map(d => ({id: d}))
+        result.graph.edges = result.graph.edges.map(d => ({source: d[0], target: d[1]}))
+
+        result.graph.nodes = result.graph.nodes.map(d => {
+
+            if (/^ODE/.test(d.id)) {
+
+                d.parent = 'Genes';
+
+            } else if (/^GSID/.test(d.id)) {
+
+                d.parent = 'Gene Sets';
+
+            } else if (/^ONTID/.test(d.id)) {
+
+                if (d.name.split(':').length >= 2) {
+
+                    d.parent = ontMap[d.name.split(':')[0].toUpperCase()];
+
+                } else {
+                    d.parent = 'MESH';
+                }
+
+                //console.log(d.name);
+                //console.log(d.parent);
+                //d.parent = 'Ontologies';
+            }
+
+            return d;
+        });
+
+        result.graph.nodes.unshift(
+            {id: 'Genes', name: 'Genes', parent: '', color: 'rgb(92, 184, 92)'}
+        );
+        result.graph.nodes.unshift(
+            {id: 'Gene Sets', name: 'Gene Sets', parent: '', color: 'rgb(240, 173, 78)'}
+        );
+        //result.graph.nodes.unshift(
+        //    {id: 'Ontologies', name: 'Ontologies', parent: '', color: 'rgb(91, 192, 222)'}
+        //);
+        for (ontology of ontologies) {
+            result.graph.nodes.unshift(
+                {id: ontology, name: ontology, parent: '', color: 'rgb(91, 192, 222)'}
+            );
+        }
+
+        let nodeCounts = result.graph.nodes.reduce((ac, d) => {
+
+            if (d.parent == '' || d.parent == 'Genes' || d.parent == 'Gene Sets')
+                return ac;
+
+            if (!(d.parent in ac))
+                ac[d.parent] = 1;
+            else
+                ac[d.parent] += 1;
+
+            return ac;
+        });
+
+        // We have to create dummy nodes for ontologies that have one or two child terms
+        // represented in the graph, otherwise they don't get displayed properly.
+        for (ont of Object.keys(nodeCounts)) {
+
+            if (nodeCounts[ont] <= 2) {
+
+                result.graph.nodes.push(
+                    {id: `${ont}-1`, name: `${ont-1}`, parent: ont, color: 'rgb(91, 192, 222)'}
+                );
+                result.graph.nodes.push(
+                    {id: `${ont}-2`, name: `${ont-2}`, parent: ont, color: 'rgb(91, 192, 222)'}
+                );
+            }
+        }
+
+        //for (let term of result.parameters.original_terms.sort()) {
+        let seedMap = result.parameters.original_terms.reduce((ac, o) => {ac[o.split(' ')[0]] = o; return ac;}, {});
+
+        console.log(seedMap);
+        // Color seed edges red
+        result.graph.edges = result.graph.edges.map(d => {
+
+            if (d.target in seedMap || d.source in seedMap) {
+                d.color = '#640000';
+            }
+
+            return d;
+        })
+
+        let graph = bundle()
+            .graph(result.graph)
+            .element('#het-graph')
+            .diameter(960)
+            .useGroupBoxes(true)
+            .groupBoxWidth(20)
+            .draw();
+
+        //console.log(result.graph);
+        // Create the graph
+        //let graph = forceGraph()
+        //    .data(result.graph)
+        //    .element('#het-graph')
+        //    .height(600)
+        //    .width(800)
+        //    .draw();
+    });
+</script>
+
+
+{% include 'modal/addGenesetsToProjects.html' %}
+{% include 'modal/addGenesetsToProjectsAlert.html' %}
+
+<!-- Includes the footer for the page -->
+{% include 'footer.html' %}

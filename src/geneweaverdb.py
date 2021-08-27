@@ -1040,6 +1040,30 @@ def get_ode_ref_id(value, sp_id):
     return ids
 
 
+def get_term_ids(value):
+    """
+    We have set a limit of 100 on the results returned because this is for an auto complete box. Too many results
+    just slow things down and aren't helpful. Also, strings are matched from the beginning.
+    """
+    value = value.lower()
+    ids = []
+    with PooledCursor() as cursor:
+        cursor.execute(
+                '''SELECT * FROM (SELECT ode_ref_id::varchar FROM gene 
+                        WHERE lower(ode_ref_id) LIKE '%%%s%%' LIMIT 30) as a
+                    UNION
+                  SELECT * FROM (SELECT 'GSID:' || gs_id::varchar || ': ' || gs_name::varchar FROM geneset 
+                        WHERE lower(gs_name) LIKE '%%%s%%' LIMIT 30) as b 
+                    UNION
+                  SELECT * FROM (SELECT 'ONTID:' || ont_ref_id::varchar || ' ' || ont_name::varchar FROM ontology 
+                        WHERE lower(ont_name) like '%%%s%%' LIMIT 30) as c''' % (value, value, value,)
+            )
+    results = cursor.fetchall()
+    for res in results:
+        ids.append(res[0])
+    return ids
+
+
 def get_microarray_types(sp_id=0):
     """
     get all rows from the platform table with the given species identifier
@@ -2790,6 +2814,21 @@ def get_gene_and_species_info(ode_ref_id):
 
 
 # end block of Emphasis functions
+
+# NESS functions
+def get_ness_term_info(ode_ref_id):
+    # check to see if this is a gene
+    with PooledCursor() as cursor:
+        cursor.execute(
+                '''SELECT gene.*, species.* FROM extsrc.gene INNER JOIN odestatic.species 
+                USING (sp_id) WHERE lower(ode_ref_id)=lower(%s);''',
+                (ode_ref_id,))
+        if cursor.rowcount > 0:
+            return list(dictify_cursor(cursor))
+        else:
+            cursor.execute('''SELECT %s as term''', (ode_ref_id,))
+            return list(dictify_cursor(cursor))
+
 
 # *************************************************************
 class User:

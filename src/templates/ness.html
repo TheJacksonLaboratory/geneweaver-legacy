@@ -1,0 +1,271 @@
+{% include 'header.html' %}
+{% set title="Network Enhanced Similarity Search (NESS)" %}
+
+<style>
+
+    a:hover {
+        text-decoration: none;
+    }
+
+    #clickablefontawesome {
+        cursor: pointer;
+    }
+
+    .page-header {
+        border-bottom-width: thick;
+        border-bottom-color: #006400;
+    }
+
+    .ui-autocomplete {
+        height: 200px;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+
+    #term-add {
+        cursor: pointer;
+        color: #808080;
+    }
+
+    #NESS_Search {
+        #color: darkgreen;
+    }
+
+
+</style>
+
+{% if g.user.user_id == 0 %}
+
+    {% include 'htmlfragments/permissionError.html' %}
+
+{% else %}
+
+    {% block body %}
+
+        <div id="maindiv" xmlns="http://www.w3.org/1999/html">
+
+        <p>
+
+        <div data-alerts="alerts" data-titles="{'warning': '<em>Warning!</em>'}" data-ids="myid" data-fade="5000"></div>
+
+        <div class="panel panel-default panel-heading bg-gray-light">
+            <h3 class="panel-title"><strong>{{ title }}</strong>
+            <span id="clickableFontAwesome" tabindex="0" data-trigger="focus"><i class="fa fa-info-circle"></i></span></h3>
+        </div>
+
+        {% with errors = get_flashed_messages() %}
+            {% if errors %}
+                {%- for msg in errors %}
+                    <div class="alert alert-danger fade in" style="text-align:center">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+                            x
+                        </button>
+                        <strong>
+                        {{ msg }}
+                        </strong>
+                    </div>
+                {% endfor -%}
+            {% endif %}
+        {% endwith %}
+
+        {% if emphgenes|length <= 0 %}
+            <div class="alert alert-warning">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">Ã—</button>
+            <p>Network Enhanced Similarity Search (NESS) is designed to find the effective similarity between
+                any two terms in an aggregated graph of GeneWeaver data. It will produce all pairwise distances
+                between the list of identifiers chosen by the user.</p>
+            </div>
+
+        {% endif %}
+
+        <div class="row">
+
+            <!-- Emphasis gene column -->
+            <div class="col-md-6">
+                <div class="page-header"><h2>List of Terms</h2></div>
+                    <button type="button" class="btn btn-block btn-default" id="callDeleteTerms">
+                        <i class="fa fa-trash-o pull-left"></i> Clear All Terms
+                    </button>
+                    <br/>
+
+                <form id="NESS_Search_Form" class="form-class" action="{{ url_for('render_ness') }}" method="post" target="_blank">
+
+                    <div class="term-results">
+                        <textarea class="form-control" rows="10" id="all-term-results" name="NESS_all_terms"></textarea>
+                    </div>
+                    <br/>
+
+                    <button type="button" class="btn btn-block btn-warning" id="start_NESS_Search">
+                        Start NESS Search
+                    </button>
+
+                </form>
+
+
+            </div>
+
+            <div class="col-md-6">
+                <div class="page-header"><h2>Add Terms</h2></div>
+
+                <form class="form-class" action="{{ url_for('render_ness') }}" method="post">
+                    <div class="input-group">
+
+                        <input class="form-control" name="NESS_SearchGene" type="text"
+                               placeholder="Search for Term" id="term-newid"/>
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" type="submit">Go</button>
+                        </span>
+
+                    </div>
+                </form>
+
+                <br/>
+
+                {% if foundgenes|length > 0 %}
+{#                    {% set allSearchGenes = [] %}#}
+                        {% for gene in foundgenes %}
+                            {% if gene.ode_ref_id|length > 0 %}
+                                <span id="term-add-{{ gene.ode_gene_id }}" data-id="{{ gene.ode_gene_id }}">
+                                    <i class="fa fa-plus"></i>
+                                    {{ gene.ode_ref_id|lower }} ({{ gene.sp_name }})
+                                </span>
+                                <br/>
+                            {% else %}
+                                <span id="term-add-term" data-id="">
+                                    <i class="fa fa-plus"></i>
+                                    {{ gene.term }})
+                                </span>
+                                <br/>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+            </div>
+            <div class="col-md-6">
+                <div class="page-header">
+                    <h2>NESS Options</h2>
+                </div>
+
+                <form class="form-class">
+                    <div class="input-group">
+                        <span class="input-group-addon">Restart probability (&alpha;)</span>
+                        <input class="form-control" name="NESS_alpha" type="text"
+                               value="0.35" id="ness-alpha"/>
+                    </div>
+                    <br />
+                    <div class="input-group">
+                        <span class="input-group-addon">Permutations (n)</span>
+                        <input class="form-control" name="NESS_permutations" type="text"
+                               value="250" id="ness-permutations"/>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    {% endblock %}
+
+{% endif %}
+
+
+{% include 'footer.html' %}
+
+
+
+<script type="text/javascript">
+
+    $(function () {
+        $("[data-toggle='tooltip']").tooltip();
+    });
+
+
+    $(function (){
+        if (sessionStorage.length > 0) {
+            $('#all-term-results').append(sessionStorage.getItem("terms"));
+        }
+    });
+
+    $('#clickableFontAwesome').popover({
+        title: 'What Is Network Enhanced Similarity?', content: 'Network Enhanced Similarity Search (NESS) is designed to ' +
+            'find the effective similarity between any two terms in an aggregated graph of GeneWeaver data. ' +
+            'It will produce all pairwise distances between the list of identifiers chosen by the user.'
+    });
+
+    /**
+     * A simple function that prevents the execution of a callback function until the timer has run down
+     */
+    var delay = (function(){
+        var timer = 0;
+        return function(callback, ms){
+            clearTimeout (timer);
+            timer = setTimeout(callback, ms);
+        };
+    })();
+
+    function typeAhead(value) {
+        var checkVal = value.toLowerCase();
+        if (checkVal !== "mg" && checkVal !== "mgi" && checkVal !== "mgi:" && checkVal.length > 1) {
+
+            $.ajax({
+                url: "/get_terms.json",
+                data: {
+                  'search': value,
+                    'sp_id': 'None'
+                },
+                dataType: 'json',
+                success: function (data) {
+                    var list = data.list;
+                    $('#term-newid').autocomplete({
+                        source: list
+                    });
+                }
+            });
+        }
+    }
+
+    $('#term-newid').on('keyup', function(){
+        delay(function(){
+            let value = $('#term-newid').val();
+            typeAhead( value );
+        }, 250);
+    });
+
+    $('[id^="term-add-"]').click(function() {
+        if ($(this).attr("data-id").length > 0) {
+            $('#all-term-results').append("ODE:" + $(this).attr("data-id") + ' ' + $.trim($(this).text()));
+        }
+        else {
+            $('#all-term-results').append($.trim($(this).text()));
+        }
+            $('#all-term-results').append('\n');
+        sessionStorage.setItem("terms", $('#all-term-results').val());
+    });
+
+    $("#callDeleteTerms").click(function() {
+        $('#all-term-results').val('');
+        sessionStorage.setItem("terms", $('#all-term-results').val());
+    });
+
+    $("#start_NESS_Search").click(function () {
+
+        // Add the restart option to the form
+        $('#NESS_Search_Form').append(
+            $('<input/>', {
+                type: 'hidden',
+                name: 'NESS_alpha',
+                value: $('#ness-alpha').val()
+            })
+        );
+        // Add the permutation testing option to the form
+        $('#NESS_Search_Form').append(
+            $('<input/>', {
+                type: 'hidden',
+                name: 'NESS_permutations',
+                value: $('#ness-permutations').val()
+            })
+        );
+
+        $("#NESS_Search_Form").submit();
+    });
+
+
+
+</script>
