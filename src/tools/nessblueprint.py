@@ -4,7 +4,7 @@ import flask
 import json
 import uuid
 import geneweaverdb as gwdb
-import toolcommon as tc
+from src.tools import toolcommon as tc
 import sys
 import os
 from itertools import chain
