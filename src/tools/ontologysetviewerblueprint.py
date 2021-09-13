@@ -32,18 +32,20 @@ def run_tool():
         return flask.redirect('/analyze')
 
     # gather the params into a dictionary
+    # Ontology set viewer does not need homology
     #homology_str = 'Homology'
     #params = {homology_str: None}
     params = {}
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
         params[tool_param.name] = form[tool_param.name]
+    # Ontology set viewer does not need homology
     '''   
         if tool_param.name.endswith('_' + homology_str):
             params[homology_str] = form[tool_param.name]
     if params[homology_str] != 'Excluded':
         params[homology_str] = 'Included'
     '''
-    # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
+
 
     # insert result for this run
     user_id = None
@@ -92,15 +94,16 @@ def run_tool():
     return response
     
 @ontologyset_viewer_blueprint.route('/run-genesest-viewer-api.html', methods=['POST'])
-def run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets ):
+def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
     # TODO need to check for read permissions on genesets
 
     user_id = gwdb.get_user_id_by_apikey(apikey)
     
 
     # gather the params into a dictionary
-    homology_str = 'Homology'
-    params = {homology_str: None}
+    #homology_str = 'Homology'
+    #params = {homology_str: None}
+    params = {}
     
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
         if tool_param.name.endswith('_' + 'SupressDisconnected'):
@@ -113,12 +116,16 @@ def run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets ):
         #     params[tool_param.name] = 'Auto'
         if minDegree not in range(1, 20, 1):
             params[tool_param.name] = 'Auto'
+
+        # homology is not needed in ontologySetViewer
+        '''
         if tool_param.name.endswith('_' + homology_str):
             params[homology_str] = 'Excluded'
             params[tool_param.name] = 'Excluded'
             if homology != 'Excluded':
                 params[homology_str] = 'Included'
                 params[tool_param.name] = 'Included'
+        '''
     # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
 
     
