@@ -8,10 +8,10 @@ import geneweaverdb as gwdb
 import tools.toolcommon as tc
 
 
-TOOL_CLASSNAME = 'GeneSetViewer'
-geneset_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
+TOOL_CLASSNAME = 'OntologySetViewer'
+ontologyset_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
-@geneset_viewer_blueprint.route('/run-geneset-viewer.html', methods=['POST'])
+@ontologyset_viewer_blueprint.route('/run-geneset-viewer.html', methods=['POST'])
 def run_tool():
     # TODO need to check for read permissions on genesets
 
@@ -32,14 +32,17 @@ def run_tool():
         return flask.redirect('/analyze')
 
     # gather the params into a dictionary
-    homology_str = 'Homology'
-    params = {homology_str: None}
+    #homology_str = 'Homology'
+    #params = {homology_str: None}
+    params = {}
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
         params[tool_param.name] = form[tool_param.name]
+    '''   
         if tool_param.name.endswith('_' + homology_str):
             params[homology_str] = form[tool_param.name]
     if params[homology_str] != 'Excluded':
         params[homology_str] = 'Included'
+    '''
     # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
 
     # insert result for this run
@@ -88,7 +91,7 @@ def run_tool():
 
     return response
     
-@geneset_viewer_blueprint.route('/run-genesest-viewer-api.html', methods=['POST'])  
+@ontologyset_viewer_blueprint.route('/run-genesest-viewer-api.html', methods=['POST'])
 def run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets ):
     # TODO need to check for read permissions on genesets
 
@@ -152,7 +155,7 @@ def run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets ):
     return task_id
 
 
-@geneset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
+@ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
 def view_result(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
@@ -184,7 +187,7 @@ def view_result(task_id):
             return flask.redirect('/analyze')
 
         return flask.render_template(
-            'tool/GeneSetViewer_result.html',
+            'tool/OntologySetViewer_result.html',
             async_result=results,
             tool=tool)
 
@@ -193,7 +196,7 @@ def view_result(task_id):
         return tc.render_tool_pending(async_result, tool)
 
 
-@geneset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
+@ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
