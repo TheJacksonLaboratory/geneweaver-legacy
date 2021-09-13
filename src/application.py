@@ -43,6 +43,7 @@ from tools import msetblueprint
 from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
+from tools import ontologysetviewerblueprint
 import adminviews
 import annotator
 import config
@@ -71,6 +72,7 @@ app.register_blueprint(booleanalgebrablueprint.boolean_algebra_blueprint)
 app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
+app.register_blueprint(ontologysetviewerblueprint.ontologyset_viewer_blueprint)
 
 # *************************************
 
@@ -2217,6 +2219,12 @@ def viewStoredResults_by_runhash():
     elif results['res_tool'] == 'GeneSet Graph':
         return url_for(
             genesetviewerblueprint.TOOL_CLASSNAME + '.view_result',
+            task_id=runhash
+        )
+
+    elif results['res_tool'] == 'OntologySet Graph':
+        return url_for(
+            ontologysetviewerblueprint.TOOL_CLASSNAME + '.view_result',
             task_id=runhash
         )
 
@@ -4737,6 +4745,14 @@ class ToolGenesetViewerProjects(restful.Resource):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return genesetviewerblueprint.run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets)
 
+class ToolOntologysetViewer(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDegree, genesets):
+        return ontologysetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
+
+class ToolOntologysetViewerProjects(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDigree, projects):
+        genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
+        return genesetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
 
 class ToolJaccardSimilarity(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
@@ -4873,6 +4889,11 @@ api.add_resource(ToolGenesetViewer,
                  '/api/tool/genesetviewer/<apikey>/<homology>/<supressDisconnected>/<minDegree>/<genesets>/')
 api.add_resource(ToolGenesetViewerProjects,
                  '/api/tool/genesetviewer/byprojects/<apikey>/<homology>/<supressDisconnected>/<minDegree>/<projects>/')
+
+api.add_resource(ToolOntologysetViewer,
+                 '/api/tool/ontologysetviewer/<apikey>/<supressDisconnected>/<minDegree>/<genesets>/')
+api.add_resource(ToolOntologysetViewerProjects,
+                 '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
 
 api.add_resource(ToolJaccardClustering, '/api/tool/jaccardclustering/<apikey>/<homology>/<method>/<genesets>/')
 api.add_resource(ToolJaccardClusteringProjects,
