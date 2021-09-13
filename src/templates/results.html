@@ -159,7 +159,10 @@
                             if (data['tool'] === 'DBSCAN')
 								$.redirectPost('/run-dbscan.html', form);
                             if (data['tool'] === 'MSET')
-                                $.redirectPost('/MSET.html', form)
+                                $.redirectPost('/MSET.html', form);
+                            if (data['tool'] === 'OntologySet Graph')
+                                $.redirectPost('/run-ontologyset-viewer.html', form)
+
 						});
 					});
 

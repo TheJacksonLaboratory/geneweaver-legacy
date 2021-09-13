@@ -11,7 +11,7 @@ import tools.toolcommon as tc
 TOOL_CLASSNAME = 'OntologySetViewer'
 ontologyset_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
-@ontologyset_viewer_blueprint.route('/run-geneset-viewer.html', methods=['POST'])
+@ontologyset_viewer_blueprint.route('/run-ontologyset-viewer.html', methods=['POST'])
 def run_tool():
     # TODO need to check for read permissions on genesets
 
@@ -93,7 +93,7 @@ def run_tool():
 
     return response
     
-@ontologyset_viewer_blueprint.route('/run-genesest-viewer-api.html', methods=['POST'])
+@ontologyset_viewer_blueprint.route('/run-ontologyset-viewer-api.html', methods=['POST'])
 def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
     # TODO need to check for read permissions on genesets
 
