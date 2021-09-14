@@ -25,13 +25,10 @@
                         border-radius:5px; padding:15px; width:100%">
                 <div class="row">
                     <div class="col-md-4">
-                        {{ macros.tool_param_radio(tool.params['GeneSetViewer_Homology']) }}
+                        {{ macros.tool_param_select(tool.params['OntologySetViewer_MinDegree']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['GeneSetViewer_MinDegree']) }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ macros.tool_param_radio(tool.params['GeneSetViewer_SupressDisconnected']) }}
+                        {{ macros.tool_param_radio(tool.params['OntologySetViewer_SupressDisconnected']) }}
                     </div>
                 </div>
                 <div class="row">
@@ -47,7 +44,7 @@
                         <button class="btn btn-primary"
                                 type='submit'
                                 value='run'
-                                onclick='this.form.action="{{ url_for('GeneSetViewer.run_tool') }}";'>
+                                onclick='this.form.action="{{ url_for('OntologySetViewer.run_tool') }}";'>
                             Re-Run Tool
                         </button>
                     </div>
@@ -69,7 +66,7 @@
             <div style="color:#006400; font-family:'Open Sans',sans-serif;
                  font-size:13px;">
                 <p style="padding-left:0px">
-                    <b>Left click</b> on gene node labels to search for that
+                    <b>Left click</b> on ontology node labels to search for that
                     gene in a new window.
                     <br />
                     <b>Left click</b> on GeneSet node labels to view the

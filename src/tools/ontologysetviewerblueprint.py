@@ -170,7 +170,7 @@ def view_result(task_id):
 
     if async_result.state in states.PROPAGATE_STATES:
         # TODO render a real descriptive error page not just an exception
-        raise Exception('error while processing: ' + tool.name)
+        raise Exception('error while processing: ' + tool.name + " " + async_result.state)
 
     if async_result.state == states.FAILURE:
 
