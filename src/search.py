@@ -1,7 +1,7 @@
 from collections import defaultdict
 import flask
 import geneweaverdb
-import sphinxapi
+# import sphinxapi
 import config
 
 # Sphinx server connection information
