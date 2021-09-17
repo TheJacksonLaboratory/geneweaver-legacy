@@ -8,10 +8,10 @@ import geneweaverdb as gwdb
 import tools.toolcommon as tc
 
 
-TOOL_CLASSNAME = 'OntologySetViewer'
-ontologyset_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
+TOOL_CLASSNAME = 'Ontology2GenesViewer'
+ontology2genes_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
-@ontologyset_viewer_blueprint.route('/run-ontologyset-viewer.html', methods=['POST'])
+@ontology2genes_viewer_blueprint.route('/run-ontology2genes-viewer.html', methods=['POST'])
 def run_tool():
     # TODO need to check for read permissions on genesets
 
@@ -93,7 +93,7 @@ def run_tool():
 
     return response
     
-@ontologyset_viewer_blueprint.route('/run-ontologyset-viewer-api.html', methods=['POST'])
+@ontology2genes_viewer_blueprint.route('/run-ontology2genes-viewer-api.html', methods=['POST'])
 def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
     # TODO need to check for read permissions on genesets
 
@@ -162,7 +162,7 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
     return task_id
 
 
-@ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
+@ontology2genes_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
 def view_result(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
@@ -203,7 +203,7 @@ def view_result(task_id):
         return tc.render_tool_pending(async_result, tool)
 
 
-@ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
+@ontology2genes_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
