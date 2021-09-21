@@ -384,6 +384,35 @@ def render_analyze():
         grp2proj=grp2proj
     )
 
+@app.route('/analyze_ont')
+@login_required(allow_guests=True)
+def render_analyze_ont():
+    grp2proj = OrderedDict()
+    active_tools = geneweaverdb.get_active_tools()
+
+    if 'user' not in flask.g:
+        return render_template('analyze_ont.html', active_tools=active_tools)
+
+    for p in flask.g.user.shared_projects:
+        p.group_id = p.group_id.split(',')
+        ## If a project is found in multiple groups we just use the
+        ## first group
+        p.group_id = p.group_id[0]
+        p.group = geneweaverdb.get_group_name(p.group_id)
+
+        if p.group not in grp2proj:
+            grp2proj[p.group] = [p]
+        else:
+            grp2proj[p.group].append(p)
+
+        grp2proj = OrderedDict(sorted(grp2proj.items(), key=lambda d: d[0]))
+
+    return render_template(
+        'analyze_ont.html',
+        active_tools=active_tools,
+        grp2proj=grp2proj
+    )
+
 
 @app.route('/analyzeshared')
 def render_analyze_shared():
