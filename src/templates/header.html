@@ -269,6 +269,7 @@ messages = array of messages
                     class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown">Analyze
                     GeneSets<span class="caret"></span></a>
                 <ul class="dropdown-menu">
+                    <li><a href="{{ url_for('render_analyze_ont')|safe }}">Ontology Analysis</a></li>
                     <li><a href="{{ url_for('render_analyze')|safe }}">Analyze GeneSets</a></li>
                     <li><a href="{{ url_for('render_user_results')|safe}}">View Results</a></li>
                     <li><a href="{{ url_for('render_emphasis')|safe }}">Emphasize Genes</a></li>
