@@ -26,10 +26,10 @@
                 <div class="row">
 
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['OntologySetViewer_MinDegree']) }}
+                        {{ macros.tool_param_select(tool.params['Ontology2GenesViewer_MinDegree']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_radio(tool.params['OntologySetViewer_SupressDisconnected']) }}
+                        {{ macros.tool_param_radio(tool.params['Ontology2GenesViewer_SupressDisconnected']) }}
                     </div>
                 </div>
                 <div class="row">
@@ -45,7 +45,7 @@
                         <button class="btn btn-primary"
                                 type='submit'
                                 value='run'
-                                onclick='this.form.action="{{ url_for('OntologySetViewer.run_tool') }}";'>
+                                onclick='this.form.action="{{ url_for('Ontology2GenesViewer.run_tool') }}";'>
                             Re-Run Tool
                         </button>
                     </div>
