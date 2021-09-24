@@ -1308,7 +1308,12 @@ def create_geneset_stub():
 @app.route('/getOntologyTermsByID')
 def get_ontology_term_by_id():
     ont_id = request.args['key']
-    flag = request.args['flag']
+
+    ontology = geneweaverdb.get_ontologyData_by_id(ont_id)
+    data = {'list': ontology}
+
+    return jsonify(data)
+
 
 @app.route('/updateGenesetOntologyDB')
 def update_geneset_ontology_db():
