@@ -1310,7 +1310,7 @@ def get_ontology_term_by_id():
     ont_id = request.args['key']
 
     ontology = geneweaverdb.get_ontologyData_by_id(ont_id)
-    data = {'list': ontology}
+    #data = {'list': ontology}
 
     return jsonify(data)
 
