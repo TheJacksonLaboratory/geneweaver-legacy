@@ -43,6 +43,7 @@ from tools import msetblueprint
 from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
+from tools import ontologysetviewerblueprint
 import adminviews
 import annotator
 import config
@@ -57,6 +58,7 @@ import report_bug
 import search
 import uploadfiles
 
+
 app = Flask(__name__)
 app.register_blueprint(abbablueprint.abba_blueprint)
 app.register_blueprint(combineblueprint.combine_blueprint)
@@ -70,6 +72,7 @@ app.register_blueprint(booleanalgebrablueprint.boolean_algebra_blueprint)
 app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
+app.register_blueprint(ontologysetviewerblueprint.ontologyset_viewer_blueprint)
 
 # *************************************
 
@@ -268,6 +271,7 @@ def _form_login():
     return user
 
 
+
 def send_mail(to, subject, body):
     # print to, subject, body
     sendmail_location = "/usr/bin/mail"  # sendmail location
@@ -326,7 +330,6 @@ def json_login():
 
     return redirect('/')
 
-
 @app.route('/login_as/<int:as_user_id>', methods=['GET'])
 def login_as(as_user_id):
     if not as_user_id:
@@ -344,6 +347,7 @@ def login_as(as_user_id):
 
     if not as_user:
         return jsonify({'error': ''})
+
 
     session['user_id'] = as_user.user_id
     flask.g.user = as_user
@@ -380,6 +384,35 @@ def render_analyze():
         grp2proj=grp2proj
     )
 
+@app.route('/analyze_ont')
+@login_required(allow_guests=True)
+def render_analyze_ont():
+    grp2proj = OrderedDict()
+    active_tools = geneweaverdb.get_active_tools()
+
+    if 'user' not in flask.g:
+        return render_template('analyze_ont.html', active_tools=active_tools)
+
+    for p in flask.g.user.shared_projects:
+        p.group_id = p.group_id.split(',')
+        ## If a project is found in multiple groups we just use the
+        ## first group
+        p.group_id = p.group_id[0]
+        p.group = geneweaverdb.get_group_name(p.group_id)
+
+        if p.group not in grp2proj:
+            grp2proj[p.group] = [p]
+        else:
+            grp2proj[p.group].append(p)
+
+        grp2proj = OrderedDict(sorted(grp2proj.items(), key=lambda d: d[0]))
+
+    return render_template(
+        'analyze_ont.html',
+        active_tools=active_tools,
+        grp2proj=grp2proj
+    )
+
 
 @app.route('/analyzeshared')
 def render_analyze_shared():
@@ -404,10 +437,10 @@ def render_analyze_shared():
     active_tools = geneweaverdb.get_active_tools()
     return render_template('analyze_shared.html', active_tools=active_tools, grp2proj=grp2proj)
 
-
 @app.route('/get_user_projects.json')
 @login_required(allow_guests=True)
 def get_user_projects():
+
     if 'user' in flask.g:
         projects = []
 
@@ -431,7 +464,6 @@ def get_user_projects():
         return jsonify(projects)
     else:
         return jsonify([])
-
 
 @app.route('/projects')
 @login_required(allow_guests=True)
@@ -514,19 +546,15 @@ def render_editgenesets(gs_id, curation_view=False):
     geneset = geneweaverdb.get_geneset(gs_id, user_id)
     species = geneweaverdb.get_all_species()
     pubs = geneweaverdb.get_all_publications(gs_id)
-    # onts = geneweaverdb.get_all_ontologies_by_geneset(gs_id, "All Reference Types")
+    #onts = geneweaverdb.get_all_ontologies_by_geneset(gs_id, "All Reference Types")
     ont_dbs = geneweaverdb.get_all_ontologydb()
     ref_types = geneweaverdb.get_all_gso_ref_type()
     ros = json.dumps(geneweaverdb.get_ontologies_by_ontdb_id(12))
     user_pref = json.loads(geneweaverdb.get_user(user_id).prefs)
 
     user_info = geneweaverdb.get_user(user_id)
-    # SRP Implementation
-    srp = geneweaverdb.get_srp(gs_id)
-    gs_update = geneweaverdb.update_geneset_date(gs_id)
     if user_id != 0:
-        view = 'True' if user_info.is_admin or user_info.is_curator or geneset.user_id == user_id or geneweaverdb.user_is_assigned_curation(
-            user_id, gs_id) else None
+        view = 'True' if user_info.is_admin or user_info.is_curator or geneset.user_id == user_id or geneweaverdb.user_is_assigned_curation(user_id, gs_id) else None
     else:
         view = None
 
@@ -549,12 +577,8 @@ def render_editgenesets(gs_id, curation_view=False):
         ont_dbs=ont_dbs,
         curation_view=curation_view,
         relation_onts=ros,
-        user_pref=user_pref,
-        # SRP Implementation
-        srp=srp,
-        gs_update=gs_update
+        user_pref=user_pref
     )
-
 
 @app.route('/addRelationsOntology', methods=['POST'])
 @login_required(json=True)
@@ -634,7 +658,6 @@ def nominate_public_geneset_for_curation():
 
     return response
 
-
 @app.route('/assign_genesets_to_curator.json', methods=['POST'])
 @login_required(json=True)
 def assign_genesets_to_curator():
@@ -703,16 +726,15 @@ def assign_geneset_to_curator():
     if assignment:
         owned_groups = geneweaverdb.get_all_owned_groups(session['user_id'])
         if assignment.group in [g['grp_id'] for g in owned_groups]:
+
             curator_info = geneweaverdb.get_user(curator)
 
             assignment.assign_curator(curator, user_id, notes)
 
-            response = jsonify(success=True, curator_name=curator_info.first_name + " " + curator_info.last_name,
-                               curator_email=curator_info.email)
+            response = jsonify(success=True, curator_name=curator_info.first_name + " " + curator_info.last_name, curator_email=curator_info.email)
 
     else:
-        response = jsonify(success=False,
-                           message="Error assigning curator, GeneSet does not have an active curation record")
+        response = jsonify(success=False, message="Error assigning curator, GeneSet does not have an active curation record")
         response.status_code = 412
 
     return response
@@ -736,8 +758,7 @@ def geneset_ready_for_review():
             response = jsonify(success=False, message='You do not have permissions to perform this action.')
             response.status_code = 403
     else:
-        response = jsonify(success=False,
-                           message="Error assigning curator, GeneSet does not have an active curation record")
+        response = jsonify(success=False, message="Error assigning curator, GeneSet does not have an active curation record")
         response.status_code = 412
 
     return response
@@ -766,8 +787,7 @@ def mark_geneset_reviewed():
             response = jsonify(success=False, message='You do not have permissions to perform this action.')
             response.status_code = 403
     else:
-        response = jsonify(success=False,
-                           message="Error assigning curator, GeneSet does not have an active curation record")
+        response = jsonify(success=False, message="Error assigning curator, GeneSet does not have an active curation record")
         response.status_code = 412
 
     return response
@@ -788,8 +808,8 @@ def render_assign_publication(group_id):
         generators = publication_generator.list_generators(user_id, [str(group['grp_id']) for group in my_groups])
 
     return render_template('publication_assignment.html',
-                           myGroups=my_groups,
-                           myGenerators=generators)
+                                 myGroups=my_groups,
+                                 myGenerators=generators)
 
 
 @app.route('/add_generator', methods=['POST'])
@@ -846,11 +866,10 @@ def update_generator():
             generator.save()
             response = jsonify(message="Generator successfully updated")
         except Error as error:
-            response = jsonify(
-                message="Generator not saved.  Error encountered while updating database: {0}".format(error))
+            response = jsonify(message="Generator not saved.  Error encountered while updating database: {0}".format(error))
     else:
         response = jsonify(success=False,
-                           message='You must provide a generator id, name, query string and group id.')
+                                 message='You must provide a generator id, name, query string and group id.')
         response.status_code = 412
 
     return response
@@ -994,8 +1013,7 @@ def assign_publications_to_group():
 
             else:
                 # check to see if publication is already assigned to the group
-                publication_assignment = pub_assignments.get_publication_assignment_by_pub_id(publication.pub_id,
-                                                                                              group_id)
+                publication_assignment = pub_assignments.get_publication_assignment_by_pub_id(publication.pub_id, group_id)
                 if publication_assignment and publication_assignment.state != publication_assignment.REVIEWED:
                     # is it already an active task for this group?
                     status[pubmed_id] = {
@@ -1043,12 +1061,11 @@ def assign_publication_to_curator():
             assignment.assign_to_curator(curator, user_id, notes)
 
             response = jsonify(success=True,
-                               curator_name=curator_info.first_name + " " + curator_info.last_name,
-                               curator_email=curator_info.email)
+                                     curator_name=curator_info.first_name + " " + curator_info.last_name,
+                                     curator_email=curator_info.email)
 
     else:
-        response = jsonify(success=False,
-                           message="Error assigning curator, publication does not have an active curation record")
+        response = jsonify(success=False, message="Error assigning curator, publication does not have an active curation record")
         response.status_code = 403
 
     return response
@@ -1206,8 +1223,7 @@ def render_pub_assignment(assignment_id):
             if view != 'no_access':
                 genesets = pub_assignment.get_genesets()
                 genesets_for_pub = geneweaverdb.get_genesets_for_publication(pub_assignment.pub_id, uid)
-                other_genesets = [gs for gs in genesets_for_pub if
-                                  gs.geneset_id not in [gs.geneset_id for gs in genesets]]
+                other_genesets = [gs for gs in genesets_for_pub if gs.geneset_id not in [gs.geneset_id for gs in genesets]]
                 if pub_assignment.state != pub_assignment.UNASSIGNED:
                     curator = geneweaverdb.get_user(pub_assignment.assignee)
                 group_name = geneweaverdb.get_group_name(pub_assignment.group)
@@ -1219,13 +1235,11 @@ def render_pub_assignment(assignment_id):
                 # create a dictionary that maps each gene set to a curation assignment if there is one
                 all_genesets = genesets + other_genesets
                 for gs in all_genesets:
-                    geneset_assignmnet_map[gs.geneset_id] = curation_assignments.get_geneset_curation_assignment(
-                        gs.geneset_id)
+                    geneset_assignmnet_map[gs.geneset_id] = curation_assignments.get_geneset_curation_assignment(gs.geneset_id)
 
             if view == 'assigner' or view == 'group_admin':
                 # needed for rendering the assignment dialog
-                curation_team_members = [geneweaverdb.get_user(uid) for uid in
-                                         geneweaverdb.get_group_users(pub_assignment.group)]
+                curation_team_members = [geneweaverdb.get_user(uid) for uid in geneweaverdb.get_group_users(pub_assignment.group)]
         else:
             # publication assignment not found
             abort(404)
@@ -1252,9 +1266,7 @@ def save_pub_assignment_note():
     gid = assignment.group
     if assignment:
         # make sure user is authorized (assignee, assigner, group admin)
-        if uid == assignment.assignee or uid == assignment.assigner or int(gid) in [g['grp_id'] for g in
-                                                                                    geneweaverdb.get_all_owned_groups(
-                                                                                            uid)]:
+        if uid == assignment.assignee or uid == assignment.assigner or int(gid) in [g['grp_id'] for g in geneweaverdb.get_all_owned_groups(uid)]:
             # SAVE notes to DB
             assignment.update_notes(notes)
             response = jsonify(success=True)
@@ -1284,8 +1296,7 @@ def create_geneset_stub():
         response.status_code = 403
     else:
         group_id = assignment.group
-        gs_ids = [assignment.create_geneset_stub(stub['gs_name'], stub['gs_label'], stub['gs_description'], species_id,
-                                                 group_id) for stub in stubs]
+        gs_ids = [assignment.create_geneset_stub(stub['gs_name'], stub['gs_label'], stub['gs_description'], species_id, group_id) for stub in stubs]
         for gs in gs_ids:
             assignment = curation_assignments.get_geneset_curation_assignment(gs)
             geneset_assignment_map[gs] = {"status_id": assignment.state, "status_name": assignment.status_to_string()}
@@ -1293,10 +1304,8 @@ def create_geneset_stub():
 
     return response
 
-
-# TODO: endpoint to retrieve the ontology terms
-@app.route('/getOntologyByID')
-def get_ontology_by_ID():
+@app.route('/getOntologyTermsByID')
+def get_ontology_term_by_id():
     ont_id = request.args['key']
     flag = request.args['flag']
 
@@ -1317,6 +1326,7 @@ def update_geneset_ontology_db():
     gso_ref_type = request.args['universe']
     ro_ont_id = request.args.get('ro_ont_id')
 
+
     if (flag == "true"):
         geneweaverdb.add_ont_to_geneset(gs_id, ont_id, gso_ref_type)
     else:
@@ -1328,7 +1338,6 @@ def update_geneset_ontology_db():
 
     return json.dumps(True)
 
-
 def remove_relation_ontology(ont_id, gs_id, ro_ont_id):
     try:
         geneweaverdb.remove_relation_ont(gs_id, ont_id, ro_ont_id)
@@ -1337,7 +1346,6 @@ def remove_relation_ontology(ont_id, gs_id, ro_ont_id):
         result = {'success': False}
 
     return result
-
 
 @app.route('/rerun_annotator.json', methods=['POST'])
 @login_required(json=True)
@@ -1355,8 +1363,8 @@ def rerun_annotator():
     # Only admins, curators, and owners can make changes
     if ((not user.is_admin and not user.is_curator) and
             (not geneweaverdb.user_is_owner(user_id, gs_id) and
-             not geneweaverdb.user_is_assigned_curation(user_id,
-                                                        gs_id))):
+                     not geneweaverdb.user_is_assigned_curation(user_id,
+                                                                gs_id))):
         response = jsonify(
             {'error': 'You do not have permission to update this GeneSet'})
         response.status_code = 403
@@ -1413,7 +1421,7 @@ def get_ontology_terms(gsid):
     ## Format ontologies for display, only send the min. requirements
     for ont in onts:
         o = {
-            'reference_id': ont.reference_id,
+            'reference_id': ont.reference_id, 
             'name': ont.name,
             'dbname': ontdbdict[ont.ontdb_id].name,
             'ontdb_id': ont.ontdb_id,
@@ -1631,7 +1639,7 @@ def convertTree(root):
     nested dicts that can be used by DynaTree on the client side of things.
 
     :param root:    the top level (root) node of the tree structure
-    :return:        formatted tree (see create_new_child_dict for relevant
+    :return:        formatted tree (see create_new_child_dict for relevant 
                     fields)
     """
 
@@ -1658,8 +1666,8 @@ def mergeTreePath(tree, path):
     """
     Merges a single path from an ontology tree into an existing tree structure.
     Used to merge section of an ontology that may overlap. The list of nodes in
-    the path should be in order i.e. from root -> leaf.
-    In the returned tree, every element except the 'node' key is a child of the
+    the path should be in order i.e. from root -> leaf. 
+    In the returned tree, every element except the 'node' key is a child of the 
     previous node.
 
     :arg dict: tree structure to add the node path to
@@ -1762,11 +1770,9 @@ def update_geneset():
         result['usr_id'] = user_id
         return json.dumps(result)
 
-
 @app.route('/curategenesetgenes/<int:gs_id>')
 def render_curategenesetgenes(gs_id):
     return render_editgeneset_genes(gs_id, curation_view=True)
-
 
 @app.route('/editgenesetgenes/<int:gs_id>')
 def render_editgeneset_genes(gs_id, curation_view=False):
@@ -1777,9 +1783,6 @@ def render_editgeneset_genes(gs_id, curation_view=False):
     geneset = geneweaverdb.get_geneset(gs_id, user_id, temp='temp')
     platform = geneweaverdb.get_microarray_types()
     idTypes = geneweaverdb.get_gene_id_types()
-    # SRP IMPLEMENTATION
-    srp = geneweaverdb.get_srp(gs_id)
-    # SRP IMPLEMENTATION END
 
     # get unmapped gene ids (this is only an approximation and will not work
     # for probe sets
@@ -1832,9 +1835,9 @@ def render_editgeneset_genes(gs_id, curation_view=False):
             symbol2ode[d['ode_ref_id']] = d['ode_gene_id']
             ## Reverse to make our lives easier during templating
             symbol2ode[d['ode_gene_id']] = d['ode_ref_id']
-        # keys = [list(query) for query in symbol2ode.keys()]
-        # symbol2ode = dict([(k[0], symbol2ode[tuple(k)][0]) for k in keys])
-        # for sym, ode in symbol2ode.items():
+        #keys = [list(query) for query in symbol2ode.keys()]
+        #symbol2ode = dict([(k[0], symbol2ode[tuple(k)][0]) for k in keys])
+        #for sym, ode in symbol2ode.items():
         #    symbol2ode[ode] = sym
 
     else:
@@ -1852,10 +1855,7 @@ def render_editgeneset_genes(gs_id, curation_view=False):
         ontology=ontology,
         id_map=symbol2ode,
         curation_view=curation_view,
-        genesnotfound=genesnotfound,
-        # SRP IMPLEMENTATION
-        srp=srp
-        # SRP IMPLEMENTATION END
+        genesnotfound=genesnotfound
     )
 
 
@@ -1984,10 +1984,10 @@ def update_genesets_groups():
         for product in itertools.product(gs_ids, groups):
 
             ## Prevent the user from sharing private, Tier 5 gene sets that
-            ## do not belong to them but they have access to (b/c those sets
+            ## do not belong to them but they have access to (b/c those sets 
             ## have been shared with them)
-            if geneweaverdb.get_geneset_tier(product[0]) == 5 and \
-                    not geneweaverdb.user_is_owner(user_id, product[0]):
+            if geneweaverdb.get_geneset_tier(product[0]) == 5 and\
+               not geneweaverdb.user_is_owner(user_id, product[0]):
                 errors.add(product[0])
                 continue
 
@@ -2137,7 +2137,6 @@ def set_annotator():
 
     return response
 
-
 @app.route('/login')
 def render_login():
     return render_template('login.html')
@@ -2157,7 +2156,7 @@ def render_forgotpass():
 def download_result():
     """
     Used when a user requests to download a hi-res result image. The SVG data
-    is posted to the server, upscaled, converted to a PNG or other image format,
+    is posted to the server, upscaled, converted to a PNG or other image format, 
     and sent back to the user.
 
     args
@@ -2203,7 +2202,7 @@ def download_result():
     elif 'version' in form and form['version']:
         classicpath = os.path.join(results, form['version'])
         ## For some reason the DPI for this image needs to be low otherwise it
-        ## takes forever to render (and may cause ImageMagick to crash). It's
+        ## takes forever to render (and may cause ImageMagick to crash). It's 
         ## also very clear even at low DPI.
         img = Image(filename=classicpath, format='svg', resolution=150)
 
@@ -2253,6 +2252,12 @@ def viewStoredResults_by_runhash():
     elif results['res_tool'] == 'GeneSet Graph':
         return url_for(
             genesetviewerblueprint.TOOL_CLASSNAME + '.view_result',
+            task_id=runhash
+        )
+
+    elif results['res_tool'] == 'OntologySet Graph':
+        return url_for(
+            ontologysetviewerblueprint.TOOL_CLASSNAME + '.view_result',
             task_id=runhash
         )
 
@@ -2369,7 +2374,7 @@ def render_curategeneset(gs_id):
             assignment.set_curation_state('Ready for review')
             curation_view = 'reviewer'
 
-        # figure out the proper view depending on the state and your role(s)
+        #figure out the proper view depending on the state and your role(s)
         if assignment.state == curation_assignments.CurationAssignment.UNASSIGNED and user_is_curation_leader():
             curation_view = 'curation_leader'
         elif assignment.state == curation_assignments.CurationAssignment.ASSIGNED:
@@ -2378,7 +2383,7 @@ def render_curategeneset(gs_id):
             elif user_is_curation_leader():
                 curation_view = 'curation_leader'
         elif (assignment.state == curation_assignments.CurationAssignment.READY_FOR_REVIEW or
-              assignment.state == curation_assignments.CurationAssignment.REVIEWED):
+                      assignment.state == curation_assignments.CurationAssignment.REVIEWED):
             if session['user_id'] == assignment.reviewer:
                 curation_view = 'reviewer'
             elif session['user_id'] == assignment.curator:
@@ -2391,8 +2396,7 @@ def render_curategeneset(gs_id):
             if curation_view == 'curation_leader' or curation_view == 'reviewer':
                 # curation_leader view needs a list of users that belong to
                 # the group so it can render the assignment dialog
-                curation_team_members = [geneweaverdb.get_user(uid) for uid in
-                                         geneweaverdb.get_group_users(assignment.group)]
+                curation_team_members = [geneweaverdb.get_user(uid) for uid in geneweaverdb.get_group_users(assignment.group)]
 
             return render_viewgeneset_main(gs_id, curation_view, curation_team_members, assignment, curator_info)
 
@@ -2400,14 +2404,13 @@ def render_curategeneset(gs_id):
     # if user is admin or GW curator, they will be able to view/edit this
     # otherwise user will get whatever viewing status they should have
 
-    # TODO this should go to some permission error page
+    #TODO this should go to some permission error page
     return render_viewgeneset_main(gs_id, False)
-
 
 @app.route('/get_geneset_values', methods=['GET'])
 def get_geneset_genes():
-    # return the list of genes associated with a geneset in json format
-    # this endpoint wil only get hit from a logged in page (viewgenesetdetails)
+    #return the list of genes associated with a geneset in json format
+    #this endpoint wil only get hit from a logged in page (viewgenesetdetails)
     if 'user_id' in session:
         user_id = session['user_id']
 
@@ -2441,7 +2444,7 @@ def get_geneset_genes():
         session['search'] = ''
 
     geneset = geneweaverdb.get_geneset(gs_id, user_id)
-    # gsvs = geneset.geneset_values
+    #gsvs = geneset.geneset_values
     # not sure why you have to give datatables both of these as the same value, but that's what it wants...
     gene_list = {'aaData': [], 'iTotalDisplayRecords': total_records, 'iTotalRecords': total_records}
 
@@ -2470,11 +2473,11 @@ def get_geneset_genes():
     session['extsrc'] = genedict['Gene Symbol']
 
     gsvs = geneweaverdb.get_geneset_values(
-        gs_id,
+        gs_id, 
         alt_gene_id,
-        session['length'],
-        session['start'],
-        session['search'],
+        session['length'], 
+        session['start'], 
+        session['search'], 
         session['sort'],
         session['dir']
     )
@@ -2488,30 +2491,30 @@ def get_geneset_genes():
         symbols.append(gsv.ode_ref)
 
     print(gsvs)
-    # map each GenesetValue object's contents back onto a dictionary, turn geneset value (decimal) into string
+    #map each GenesetValue object's contents back onto a dictionary, turn geneset value (decimal) into string
     for i in range(len(gsvs)):
         gene_id = gsvs[i].ode_gene_id
         gene = []
-        # gene id
+        #gene id
         gene.append(gene_id)
-        # gene name (default symbol)
+        #gene name (default symbol)
         gene.append(str(gsvs[i].source_list[0]))
-        # gene symbol
+        #gene symbol
         gene.append(str(gsvs[i].ode_ref))
-        # homology
+        #homology
         gene.append(sorted(gsvs[i].hom))
-        # score
+        #score
         gene.append(str(round(gsvs[i].value, 3)))
-        # priority
+        #priority
         gene.append((float(gsvs[i].gene_rank) / 0.15) * 100)
-        # blank column for linkouts - handled in DOM on page
+        #blank column for linkouts - handled in DOM on page
         gene.append('Null')
-        # emphasis on/off flag.
+        #emphasis on/off flag.
         if gene_id in emphgeneids:
             gene.append('On')
         else:
             gene.append('Off')
-        # 'add genes to geneset' checkbox - handled in DOM on page
+        #'add genes to geneset' checkbox - handled in DOM on page
         gene.append('Null')
         ## Add the symbol to the list for the linkouts
         if i < len(symbols):
@@ -2522,7 +2525,6 @@ def get_geneset_genes():
         gene_list['aaData'].append(gene)
 
     return jsonify(gene_list)
-
 
 def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curation_assignment=None, curator_info=None):
     # get values for sorting result columns and saving these to a session variable
@@ -2546,9 +2548,6 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     numgenes = geneweaverdb.get_genecount_in_geneset(gs_id)
     user_info = flask.g.user
     geneset = geneweaverdb.get_geneset(gs_id, user_id)
-    # SRP IMPLEMENTATION
-    srp = geneweaverdb.get_srp(gs_id)
-    # SRP IMPLEMENTATIOn END
 
     # can the user see this geneset?
     ## User account
@@ -2571,6 +2570,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
             no_access=True,
             user_id=user_id
         )
+
 
     genetypes = geneweaverdb.get_gene_id_types(geneset.sp_id)
     genedict = {}
@@ -2602,8 +2602,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
                 altGeneSymbol = genedict[session['extsrc']]
                 alt_gdb_id = session['extsrc']
             else:
-                ## The genedict will not have references for expression
-                ## platforms so if the gene_id_type is missing, it's
+                ## The genedict will not have references for expression 
+                ## platforms so if the gene_id_type is missing, it's 
                 ## probably a platform and we should handle it by setting
                 ## the default display to gene symbol
                 if geneset.gene_id_type not in genedict:
@@ -2629,10 +2629,10 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     ## Nothing is ever deleted but that doesn't mean users should be able
     ## to see them. Some sets have a NULL status so that MUST be
     ## checked for, otherwise sad times ahead :(
-    ## allow admins, curators, and gene set owners to view deleted sets
+    ## allow admins, curators, and gene set owners to view deleted sets 
     ## (like in classic GW)
-    if (not user_info.is_admin and not user_info.is_curator and user_id != geneset.user_id) and \
-            (not geneset or (geneset and geneset.status == 'deleted')):
+    if (not user_info.is_admin and not user_info.is_curator and user_id != geneset.user_id) and\
+       (not geneset or (geneset and geneset.status == 'deleted')):
         return render_template(
             'viewgenesetdetails.html',
             geneset=None,
@@ -2648,7 +2648,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     ## Ontologies associated with this geneset
     ontology = get_ontology_terms(gs_id)
 
-    # print ontology
+    #print ontology
 
     ## Ontology linkout mapping, ontdb_id -> url
     ontdb = geneweaverdb.get_all_ontologydb()
@@ -2656,7 +2656,7 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
     ont_links = {}
 
     for odb in ontdb:
-        # just in case the linkout_url is empty. if it is it breaks the template, so avoid
+        #just in case the linkout_url is empty. if it is it breaks the template, so avoid
         if odb.linkout_url is not None:
             ont_links[odb.ontologydb_id] = odb.linkout_url
 
@@ -2685,12 +2685,8 @@ def render_viewgeneset_main(gs_id, curation_view=None, curation_team=None, curat
         curator_info=curator_info,
         show_gene_list=show_gene_list,
         totalGenes=numgenes,
-        uploaded_as=uploaded_as,
-        # SRP IMPLEMENTATION
-        srp=srp
-        # SRP IMPLEMENTATION END
+        uploaded_as=uploaded_as
     )
-
 
 @app.route('/viewgenesetoverlap/<list:gs_ids>', methods=['GET'])
 @login_required(allow_guests=True)
@@ -2714,8 +2710,9 @@ def render_viewgenesetoverlap(gs_ids):
 
     ## The same geneset provided for all arguments
     if len(list(set(gs_ids))) == 1:
+
         return render_template(
-            'viewgenesetoverlap.html',
+            'viewgenesetoverlap.html', 
             same_geneset=True
         )
 
@@ -2803,7 +2800,7 @@ def render_viewgenesetoverlap(gs_ids):
     else:
         view = None
 
-    def venn_circles(i, ii, j, size=100):
+    def venn_circles(i,ii,j, size=100):
         """
         Taken from the jaccard sim. tool source code. Calculates x, y positions
         for each circle in the venn diagram so the proper overlap area is
@@ -2819,46 +2816,46 @@ def render_viewgenesetoverlap(gs_ids):
             a dictionary with x, y positions and radius sizes for both circles
         """
         pi = math.acos(-1.0)
-        r1 = math.sqrt(i / pi)
-        r2 = math.sqrt(ii / pi)
-        if r1 == 0:
-            r1 = 1.0
-        if r2 == 0:
-            r2 = 1.0
-        scale = size / 2.0 / (r1 + r2)
+        r1 = math.sqrt(i/pi)
+        r2 = math.sqrt(ii/pi)
+        if r1==0:
+            r1=1.0
+        if r2==0:
+            r2=1.0
+        scale=size/2.0/(r1+r2)
 
-        if i == j or ii == j:  # complete overlap
-            c1x = c1y = c2x = c2y = size / 2.0
-        elif j == 0:  # no overlap
-            c1x = c1y = r1 * scale
-            c2x = c2y = size - (r2 * scale)
+        if i==j or ii==j:  # complete overlap
+            c1x=c1y=c2x=c2y=size/2.0
+        elif j==0:  # no overlap
+            c1x=c1y=r1*scale
+            c2x=c2y=size-(r2*scale)
         else:
             # originally written by zuopan, rewritten a number of times
             step = .001
             beta = pi
-            if r1 < r2:
-                r2_ = r1
-                r1_ = r2
+            if r1<r2:
+                r2_=r1
+                r1_=r2
             else:
-                r1_ = r1
-                r2_ = r2
-            r2o1 = r2_ / r1_
-            r1_2 = r1_ * r1_
-            r2_2 = r2_ * r2_
+                r1_=r1
+                r2_=r2
+            r2o1=r2_/r1_
+            r1_2=r1_*r1_
+            r2_2=r2_*r2_
 
             while beta > 0:
                 beta -= step
-                alpha = math.asin(math.sin(beta) / r1_ * r2_)
-                Sj = r1_2 * alpha + r2_2 * (pi - beta) - 0.5 * (r1_2 * math.sin(2 * alpha) + r2_2 * math.sin(2 * beta));
+                alpha = math.asin(math.sin(beta)/r1_ * r2_)
+                Sj = r1_2*alpha + r2_2*(pi-beta) - 0.5*(r1_2*math.sin(2*alpha) + r2_2*math.sin(2*beta));
                 if Sj > j:
                     break
 
-            oq = r1_ * math.cos(alpha) - r2_ * math.cos(beta)
-            oq = (oq * scale) / 2.0
+            oq= r1_*math.cos(alpha) - r2_*math.cos(beta)
+            oq=(oq*scale)/2.0
 
-            c1x = (size / 2.0) - oq
-            c2x = (size / 2.) + oq
-            c1y = c2y = size / 2.0
+            c1x=(size/2.0) - oq
+            c2x=(size/2.) + oq
+            c1y=c2y=size/2.0
 
         vsize = 100
         if r1 > r2:
@@ -2866,15 +2863,16 @@ def render_viewgenesetoverlap(gs_ids):
         else:
             r = r2
 
-        tx = (vsize / 2) * (4.0 / 3.0)
-        ty = (vsize / 2 - (r) - 5) * (4.0 / 3.0)
-        r1 = r1 * scale
-        r2 = r2 * scale
+        tx = (vsize/2)*(4.0/3.0)
+        ty = (vsize/2 - (r) -5)*(4.0/3.0)
+        r1=r1*scale
+        r2=r2*scale
 
         c1y += 30
         c2y += 30
 
-        return {'c1x': c1x, 'c1y': c1y, 'r1': r1, 'c2x': c2x, 'c2y': c2y, 'r2': r2, 'tx': tx, 'ty': ty}
+        return {'c1x':c1x,'c1y':c1y,'r1':r1, 'c2x':c2x,'c2y':c2y,'r2':r2, 'tx': tx, 'ty': ty}
+
 
     ## TODO: fix emphasis genes
     # emphgenes = geneweaverdb.get_gene_and_species_info_by_user(user_id)
@@ -2912,9 +2910,9 @@ def render_viewgenesetoverlap(gs_ids):
             geneweaverdb.get_geneset_values_simple(genesets[1].geneset_id)
         ))
         venn = venn_circles(
-            gslen1,
-            gslen2,
-            len(intersects),
+            gslen1, 
+            gslen2, 
+            len(intersects), 
             200
         )
         venn_text = {'tx': venn['tx'], 'ty': venn['ty']}
@@ -2930,7 +2928,7 @@ def render_viewgenesetoverlap(gs_ids):
         venn = None
         venn_text = None
 
-    # emphgenes = geneweaverdb.get_gene_and_species_info_by_user(user_id)
+    #emphgenes = geneweaverdb.get_gene_and_species_info_by_user(user_id)
 
     return render_template('viewgenesetoverlap.html',
                            gs_map=gs_map,
@@ -2991,7 +2989,6 @@ def createVennDiagram(i, ii, j, size=100):
     data['circledata'] = {'c1x': c1x, 'c1y': c1y, 'r1': r1, 'c2x': c2x, 'c2y': c2y, 'r2': r2}
 
     return json.dumps(data)
-
 
 @app.route('/mygenesets')
 @login_required()
@@ -3070,7 +3067,7 @@ def render_group_tasks(group_id):
                       "# GeneSets"]
 
         groups_member = geneweaverdb.get_all_member_groups(user_id)
-        groups_owner = geneweaverdb.get_all_owned_groups(user_id)
+        groups_owner  = geneweaverdb.get_all_owned_groups(user_id)
 
         if not group_id:
             if len(groups_owner) > 0:
@@ -3319,7 +3316,7 @@ def get_pubmed_data():
             if not pub:
                 return json.dumps({})
 
-            pubmedValues.extend((pub['pub_title'], pub['pub_authors'],
+            pubmedValues.extend((pub['pub_title'], pub['pub_authors'], 
                                  pub['pub_journal'],
                                  pub['pub_volume'], pub['pub_pages'],
                                  pub['pub_year'], pub['pub_month'], pub['pub_abstract']))
@@ -3344,7 +3341,7 @@ def render_export_batch(gs_id):
     """
     This will use functions developed as part of the batch-download script to populate a batch file associated with
     a geneset
-    :param gs_id:
+    :param gs_id: 
     :return: an extended batch string
     """
     title = 'gene_export_geneset_' + str(gs_id) + '_' + str(datetime.date.today()) + '.gw'
@@ -3578,7 +3575,7 @@ def render_searchFromHome():
 
     if (search_values['STATUS'] == 'NO MATCHES'):
         return render_template('search.html', paginationValues=None,
-                               noResults=True)
+                                     noResults=True)
 
     ## Used to dynamically generate species tags
     species = geneweaverdb.get_all_species()
@@ -3653,7 +3650,6 @@ def render_search_json():
 def render_search_suggestions():
     return render_template('searchsuggestionterms.json')
 
-
 @app.route('/projectGenesets.json', methods=['GET'])
 def render_project_genesets():
     uid = session.get('user_id')
@@ -3669,10 +3665,9 @@ def render_project_genesets():
     species = splist
 
     return render_template('singleProject.html',
-                           genesets=genesets,
-                           proj={'project_id': pid},
-                           species=species)
-
+                                 genesets=genesets,
+                                 proj={'project_id': pid},
+                                 species=species)
 
 @app.route('/get_project_groups_modal', methods=['GET'])
 def get_project_groups_modal():
@@ -3686,7 +3681,6 @@ def get_project_groups_modal():
         'modal/viewProjectGroups.html',
         proj={'project_id': pid}
     )
-
 
 @app.route('/get_add_project_group_modal', methods=['GET'])
 def get_add_project_group_modal():
@@ -3943,7 +3937,6 @@ def get_db_grouptasks_data():
     results = geneweaverdb.get_server_side_grouptasks(request.args)
     return json.dumps(results)
 
-
 @app.route('/assignmentStatusAsString/<int:status>')
 def get_assignment_status_string(status):
     status_text = {'status': curation_assignments.CurationAssignment.status_to_string(status)}
@@ -3973,7 +3966,6 @@ def render_share_projects():
     active_tools = geneweaverdb.get_active_tools()
     return render_template('share_projects.html', active_tools=active_tools)
 
-
 @app.route('/mygroupselect')
 @login_required(allow_guests=True)
 def my_groups_select():
@@ -3985,7 +3977,6 @@ def my_groups_select():
     my_groups = geneweaverdb.get_all_owned_groups(user_id) + geneweaverdb.get_all_member_groups(user_id)
     return render_template('htmlfragments/groupSelect.html', groups=my_groups)
 
-
 @app.route('/publicgroupsmultiselect')
 @login_required(allow_guests=True)
 def public_groups_multiselect():
@@ -3996,7 +3987,6 @@ def public_groups_multiselect():
     public_groups = geneweaverdb.get_other_visible_groups(flask.g.user.user_id)
     return render_template('htmlfragments/groupsMultiselect.html', groups=public_groups)
 
-
 @app.route('/projectsmultiselect')
 @login_required(allow_guests=True)
 def get_projects_multiselect():
@@ -4005,7 +3995,6 @@ def get_projects_multiselect():
     :return: (html): htmlfragments/projectsMultiselect.html
     """
     return render_template('htmlfragments/projectsMultiselect.html')
-
 
 @app.route('/addGenesetsToProjects')
 @create_guest
@@ -4022,7 +4011,7 @@ def add_genesets_projects():
         JSON Dict: {'error': 'None'} for successs, {'error': 'Error Message'} for error
 
     """
-
+    
     user_id = session['user_id']
     gs_ids = request.args.get('gs_id', type=str, default='').split(',')
     try:
@@ -4092,6 +4081,7 @@ def split_lines_and_tabs(to_split=''):
 @app.route('/addGenesetGene', methods=['GET', 'POST'])
 @login_required(json=True)
 def add_geneset_gene():
+
     # Data from GET / POST
     input_data = request.args if request.args else request.form
 
@@ -4142,15 +4132,13 @@ def add_geneset_gene():
             existing = sorted(set([gene[0] for gene in existing]))
 
             if overwrite:
-                warnings += [{'warning': 'The value for \'{}\', has been overwritten in this geneset'.format(gene)} for
-                             gene in existing]
+                warnings += [{'warning': 'The value for \'{}\', has been overwritten in this geneset'.format(gene)} for gene in existing]
 
             else:
                 for gene in existing:
                     del gene_dict[gene]
 
-                warnings += [{'warning': 'The Source ID \'{}\', already exists for this geneset'.format(gene)} for gene
-                             in existing]
+                warnings += [{'warning': 'The Source ID \'{}\', already exists for this geneset'.format(gene)} for gene in existing]
 
             row_list = [(gs_id, gene_dict[gene]['ode_gene_id'], gene_dict[gene]['value'], gene_dict[gene]['id'])
                         for gene in gene_dict]
@@ -4285,17 +4273,17 @@ def update_alternate_gene_symbol():
     ## Retrieves the geneset but using the new alternate symbol ID
     gs = geneweaverdb.get_geneset(gs_id, user_id)
     gsvs = geneweaverdb.get_geneset_values(
-        gs.geneset_id,
-        session['extsrc'],
-        session['length'],
+        gs.geneset_id, 
+        session['extsrc'], 
+        session['length'], 
         session['start'],
-        session['search'],
+        session['search'], 
         session['sort'],
         session['dir']
     )
     geneset_values = []
 
-    # for gsv in gs.geneset_values:
+    #for gsv in gs.geneset_values:
     for gsv in gsvs:
         geneset_values.append({'ode_gene_id': gsv.ode_gene_id,
                                'ode_ref_id': gsv.ode_ref,
@@ -4343,7 +4331,7 @@ def render_data():
     ontology_info = geneweaverdb.get_all_ontology_resources()
     gene_info = geneweaverdb.get_all_gene_resources()
     return render_template('data.html', sp=species_info, pl=platform_info, ont=ontology_info,
-                           gene=gene_info)
+                                 gene=gene_info)
 
 
 @app.route('/funding')
@@ -4406,7 +4394,6 @@ def reset_password():
 def render_success():
     return render_template('password_reset.html')
 
-
 @app.route('/change_password', methods=['POST'])
 @login_required(json=True)
 def change_password():
@@ -4416,7 +4403,6 @@ def change_password():
     else:
         geneweaverdb.change_password(user.user_id, request.form.get('new_pass'))
         return "Success"
-
 
 @app.route('/generate_api_key', methods=['POST'])
 def generate_api_key():
@@ -4454,7 +4440,7 @@ def json_register_successful():
     ## No robots
     if not captcha:
         return render_template('register.html',
-                               error="There was a problem with your captcha input. Please try again.")
+                                     error="There was a problem with your captcha input. Please try again.")
 
     else:
         ## The only data required by reCAPTCHA is secret and response. An
@@ -4466,8 +4452,8 @@ def json_register_successful():
     ## 200 = OK
     if resp.status != 200:
         return render_template('register.html',
-                               error=("There was a problem with the reCAPTCHA servers. "
-                                      "Please try again."))
+                                     error=("There was a problem with the reCAPTCHA servers. "
+                                            "Please try again."))
 
     rdata = json.loads(resp.data)
 
@@ -4475,7 +4461,7 @@ def json_register_successful():
     ## isn't checked currently.
     if not rdata['success']:
         return render_template('register.html',
-                               error="Incorrect captcha. Please try again.")
+                                     error="Incorrect captcha. Please try again.")
     user = _form_register()
 
     if user is None:
@@ -4585,8 +4571,7 @@ def message_group_json():
             response = jsonify(success=True, message="Message sent.")
 
         except KeyError:
-            response = jsonify(success=False,
-                               message="Can't send message. You must provide both a subject and a message.")
+            response = jsonify(success=False, message="Can't send message. You must provide both a subject and a message.")
             response.status_code = 400
 
     else:
@@ -4609,8 +4594,7 @@ def message_all_json():
             response = jsonify(success=True)
 
         except KeyError:
-            response = jsonify(success=False,
-                               message="Can't send message. You must provide both a subject and a message.")
+            response = jsonify(success=False, message="Can't send message. You must provide both a subject and a message.")
             response.status_code = 400
 
     else:
@@ -4623,6 +4607,7 @@ def message_all_json():
 @app.route('/report_bug.json', methods=['POST'])
 @login_required(allow_guests=True)
 def report_bug_to_jira():
+
     results = report_bug.to_jira(
         description=request.values['description'],
         fullname=request.values['fullname'],
@@ -4793,6 +4778,14 @@ class ToolGenesetViewerProjects(restful.Resource):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return genesetviewerblueprint.run_tool_api(apikey, homology, supressDisconnected, minDegree, genesets)
 
+class ToolOntologysetViewer(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDegree, genesets):
+        return ontologysetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
+
+class ToolOntologysetViewerProjects(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDigree, projects):
+        genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
+        return genesetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
 
 class ToolJaccardSimilarity(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
@@ -4860,7 +4853,6 @@ class ToolBooleanAlgebraProjects(restful.Resource):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return booleanalgebrablueprint.run_tool_api(apikey, relation, genesets)
 
-
 class ToolUpSet(restful.Resource):
     def get(self, apikey, homology, genesets, zeros):
         return upsetblueprint.run_tool_api(apikey, homology, genesets, zeros)
@@ -4915,7 +4907,7 @@ api.add_resource(GetGeneDatabaseById, '/api/get/genedatabase/byid/<apikey>/<gene
 api.add_resource(AddProjectByUser, '/api/add/project/byuser/<apikey>/<project_name>/')
 api.add_resource(AddGenesetToProject, '/api/add/geneset/toproject/<apikey>/<projectid>/<genesetid>/')
 api.add_resource(DeleteGenesetFromProject, '/api/delete/geneset/fromproject/<apikey>/<projectid>/<genesetid>/')
-api.add_resource(AddGeneSetByUser, '/api/add/geneset/byuser/<apikey>/')
+api.add_resource(AddGeneSetByUser,'/api/add/geneset/byuser/<apikey>/')
 
 # Tool Functions
 api.add_resource(ToolGetFile, '/api/tool/get/file/<apikey>/<task_id>/<file_type>/')
@@ -4927,6 +4919,11 @@ api.add_resource(ToolGenesetViewer,
                  '/api/tool/genesetviewer/<apikey>/<homology>/<supressDisconnected>/<minDegree>/<genesets>/')
 api.add_resource(ToolGenesetViewerProjects,
                  '/api/tool/genesetviewer/byprojects/<apikey>/<homology>/<supressDisconnected>/<minDegree>/<projects>/')
+
+api.add_resource(ToolOntologysetViewer,
+                 '/api/tool/ontologysetviewer/<apikey>/<supressDisconnected>/<minDegree>/<genesets>/')
+api.add_resource(ToolOntologysetViewerProjects,
+                 '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
 
 api.add_resource(ToolJaccardClustering, '/api/tool/jaccardclustering/<apikey>/<homology>/<method>/<genesets>/')
 api.add_resource(ToolJaccardClusteringProjects,
@@ -4975,6 +4972,7 @@ if __name__ == '__main__':
 
     # config.loadConfig()
     # print config.CONFIG.sections()
+
 
     ## Register error handlers, should be turned off during debugging since
     ## stack traces are printed then
