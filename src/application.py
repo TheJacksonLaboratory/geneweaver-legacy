@@ -44,6 +44,7 @@ from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
 from tools import ontologysetviewerblueprint
+
 import adminviews
 import annotator
 import config
