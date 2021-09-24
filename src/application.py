@@ -4791,17 +4791,14 @@ class ToolJaccardSimilarity(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
         return jaccardsimilarityblueprint.run_tool_api(apikey, homology, pairwiseDeletion, genesets)
 
-
 class ToolJaccardSimilarityProjects(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, projects):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return jaccardsimilarityblueprint.run_tool_api(apikey, homology, pairwiseDeletion, genesets)
 
-
 class ToolTricliqueViewer(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
         return triclique_viewer_blueprint.run_tool_api(apikey, homology, pairwiseDeletion, genesets)
-
 
 class ToolTricliqueViewerProjects(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, projects):
