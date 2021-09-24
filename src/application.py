@@ -1304,6 +1304,10 @@ def create_geneset_stub():
 
     return response
 
+@app.route('/getOntologyTermsByID')
+def get_ontology_term_by_id():
+    ont_id = request.args['key']
+    flag = request.args['flag']
 
 @app.route('/updateGenesetOntologyDB')
 def update_geneset_ontology_db():
