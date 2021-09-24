@@ -138,9 +138,7 @@
                         </div>
                         <div class="panel-group" id="accordion">
                             {% for tool in active_tools %}
-                                {% if "Ontology" not in tool.classname %}
-                                    {% include 'tool/' + tool.classname + '_options.html' %}
-                                {% endif %}
+                                {% include 'tool/' + tool.classname + '_options.html' %}
                             {% endfor %}
                         </div>
                     </div>
