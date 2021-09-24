@@ -5911,6 +5911,18 @@ def get_ontology_by_id(ont_id):
     ontology = [Ontology(row_dict) for row_dict in dictify_cursor(cursor)]
     return ontology[0]
 
+def get_ontologyData_by_id(ont_id):
+    with PooledCursor() as cursor:
+        cursor.execute(
+            '''
+                SELECT ont.ont_id, ont_db.ontdb_name, ont.ont_name, ont.ont_description
+                FROM extsrc.ontology ont, odestatic.ontologydb ont_db
+                WHERE ont.ont_id = %s AND ont.ontdb_id = ont_db.ontdb_id
+            ''', (ont_id,)
+        )
+    ontology = [Ontology(row_dict) for row_dict in dictify_cursor(cursor)]
+    return ontology[0]
+
 # call by API only
 def get_genesets_by_projects(apikey, projectids):
     user = get_user_id_by_apikey(apikey)
