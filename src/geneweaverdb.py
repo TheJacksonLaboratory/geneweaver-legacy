@@ -3136,6 +3136,13 @@ class Ontology:
         self.ontdb_id = ont_dict['ontdb_id']
         self.ro_ont_id = ont_dict.get('ro_ont_id')
 
+class Ontology_Term:
+    def __init__(self, ont_dict):
+        self.ontology_id = ont_dict['ont_id']
+        self.ontdb_name = ont_dict['ontdb_name']
+        self.name = ont_dict['ont_name']
+        self.description = ont_dict['ont_description']
+
 class Ontologydb:
     def __init__(self, ontdb_dict):
         self.ontologydb_id = ontdb_dict['ontdb_id']
@@ -5920,7 +5927,7 @@ def get_ontologyData_by_id(ont_id):
                 WHERE ont.ont_id = %s AND ont.ontdb_id = ont_db.ontdb_id
             ''', (ont_id,)
         )
-    ontology = [Ontology(row_dict) for row_dict in dictify_cursor(cursor)]
+    ontology = [Ontology_Term(row_dict) for row_dict in dictify_cursor(cursor)]
     return ontology[0]
 
 # call by API only

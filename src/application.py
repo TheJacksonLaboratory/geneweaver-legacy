@@ -1305,14 +1305,21 @@ def create_geneset_stub():
 
     return response
 
-@app.route('/getOntologyTermsByID')
+@app.route('/getOntologyTermsByID.json',methods=['GET'])
+#@login_required(allow_guests=True, json=True)
 def get_ontology_term_by_id():
-    ont_id = request.args['key']
+    ont_id = request.args['ID']
 
     ontology = geneweaverdb.get_ontologyData_by_id(ont_id)
-    #data = {'list': ontology}
+    ont={'ontology_id':ontology.ontology_id,
+          'ontdb_name':ontology.ontdb_name,
+          'name':ontology.name,
+          'description':ontology.description}
 
-    return jsonify(data)
+
+    data = {'list': ont}
+    result = jsonify(data)
+    return result
 
 
 @app.route('/updateGenesetOntologyDB')
@@ -1511,6 +1518,8 @@ def search_ontology_terms():
             'ontdb_name': ontdb_name,
             'ref_id': ref_id
         })
+
+    test=jsonify({'terms': terms})
 
     return jsonify({'terms': terms})
 
