@@ -41,6 +41,7 @@
         #color: green;
         text-decoration: none;
     }
+
     a:visited {
         text-decoration: none;
     }
@@ -49,10 +50,12 @@
         background-color: #F0F0F0;
         color: #F0F0F0;
     }
-    .datatablerowhighlight{
+
+    .datatablerowhighlight {
         background-color: #ECFFB3;
     }
-    .row_selected{
+
+    .row_selected {
         background-color: #000000;
     }
 
@@ -69,25 +72,25 @@
         border-style: none;
     }
 
-	/* Override checkbox style found in plugins.min.css. It's messing up the
-	 * alignment of checkboxes and project names.
-	 */
-	.ui-checkbox {
-		margin: 0;
-	}
+    /* Override checkbox style found in plugins.min.css. It's messing up the
+     * alignment of checkboxes and project names.
+     */
+    .ui-checkbox {
+        margin: 0;
+    }
 
-	.tool-title {
+    .tool-title {
 
-		font-family:'Carrois Gothic', sans-serif;
-		font-size: 18px;
-	}
+        font-family: 'Carrois Gothic', sans-serif;
+        font-size: 18px;
+    }
 
-	.tool-description {
+    .tool-description {
 
-		display: inline-block;
-		font-family:'Carrois Gothic', sans-serif;
-		font-size: 11px;
-	}
+        display: inline-block;
+        font-family: 'Carrois Gothic', sans-serif;
+        font-size: 11px;
+    }
 
 </style>
 
@@ -106,7 +109,8 @@
 
             <div class="panel panel-default panel-heading bg-gray-light">
                 <h3 class="panel-title"><strong>Analyze Gene Sets and Projects</strong>
-                    <span id="clickableFontAwesome" tabindex="0" data-trigger="focus"><i class="fa fa-info-circle"></i></span></h3>
+                    <span id="clickableFontAwesome" tabindex="0" data-trigger="focus"><i class="fa fa-info-circle"></i></span>
+                </h3>
             </div>
 
 
@@ -120,7 +124,7 @@
                                 x
                             </button>
                             <strong>
-                            {{ msg }}
+                                {{ msg }}
                             </strong>
                         </div>
                     {% endfor -%}
@@ -138,152 +142,113 @@
                         </div>
                         <div class="panel-group" id="accordion">
                             {% for tool in active_tools %}
-                                {% if "Ontology" in tool.classname  %}
+                                {% if "Ontology" in tool.classname %}
                                     {% include 'tool/' + tool.classname + '_options.html' %}
                                 {% endif %}
                             {% endfor %}
                         </div>
                     </div>
 
-					<form id="analyzeGenesets" name="analyzeGenesets" method="post" action="#"
-						  class="form-horizontal form-inline" novalidate="novalidate">
-                    <!-- the projects column -->
-                    <div class="col-md-8">
-                        <div class="page-header" style="margin-bottom:0;">
-							<h2>Projects <span id="geneset-count"></span></h2>
-						</div>
+                    <form id="analyzeGenesets" name="analyzeGenesets" method="post" action="#"
+                          class="form-horizontal form-inline" novalidate="novalidate">
+                        <!-- the projects column -->
+                        <div class="col-md-8">
+                            <div class="page-header" style="margin-bottom:0;">
+                                <h2>Ontology <span id="ontologyInformation" tabindex="0"
+                                                   data-trigger="focus">
+                                        <i class="fa fa-info-circle"></i>
+                                            </span></h2>
+                            </div>
 
-                        {% if "user" in g %}
+                            {% if "user" in g %}
 
-                            <div class="panel-body">
-								<div id="geneset-count" class="h5"></div>
-                                    <!-- TODO make the table sortable, show more gene details -->
-                                    <table class="table table-hover" id="allGenesets" cellpadding="0" cellspacing="0">
-                                        <tbody>
+                                <div class="row">
+                                    <div class="col-md-2 col-md-offset-8">
+                                        <button type="button" class="btn btn-block btn-warning" id="add-rdf" disabled>
+                                            <i class="fa fa-plus" aria-hidden="true"></i> Add RO Term
+                                        </button>
+                                    </div>
 
-                                        {% for proj in g.user.projects %}
-                                            <tr>
-                                                {# checkbox #}
-                                                <td width="18">
-                                                    <div class="ui-checkbox proj-checkbox">
-                                                        <label for="proj-{{ proj.project_id }}-allcheck">
-                                                            <input type="checkbox" data-project="{{ proj.project_id }}"
-                                                                   data-project-name="{{ proj.name }}"
-                                                                   name="project_{{ proj.project_id }}"
-                                                                   id="proj-{{ proj.project_id }}-allcheck"/>
-                                                        </label>
-                                                    </div>
-                                                </td>
-                                                {# expand button #}
-                                                <td width="15">
-													<span id="proj-{{ proj.project_id }}" class="toggler" data-prod="{{ proj.project_id }}">
-														<span class="plus"></span>
-                                                        <span class="minus"></span>
-                                                    </span>
-                                                </td>
-                                                {# Project Name #}
-                                                <td>
-													<span data-prod="{{proj.project_id }}" class="toggler" style="cursor:pointer;">
-														<strong>{{ proj.name }}</strong>
-														{% if proj.star == 't' %}
-															<span class="closedstar"></span>
-														{% endif %}
-													</span>
-                                                </td>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-block btn-warning" id="remove-term"
+                                                disabled>
+                                            <i class="fa fa-times" aria-hidden="true"></i> Remove Term(s)
+                                        </button>
+                                    </div>
+                                </div>
 
-                                            </tr>
+                                <br>
 
-                                            <tr class="gsid{{ proj.project_id }}" id="genesets-{{ proj.project_id }}"
-                                                style="display: none;">
-                                                <td colspan="9">
-                                                    <table id="project-body-{{ proj.project_id }}"
-                                                           class="table table-hover">
-                                                    </table>
-                                                </td>
-                                            </tr>
+                                <div style="margin-left: 1em;">
+                                    <br/>
 
-                                        {% endfor %}
+                                    <div>
+                                        Add new term:
+                                        <input id="add-annotation" name="add-annotation"
+                                               type="text"/>
+                                        (start typing to search ontologies)
+                                    </div>
+                                    <table class="table table-hover" id="annotation-list">
+                                        <thead>
+                                        <tr class="header">
+                                            <th></th>
+                                            <th>Ontology Term</th>
+                                            <th>Term ID</th>
+                                            <th>Description</th>
+                                            <th>Ontology Database</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody style="font-size:13px">
                                         </tbody>
                                     </table>
-                            </div>
 
-				{# Only display this section if the user has shared projects #}
-				{% if grp2proj.keys() | length > 0 %}
-                <div class="page-header" style="margin-bottom:0;margin-top:0;">
-					<h2>Shared Projects</h2>
-				</div>
-                            <div class="panel-body">
-								<div id="shared-geneset-count" class="h5"></div>
-                                    <!-- TODO make the table sortable, show more gene details -->
-									{% for grp in grp2proj %}
-										<div style="border-bottom:2px #006400 solid; margin-bottom:10px;">
-											<h4>{{ grp }}</h4>
-										</div>
+                                    <br/>
 
-									{% for proj in grp2proj[grp] %}
-                                    <table class="table table-hover" id="allGenesets" cellpadding="0" cellspacing="0">
-                                        <tbody>
-                                            <tr>
-                                                {# checkbox #}
-                                                <td width="18">
-                                                    <div class="ui-checkbox proj-checkbox">
-                                                        <label for="proj-{{ proj.project_id }}-allcheck">
-                                                            <input type="checkbox" data-project="{{ proj.project_id }}"
-                                                                   data-project-name="{{ proj.name }}"
-                                                                   name="project_{{ proj.project_id }}"
-                                                                   id="proj-{{ proj.project_id }}-allcheck"/>
-                                                        </label>
-                                                    </div>
-                                                </td>
-                                                {# expand button #}
-                                                <td width="15">
-													<span id="proj-{{ proj.project_id }}" class="toggler" data-prod="{{ proj.project_id }}">
-														<span class="plus"></span>
-                                                        <span class="minus"></span>
-                                                    </span>
-                                                </td>
-                                                {# Project Name #}
-                                                <td>
-													<span data-prod="{{proj.project_id }}" class="toggler" style="cursor:pointer;">
-														<strong>{{ proj.name }}</strong>
-														<span style="font-size:13px; color:#888;">
-															<b>(Shared by {{proj.owner}})</b>
-														</span>
-														{% if proj.star == 't' %}
-															<span class="closedstar"></span>
-														{% endif %}
-													</span>
-                                                </td>
+                                    <div class="row">
+                                        <div class="col-xs-3">
+                                            <select name="ontology_db" id="ontology_db"
+                                                    class="form-control"
+                                                    style="margin-bottom: 20px;" required>
+                                                {% for ont in ont_dbs %}
+                                                    <option value="{{ ont.ontologydb_id }}">
+                                                        {{ ont.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div id="genesetOntologyAlert"
+                                             class="alert alert-warning fade in col-xs-3"
+                                             style="width:400px; text-align:center;">
+                                            <button type="button" class="close"
+                                                    data-dismiss="alert" aria-hidden="true">
+                                                x
+                                            </button>
+                                            <strong>
+                                                Annotation changes persist on (de)selection.
+                                            </strong>
+                                        </div>
+                                    </div>
 
-                                            </tr>
+                                    <div style="border: 1px solid #afafaf;">
+                                        <div id="tree" name="selNodes" style="overflow:auto; max-height:600px"></div>
+                                    </div>
+                                </div>
 
-                                            <tr class="gsid{{ proj.project_id }}" id="genesets-{{ proj.project_id }}"
-                                                style="display: none;">
-                                                <td colspan="9">
-                                                    <table id="project-body-{{ proj.project_id }}"
-                                                           class="table table-hover">
-                                                    </table>
-                                                </td>
-                                            </tr>
 
-                                        </tbody>
-                                    </table>
-									{% endfor %}
-									{% endfor %}
-                            </div>
-						{% endif %}
-                        {% else %}
 
-                            <div class="alert alert-warning fade in">
-                                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-                                You do not have any projects.
-                            </div>
+                            {% else %}
 
-                        {% endif %}
+                                <div class="alert alert-warning fade in">
+                                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x
+                                    </button>
+                                    You do not have any projects.
+                                </div>
 
-                    </div>
-                </div>
-            </form>
+                            {% endif %}
+
+                        </div>
+
+                    </form>
             </form>
 
         </div>
@@ -293,54 +258,263 @@
 {% endif %}
 
 {% include 'modal/addGenesetsToProjects.html' %}
-
+{% include 'modal/addRDFToGeneset.html' %}
+{% include 'modal/showGenericMessage.html' %}
 
 {% include 'footer.html' %}
 
 <script type="text/javascript" src="../static/js/geneweaver/tags.js"></script>
 <script type="text/javascript" src="../static/js/geneweaver/selected.js"></script>
-<script type="text/javascript">
+<script type="text/javascript" src="/static/js/geneweaver/addRDFModal.js"></script>
+<script type="text/javascript" src="/static/js/geneweaver/showErrorModal.js"></script>
+<script>
 
-    $(function () {
-        $("[data-toggle='tooltip']").tooltip();
-    });
+    var checkedOnts = [];
 
-    // Updates selected geneset and project counts and displays them to the
-    // user. The counts are stored as static variable within a closure.
-    // Project count displays are currently disabled.
-    //
-    // :type gscount: int
-    // :arg gscount: the number of genesets to add to the count
-    //
-    // :type pjcount: int
-    // :arg pjcount: the numebr of projects to add to the count
-    //
-    var updateCount = (function() {
+    var disableActionButtons = function (newState) {
+        $('#add-rdf').prop('disabled', newState);
+        $('#remove-term').prop('disabled', newState);
+    };
 
-        var gsCount = 0;
-        var pjCount = 0;
+    var updateCheckedOnts = function (ont_id, ro_ont_id) {
+        var row_id = ont_id + '-' + ro_ont_id,
+            checkbox_el = $("#addRDF" + row_id),
+            idx = checkedOnts.indexOf(row_id);
+        if (checkbox_el.attr('checked') && idx === -1) {
+            checkedOnts.push(row_id);
+        } else {
+            if (idx !== -1) {
+                checkedOnts.splice(idx, 1)
+            }
+        }
+        if (checkedOnts.length < 1) {
+            disableActionButtons(true);
+        } else {
+            disableActionButtons(false);
+        }
+    };
 
-        return function(gscount, pjcount) {
+    var removeOntology = function (row_id) {
+        const [ont_id, ro_ont_id] = row_id.split('-');
+        $.ajax({
+            url: '/updateGenesetOntologyDB',
+            type: 'GET',
+            data: {
+                key: ont_id,
+                flag: false,
+                universe: 'Manual Association',
+                gs_id: gsID,
+                ro_ont_id: ro_ont_id
+            }
+        });
 
-            gsCount += gscount;
-            pjCount += pjcount;
+    };
 
-            $('#geneset-count').html(function() {
-                if (gsCount === 0)
-                    return '';
-
-                if (gsCount === 1)
-                    return '(' + gsCount + ' geneset is selected)';
-
-                return '(' + gsCount + ' genesets are selected)';
+    var removeSelectedOntologies = function () {
+        return function () {
+            checkedOnts.forEach(function (i) {
+                removeOntology(i);
             });
+            setTimeout(function () {
+                $('#annotation-list').DataTable().ajax.reload();
+                $("#tree").dynatree("getTree").reload();
+                checkedOnts = [];
+            }, 500);
         };
+    };
+
+    var openRemoveModal = function () {
+        return function () {
+            if (checkedOnts.length > 0) {
+                var genericModal = $('#showGenericModal'),
+                    modalFooter = genericModal.find('.modal-footer');
+                var deleteButton = `<button type="submit" class="btn btn-md btn-warning" data-dismiss="modal" id="submitRemoveTerms">
+                       Remove
+                    </button>`;
+                genericModal.find('.modal-title').html('Remove Ontology Terms');
+                genericModal.find('#genericMessage').html('Are you sure you want to remove these terms?');
+                if (modalFooter.find('#submitRemoveTerms').length < 1) {
+                    modalFooter.append(deleteButton);
+                    modalFooter.find('#submitRemoveTerms').on('click', removeSelectedOntologies());
+                }
+                genericModal.modal('show');
+            } else {
+                showErrorModal('Please select at least one Ontology to delete');
+            }
+        }
+    };
+
+    /*
+     * Retrieves the currently selected annotation reference type.
+     *
+     * returns
+     *      the name of the currently selected reference type
+     */
+    var getSelectedRefType = function () {
+
+        var ref = $('#ontology_db option:selected').val();
+
+        return $.trim(ref);
+    };
+
+    /**
+     * Changes the "Run Annotator" button between its disabled, running and
+     * enabled, ready states. The style change is performed so the user knows
+     * the annotator is running (it might take awhile depending on the amount
+     * of text being annotated).
+     */
+    var changeAnnotatorButton = function () {
+
+        if ($('#run-annotator').prop('disabled')) {
+
+            $('#annotator-icon').attr('class', 'fa fa-play');
+            $('#annotator-text').text('Run Annotator');
+
+        } else {
+
+            $('#annotator-icon').attr('class', 'fa fa-cog fa-spin');
+            $('#annotator-text').text('Running...');
+        }
+
+        toggleElementDisabled('#run-annotator');
+    };
+
+    $(document).ready(function () {
+        var selectOnt=[]
+        console.log("document ready check")
+        // DataTable initialization for the list of gene set annotations
+        var table = $('#annotation-list').DataTable({
+            'paging': false,
+            'searching': false,
+            'info': false,
+            'sAjaxDataProp': 'annotations',
+            'columns': [
+                {data: null, defaultContent: ''},
+                {data: 'name'},
+                {data: 'reference_id'},
+                {data: 'description'},
+                {data: 'ref_type'},
+                {data: 'ro_id', visible: false}
+            ],
+            'aoColumnDefs': [{
+                'aTargets': [0],
+                'fnCreatedCell': function(nTd, _, oData, _, _) {
+                    var roCheck = $('<div class="ui-checkbox">' +
+                            '<input class="addGene" name="gsoptions[]" ' +
+                            'id="addRDF' +  oData['ont_id'] + '-' + oData['ro_id'] + '" ' +
+                            'value="' +  oData['ont_id'] + '" ' +
+                            'type="checkbox"' +
+                            'onchange="updateCheckedOnts(' + oData['ont_id']+ ', ' + oData['ro_id'] + ');' +
+                            '"></div>');
+                    $(nTd).append(roCheck);
+                }
+            }]
+         });
+
+        {##}
+        {##}
+        {#$('#add-rdf').on('click', openRDFModal('#addRDFToGeneset', gsID, checkedOnts, ros));#}
+        {#$('#remove-term').on('click', openRemoveModal());#}
 
 
-    })();
+        // Change the way the autocomplete menu is rendered
+        $.widget('ui.autocomplete', $.ui.autocomplete, {
+            _renderItem: function (ul, item) {
+                var termlabel = item.ref_id + ': ' + item.name;
+                var ontology = item.ontdb_name;
+
+                return $('<li style="list-style:none;font-size:11px;"></li>')
+                    //.data( "item.autocomplete", item )
+                    //.append( "<a>" + termlabel + "&nbsp;<span style=\"color:#0000ff;float:right;\">(" + ontology + ")</span></a>" )
+                    .append("<a>")
+                    .append(termlabel)
+                    .append("&nbsp;<span style=\"color:#0000ff;float:right;\">(" + ontology + ")</span></a>")
+                    //.append( "<a>" + termlabel + "&nbsp;<span style=\"color:#0000ff;float:right;\">(" + ontology + ")</span></a>" )
+                    .appendTo(ul);
+
+                //return $('<li>')
+                //    .append(term)
+                //    .append(ontology)
+                //    .appendTo(ul);
+            }
+        });
+
+        $('#add-annotation').on('keyup', function () {
+
+            console.log("adding the annotation")
+            var value = $(this).val();
+
+            if (value.length < 3)
+                return;
+
+            // Callback hell :(
+            $.ajax({
+                url: '/ontologyTermSearch.json',
+                data: {search: value},
+                dataType: 'json',
+                success: function (result) {
+                    var terms = result.terms;
+
+                    $('#add-annotation').autocomplete({
+                        source: terms,
+                        minLength: 3,
+                        // Custom function for handling selection events
+                        select: function (event, ui) {
+                            event.preventDefault();
+                            console.log("the ontology id you selected is " + ui.item.ont_id)
+
+                            $.ajax({
+                                url: '/getOntologyTermsByID.json',
+                                data: {ID: ui.item.ont_id},
+                                dataType: 'json',
+                                success: function (r) {
+                                    var result = r.list
+                                    selectOnt.push(result["ontology_id"])
+                                    console.log(result)
+                                    console.log("the selectOnt array now is: ")
+                                    {#$('#annotation-list').DataTable()#}
+                                    {#    .ajax#}
+                                    {#    .reload();#}
+
+                                    table.row.add({
+                                        "name": result['name'],
+                                        "reference_id" : result['ontology_id'],
+                                        "ref_type" : result['ontdb_name'],
+                                        "description" : result['description'],
+                                        "ro_id" : result['ontology_id']
+
+                                    }).draw(false);
+
+                                    {#var table = document.getElementById("annotation-list")#}
+                                    {#var newRow = table.insertRow(-1)#}
+                                    {#var c1 = newRow.insertCell(0)#}
+                                    {#var c2 = newRow.insertCell(1)#}
+                                    {#var c3 = newRow.insertCell(2)#}
+                                    {#var c4 = newRow.insertCell(3)#}
+                                    {#var c5 = newRow.insertCell(4)#}
+                                    {##}
+                                    {#c1.innerHTML = '<div class="ui-checkbox">' +#}
+                                    {#    '<input class="addGene" name="gsoptions[]" ' +#}
+                                    {#    'id="addRDF' + "oData['ont_id']" + '-' + "oData['ro_id']" + '" ' +#}
+                                    {#    'value="' + "oData['ont_id']" + '" ' +#}
+                                    {#    'type="checkbox"' +#}
+                                    {#    '"></div>'#}
+                                    {##}
+                                    {#c2.innerHTML = result["name"]#}
+                                    {#c3.innerHTML = result["ontology_id"]#}
+                                    {#c4.innerHTML = result["description"]#}
+                                    {#c5.innerHTML = result["ontdb_name"]#}
 
 
-
+                                    $("#tree").dynatree("getTree").reload();
+                                }
+                            })
+                        },
+                    });
+                }
+            });
+        });
+    });
 
     $(document).ready(function () {
 
@@ -367,8 +541,9 @@
         {% endif %}
 
 
+
         // Changes caret position when tool options are expanded.
-        $('.tool-link').on('click', function(event) {
+        $('.tool-link').on('click', function (event) {
 
             var caret = $(this).children('.fa-caret-left');
             var allCarets = $('.fa-caret-left');
@@ -383,144 +558,253 @@
             }
         });
 
-        // TODO: this should be refactored
-        // All selector checkbox
-        $('.proj-checkbox').on('click', function(event) {
-
-            var check = $(this).find('input[type=checkbox]');
-            var allcheck = '#' + check.attr('id');
-            var pid = allcheck.split('-')[1];
-            var pbid = '#project-body-' + pid;
-            var chkclass = '.proj-' + pid + '-check';
-
-            // Check to see if we haven't made an AJAX call for this project
-            if ($(pbid).children().length === 0) {
-
-                var data = {'project': pid};
-                $.get(url, data).done(function (data) {
-                    $(pbid).append(data);
-                    selected.add(check);
-                    $(chkclass).each(function (index) {
-                        $(this).attr('checked', true);
-                        updateCount(1, 0);
-                        selected.add($(this));
-                    });
-                });
-
-            } else {
-
-                if ($(allcheck).attr('checked')) {
-                    selected.remove(check);
-
-                    $(chkclass).each(function (index) {
-                        if ($(this).attr('checked')) {
-                            updateCount(-1, 0);
-                            selected.remove($(this));
-                        }
-                        $(this).attr('checked', false);
-                    });
-
-                } else {
-                    selected.add(check);
-                    $(chkclass).each(function (index) {
-                        if (!$(this).attr('checked')) {
-                            updateCount(1, 0);
-                            selected.add($(this));
-                        }
-                        $(this).attr('checked', true);
-                    });
-                }
-            }
-        });
-
-        // Updates individual geneset counts. Since the geneset list is
-        // injected into the dom, we register the click handler on a static
-        // element that exists prior to injection, and then filter the child
-        // elements that call the event.
-        //
-        $('.table').on('click', 'input[type=checkbox]', function(event) {
-
-            var projCheck = $(this).attr('class');
-            var checkIndex = projCheck.search('-check');
-            projCheck = projCheck.slice(0, checkIndex);
-            projCheck += '-allcheck';
-
-            event.stopPropagation();
-
-            // TODO: Looks like our fancy checkboxes don't support the
-            // indetereminate visual state. :(
-            $('#' + projCheck).prop('indeterminate', true);
-
-            // Backwards because by the time we check to see if the box is
-            // (un)checked, it's already the opposite. Web dev is pants on
-            // head retarded sometimes.
-            if ($(this).attr('checked')) {
-                updateCount(1, 0);
-                selected.add($(this))
-            } else {
-                updateCount(-1, 0);
-                selected.remove($(this));
-            }
-        });
-
-        // Project genesets are only loaded when necessary (i.e. when a user
-        // clicks on the project link.
-        $('.toggler').click(function (e) {
-
-            e.preventDefault();
-            //the data stored in the data-prod
-            var pid = ($(this).attr("data-prod"));
-            var pbid = '#project-body-' + pid;
-            var data = {'project': pid};
-
-            // Check to see if we've already made an AJAX call for this project
-            if ($(pbid).children().length !== 0) {
-                $(".gsid" + pid).toggle();
-                //select the parent and find the span so you can
-                //toggle the "plus" class
-                $('#proj-' + pid).parent().find("span").toggleClass("plus");
-                //toggle the minus class
-                $('#proj-' + pid).toggleClass("plus");
-                $('#proj-' + pid).toggleClass("minus");
-                return;
-            }
-
-            // Flask should return the rendered HTML, inject it into the DOM
-            $.get(url, data).done(function (data) {
-
-                var tbody = pbid + ' tbody';
-                $(pbid).append(data);
-                //toggle the link clicked on
-                $(".gsid" + pid).toggle();
-                //select the parent and find the span so you can
-                //toggle the "plus" class
-                $('#proj-'+pid).toggleClass("minus");
-
-                var allclass = '#proj-' + pid + '-allcheck';
-                var chkclass = '.proj-' + pid + '-check';
-
-                // Now start checking to see if we need to mark the checkboxes
-                // under this particular project
-                if ($(allclass).attr('checked')) {
-
-                    $(chkclass).each(function (index) {
-                        $(this).attr('checked', true);
-                    });
-                }
-
-                // Generate these tags once we actually have loaded data
-                // TODO: this could be improved by caching
-                makeSpeciesTags(species);
-            });
-        });
-
 
         $('#clickableFontAwesome').popover({
             title: 'Select Projects or Gene Sets', content: 'Select entire projects on the right or expand ' +
-            'to select individual gene sets within those projects. Next, select a tool from the left, including ' +
-            'the appropriate options.'
+                'to select individual gene sets within those projects. Next, select a tool from the left, including ' +
+                'the appropriate options.'
+        });
+
+
+    });
+
+</script>
+
+<script>
+
+    /*
+     * Toggles an element's enabled/disabled property.
+     *
+     * arguments
+     *      element: HTML element being enabled/disabled
+     */
+    var toggleElementDisabled = function (element) {
+
+        $(element).prop('disabled', function () {
+            return !$(this).prop('disabled')
+        });
+    };
+
+    /*
+     * Retrieves the currently selected annotation reference type.
+     *
+     * returns
+     *      the name of the currently selected reference type
+     */
+    var getSelectedRefType = function () {
+
+        var ref = $('#ontology_db option:selected').val();
+
+        return $.trim(ref);
+    };
+
+    /*
+     * Retrieves and concatenates GS name/description text and publication
+     * title/abstract text so it can be sent to the annotator. Description and
+     * publication text is returned separately because the annotator tool has
+     * specific reference types for each.
+     *
+     * returns
+     *      an object containing text from the GS description and publication
+     */
+    var getGenesetText = function () {
+
+        var gsName = $.trim($('#genesetName').text()),
+            gsDesc = $.trim($('#genesetDescription').text()),
+            pubTitle = $.trim($('#pub_title').text()),
+            pubAbs = $.trim($('#pub_abstract').text());
+
+        return {
+            description: gsName + ' ' + gsDesc,
+            publication: pubTitle + ' ' + pubAbs
+        };
+    };
+
+    /**
+     * Changes the "Run Annotator" button between its disabled, running and
+     * enabled, ready states. The style change is performed so the user knows
+     * the annotator is running (it might take awhile depending on the amount
+     * of text being annotated).
+     */
+    var changeAnnotatorButton = function () {
+
+        if ($('#run-annotator').prop('disabled')) {
+
+            $('#annotator-icon').attr('class', 'fa fa-play');
+            $('#annotator-text').text('Run Annotator');
+
+        } else {
+
+            $('#annotator-icon').attr('class', 'fa fa-cog fa-spin');
+            $('#annotator-text').text('Running...');
+        }
+
+        toggleElementDisabled('#run-annotator');
+    };
+
+    $(function () {
+        //Initialize dynatree data and functions
+        $("#tree").dynatree({
+            checkbox: true,
+            selectMode: 2,
+            // Prevents the page from focusing and auto scrolling to the tree
+            autoFocus: false,
+            initAjax: {
+                url: "/initOntTree",
+                data: {
+                    gs_id: "86623",
+                    universe: getSelectedRefType()
+                }
+            },
+
+            //Performs lazy ajax call when new nodes need to be viewed
+            onLazyRead: function (node) {
+                node.appendAjax({
+                    url: "/expandOntNode",
+                    data: {
+                        key: node.data.key,
+                        is_db: node.data.db,
+                        universe: getSelectedRefType()
+                    }
+                })
+            },
+
+            // Does nothing but needs to be present for nodes to be unselected.
+            onClick: function (node, event) {
+            },
+
+            /**
+             * Called during node creation. If a node has the "Manual
+             * Rejection" reference type we alter the style. Every node gets
+             * its reference type added to the span title so it can be viewed
+             * when a user hovers over the node.
+             *
+             * arguments
+             *     node:       the node object being initialized
+             *     nodeSpan:   jQuery object representing the node's span
+             *                 element
+             */
+            onCreate: function (node, nodeSpan) {
+
+                if (node.data.ref === undefined)
+                    return;
+
+                if (node.data.ref === 'Manual Rejection') {
+
+                    $(nodeSpan)
+                        .children('.dynatree-title')
+                        .css('text-decoration', 'line-through')
+                        .css('background-color', 'none')
+                        .css('font-weight', 'normal');
+                }
+
+                $(nodeSpan).attr('title', node.data.ref);
+            }
+
+            // Updates the database based on the ontology terms a user selects.
+            {#onSelect: termSelectionHandler#}
+        });
+
+        /**
+         * Clicking this button reruns the annotator tool on the geneset's
+         * description and publication text.
+         */
+        $('#run-annotator').on('click', function (event) {
+            event.preventDefault();
+
+            var postData = getGenesetText();
+            postData.gs_id = gsID;
+
+            // Style changes so the user knows something is happening
+            changeAnnotatorButton();
+
+            $.post("{{ url_for('rerun_annotator') }}", postData, function (data) {
+                changeAnnotatorButton();
+                $('#tree').dynatree('getTree').reload();
+            }, "json").fail(function (data) {
+                // failure, log error message returned
+                console.error(data.responseJSON.error);
+                changeAnnotatorButton();
+            });
+
+        });
+
+        /**
+         * Should eventually redirect the user to the edit genes page.
+         */
+        $('#edit-genes').on('click', function (event) {
+            event.preventDefault();
         });
     });
 
+    //This refreshes all tree data based on changing gso_ref_type (universe) seen in the gso_ref_type select tag
+    $($("#ontology_db").change(function () {
+        $("#tree").dynatree("option", "initAjax", {
+            url: "/initOntTree",
+            data: {
+                gs_id: gsID,
+                universe: getSelectedRefType()
+            }
+        });
+        $("#tree").dynatree("getTree").reload();
+    }));
+
+    $(window).on("load", function (e) {
+        $(".loader").fadeOut("slow");
+    });
+
+    $(function () {
+        $("[data-toggle='tooltip']").tooltip();
+    });
+
+
+    function formFocus($e) {
+        $e.style.backgroundColor = "yellow";
+    }
+
+    function noFormFocus($e) {
+        $e.style.backgroundColor = '';
+    }
+
+
+    function createReaderHandler(name) {
+        return function (ev) {
+            data[name] = ev.target.result;
+        };
+    }
+
+    //Popover that gives Geneset Ontology functionality overview for the user
+    //Displayed when ontologies are linked with the geneset
+    $('#ontologyInformation').popover({
+        title: 'GeneSet Annotations',
+        content: 'GeneSet ontology annotations are highlighted below. ' +
+            'The drop down menu above the ontology tree allows for the ' +
+            'selection of GeneSet annotation source, e.g. manual or inferred ' +
+            'from text mining. All selected ontology terms may be viewed ' +
+            'under the All Reference Types category. GeneSet ontology ' +
+            'annotations may be added or removed under any other category. ' +
+            'Contact us to suggest additional ontologies that you would ' +
+            'like to use to annotate your GeneSets.'
+    });
+
+
+    //toggles between the file or paste uploaders and toggle's enable/disable on inputs
+    function toggle_pasting() {
+
+        $("#file_uploader").toggle();
+        $("#paste_uploader").toggle();
+
+        $('#file_text').prop('disabled', function () {
+            return !$(this).prop('disabled')
+        })
+        $('#file_data').prop('disabled', function () {
+            return !$(this).prop('disabled')
+        })
+    }
+
 
 </script>
+
+
+
+
