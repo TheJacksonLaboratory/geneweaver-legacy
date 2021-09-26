@@ -92,6 +92,12 @@
         font-size: 11px;
     }
 
+    .remove_button{
+        padding: 7px 7px;
+        background-color:darkred;
+
+    }
+
 </style>
 
 
@@ -382,6 +388,7 @@
     $(document).ready(function () {
         var selectOnt=[]
         console.log("document ready check")
+        console.log("the datatable version is"+$.fn.DataTable.version)
         // DataTable initialization for the list of gene set annotations
         var table = $('#annotation-list').DataTable({
             'paging': false,
@@ -399,13 +406,15 @@
             'aoColumnDefs': [{
                 'aTargets': [0],
                 'fnCreatedCell': function(nTd, _, oData, _, _) {
-                    var roCheck = $('<div class="ui-checkbox">' +
-                            '<input class="addGene" name="gsoptions[]" ' +
-                            'id="addRDF' +  oData['ont_id'] + '-' + oData['ro_id'] + '" ' +
-                            'value="' +  oData['ont_id'] + '" ' +
-                            'type="checkbox"' +
-                            'onchange="updateCheckedOnts(' + oData['ont_id']+ ', ' + oData['ro_id'] + ');' +
-                            '"></div>');
+                    var roCheck = $('<button class="remove_button"></button>');
+
+                        {#$('<div class="ui-checkbox">' +#}
+                        {#    '<input class="addGene" name="gsoptions[]" ' +#}
+                        {#    'id="addRDF' +  oData['ont_id'] + '-' + oData['ro_id'] + '" ' +#}
+                        {#    'value="' +  oData['ont_id'] + '" ' +#}
+                        {#    'type="checkbox"' +#}
+                        {#    'onchange="updateCheckedOnts(' + oData['ont_id']+ ', ' + oData['ro_id'] + ');' +#}
+                        {#    '"></div>');#}
                     $(nTd).append(roCheck);
                 }
             }]
@@ -437,6 +446,11 @@
                 //    .append(ontology)
                 //    .appendTo(ul);
             }
+        });
+
+        $('#annotation-list').on('click','.remove_button',function(){
+            console.log("delete button clicked");
+            table.row($(this).parents('tr')).remove().draw();
         });
 
         $('#add-annotation').on('keyup', function () {
