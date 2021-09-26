@@ -159,7 +159,7 @@
                           class="form-horizontal form-inline" novalidate="novalidate">
                         <!-- the projects column -->
                         <div class="col-md-8">
-                            <div class="page-header" style="margin-bottom:0;">
+                            <div class="page-header" id="Ontology_interface_header" style="margin-bottom:0;">
                                 <h2>Ontology <span id="ontologyInformation" tabindex="0"
                                                    data-trigger="focus">
                                         <i class="fa fa-info-circle"></i>
@@ -485,19 +485,24 @@
                                     var result = r.list
                                     selectOnt.push(result["ontology_id"])
                                     console.log(result)
-                                    console.log("the selectOnt array now is: ")
-                                    {#$('#annotation-list').DataTable()#}
-                                    {#    .ajax#}
-                                    {#    .reload();#}
 
-                                    table.row.add({
-                                        "name": result['name'],
-                                        "reference_id" : result['ontology_id'],
-                                        "ref_type" : result['ontdb_name'],
-                                        "description" : result['description'],
-                                        "ro_id" : result['ontology_id']
+                                    var selected_ids=table.column(2).data().toArray();
 
-                                    }).draw(false);
+                                    if ( !selected_ids.includes(result["ontology_id"])) {
+
+                                        table.row.add({
+                                            "name": result['name'],
+                                            "reference_id": result['ontology_id'],
+                                            "ref_type": result['ontdb_name'],
+                                            "description": result['description'],
+                                            "ro_id": result['ontology_id']
+
+                                        }).draw(false);
+                                    }else{
+
+                                        {# TODO pop the warning message #}
+                                        console.log("repeat selection");
+                                    }
 
                                     {#var table = document.getElementById("annotation-list")#}
                                     {#var newRow = table.insertRow(-1)#}
