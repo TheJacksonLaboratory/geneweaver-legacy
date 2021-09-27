@@ -29,7 +29,7 @@ def run_tool():
         flask.flash(('You need to select at least 2 genesets as input for '
                     'this tool.'))
 
-        return flask.redirect('/analyze')
+        return flask.redirect('/analyze_ont')
 
     # gather the params into a dictionary
     # Ontology set viewer does not need homology
@@ -54,7 +54,7 @@ def run_tool():
     else:
         flask.flash('Please log in to run the tool.')
 
-        return flask.redirect('/analyze')
+        return flask.redirect('/analyze_ont')
 
     # Gather emphasis gene ids and put them in paramters
     emphgeneids = []
@@ -183,7 +183,7 @@ def view_result(task_id):
                 'An unkown error occurred. Please contact a GeneWeaver admin.'
             )
 
-            return flask.redirect('/analyze')
+            return flask.redirect('/analyze_ont')
 
     elif async_result.state in states.READY_STATES:
         results = json.loads(async_result.result)
@@ -191,10 +191,10 @@ def view_result(task_id):
         if 'error' in results and results['error']:
             flask.flash(results['error'])
 
-            return flask.redirect('/analyze')
+            return flask.redirect('/analyze_ont')
 
         return flask.render_template(
-            'tool/OntologySetViewer_result.html',
+            'tool/Ontology2GenesViewer_result.html',
             async_result=results,
             tool=tool)
 
