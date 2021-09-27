@@ -164,23 +164,27 @@
                                                    data-trigger="focus">
                                         <i class="fa fa-info-circle"></i>
                                             </span></h2>
+
                             </div>
 
                             {% if "user" in g %}
 
+                                {#                                <div class="row">#}
+                                {#                                    <div class="col-md-2 col-md-offset-8">#}
+                                {#                                        <button type="button" class="btn btn-block btn-warning" id="add-rdf" disabled>#}
+                                {#                                            <i class="fa fa-plus" aria-hidden="true"></i> Add RO Term#}
+                                {#                                        </button>#}
+                                {#                                    </div>#}
+                                {##}
+                                {#                                    <div class="col-md-2">#}
+                                {#                                        <button type="button" class="btn btn-block btn-warning" id="remove-term"#}
+                                {#                                                disabled>#}
+                                {#                                            <i class="fa fa-times" aria-hidden="true"></i> Remove Term(s)#}
+                                {#                                        </button>#}
+                                {#                                    </div>#}
+                                {#                                </div>#}
                                 <div class="row">
-                                    <div class="col-md-2 col-md-offset-8">
-                                        <button type="button" class="btn btn-block btn-warning" id="add-rdf" disabled>
-                                            <i class="fa fa-plus" aria-hidden="true"></i> Add RO Term
-                                        </button>
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <button type="button" class="btn btn-block btn-warning" id="remove-term"
-                                                disabled>
-                                            <i class="fa fa-times" aria-hidden="true"></i> Remove Term(s)
-                                        </button>
-                                    </div>
+                                    <span id="ontology_Warning"></span>
                                 </div>
 
                                 <br>
@@ -210,34 +214,34 @@
 
                                     <br/>
 
-{#                                    <div class="row">#}
-{#                                        <div class="col-xs-3">#}
-{#                                            <select name="ontology_db" id="ontology_db"#}
-{#                                                    class="form-control"#}
-{#                                                    style="margin-bottom: 20px;" required>#}
-                                                {#% for ont in ont_dbs %#}
-{#                                                    <option value="{{ ont.ontologydb_id }}">#}
-{#                                                        {{ ont.name }}#}
-{#                                                    </option>#}
-{#                                                {% endfor %}#}
-{#                                            </select>#}
-{#                                        </div>#}
-{#                                        <div id="genesetOntologyAlert"#}
-{#                                             class="alert alert-warning fade in col-xs-3"#}
-{#                                             style="width:400px; text-align:center;">#}
-{#                                            <button type="button" class="close"#}
-{#                                                    data-dismiss="alert" aria-hidden="true">#}
-{#                                                x#}
-{#                                            </button>#}
-{#                                            <strong>#}
-{#                                                Annotation changes persist on (de)selection.#}
-{#                                            </strong>#}
-{#                                        </div>#}
-{#                                    </div>#}
-{##}
-{#                                    <div style="border: 1px solid #afafaf;">#}
-{#                                        <div id="tree" name="selNodes" style="overflow:auto; max-height:600px"></div>#}
-{#                                    </div>#}
+                                    {#                                    <div class="row">#}
+                                    {#                                        <div class="col-xs-3">#}
+                                    {#                                            <select name="ontology_db" id="ontology_db"#}
+                                    {#                                                    class="form-control"#}
+                                    {#                                                    style="margin-bottom: 20px;" required>#}
+                                    {#% for ont in ont_dbs %#}
+                                    {#                                                    <option value="{{ ont.ontologydb_id }}">#}
+                                    {#                                                        {{ ont.name }}#}
+                                    {#                                                    </option>#}
+                                    {#                                                {% endfor %}#}
+                                    {#                                            </select>#}
+                                    {#                                        </div>#}
+                                    {#                                        <div id="genesetOntologyAlert"#}
+                                    {#                                             class="alert alert-warning fade in col-xs-3"#}
+                                    {#                                             style="width:400px; text-align:center;">#}
+                                    {#                                            <button type="button" class="close"#}
+                                    {#                                                    data-dismiss="alert" aria-hidden="true">#}
+                                    {#                                                x#}
+                                    {#                                            </button>#}
+                                    {#                                            <strong>#}
+                                    {#                                                Annotation changes persist on (de)selection.#}
+                                    {#                                            </strong>#}
+                                    {#                                        </div>#}
+                                    {#                                    </div>#}
+                                    {##}
+                                    {#                                    <div style="border: 1px solid #afafaf;">#}
+                                    {#                                        <div id="tree" name="selNodes" style="overflow:auto; max-height:600px"></div>#}
+                                    {#                                    </div>#}
                                 </div>
 
 
@@ -420,11 +424,11 @@
             }, {
                 'aTargets': [2],
                 fnCreatedCell: function (nTd, sData, oData, iRow, _) {
-                    var fixed_data=table.column(2).data().toArray();
+                    var fixed_data = table.column(2).data().toArray();
                     var roCheck = $('<input type="hidden" ' +
-                        ' name=selected_ontology_' +iRow+
+                        ' name=selected_ontology_' + iRow +
                         ' value=' + '"' + sData + '">');
-                    console.log("input cell is "+ fixed_data)
+                    console.log("input cell is " + fixed_data)
                     $(nTd).append(roCheck);
 
                 }
@@ -514,6 +518,12 @@
 
                                         {# TODO pop the warning message #}
                                         console.log("repeat selection");
+                                        var warning_section = document.getElementById("ontology_Warning");
+                                        warning_section.innerHTML = '<div class="alert alert-danger fade in" style="text-align:center"> ' +
+                                            '<button type="button" class="close" data-dismiss="alert" aria-hidden="true" >' +
+                                            'x </button> ' +
+                                            '<strong> duplicated selection! </strong> </div>';
+
                                     }
 
                                     {#var table = document.getElementById("annotation-list")#}
