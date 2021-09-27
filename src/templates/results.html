@@ -161,7 +161,9 @@
                             if (data['tool'] === 'MSET')
                                 $.redirectPost('/MSET.html', form);
                             if (data['tool'] === 'OntologySet Graph')
-                                $.redirectPost('/run-ontologyset-viewer.html', form)
+                                $.redirectPost('/run-ontologyset-viewer.html', form);
+                            if (data['tool'] === 'Ontology2Genes Graph')
+                                $.redirectPost('/run-ontology2genes-viewer.html')
 
 						});
 					});
