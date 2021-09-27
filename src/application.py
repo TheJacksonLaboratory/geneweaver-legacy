@@ -44,6 +44,7 @@ from tools import phenomemapblueprint
 from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
 from tools import ontologysetviewerblueprint
+from tools import ontology2genesviewerblueprint
 
 import adminviews
 import annotator
@@ -74,6 +75,7 @@ app.register_blueprint(tricliqueblueprint.triclique_viewer_blueprint)
 app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
 app.register_blueprint(ontologysetviewerblueprint.ontologyset_viewer_blueprint)
+app.register_blueprint(ontology2genesviewerblueprint.ontology2genes_viewer_blueprint)
 
 # *************************************
 
@@ -2273,6 +2275,12 @@ def viewStoredResults_by_runhash():
     elif results['res_tool'] == 'OntologySet Graph':
         return url_for(
             ontologysetviewerblueprint.TOOL_CLASSNAME + '.view_result',
+            task_id=runhash
+        )
+
+    elif results['res_tool'] == 'Ontology2Gene Graph':
+        return url_for(
+            ontology2genesviewerblueprint.TOOL_CLASSNAME + '.view_result',
             task_id=runhash
         )
 
@@ -4798,9 +4806,19 @@ class ToolOntologysetViewer(restful.Resource):
         return ontologysetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
 
 class ToolOntologysetViewerProjects(restful.Resource):
-    def get(self, apikey, supressDisconnected, minDigree, projects):
+    def get(self, apikey, supressDisconnected, minDegree, projects):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return genesetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
+
+class ToolOntology2GenesViewer(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDegree, ontologyset):
+        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, ontologyset)
+
+class ToolOntology2GenesViewerProjects(restful.Resource):
+    def get(self, apikey, supressDisconnected, minDegree, projects):
+        # @TODO assign set of ontology from user selection to ontologyset
+        ontologyset = None
+        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, ontologyset)
 
 class ToolJaccardSimilarity(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
@@ -4938,6 +4956,11 @@ api.add_resource(ToolGenesetViewerProjects,
 api.add_resource(ToolOntologysetViewer,
                  '/api/tool/ontologysetviewer/<apikey>/<supressDisconnected>/<minDegree>/<genesets>/')
 api.add_resource(ToolOntologysetViewerProjects,
+                 '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
+
+api.add_resource(ToolOntology2GenesViewer,
+                 '/api/tool/ontology2genesviewer/<apikey>/<supressDisconnected>/<minDegree>/<ontologyset>/')
+api.add_resource(ToolOntology2GenesViewerProjects,
                  '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
 
 api.add_resource(ToolJaccardClustering, '/api/tool/jaccardclustering/<apikey>/<homology>/<method>/<genesets>/')
