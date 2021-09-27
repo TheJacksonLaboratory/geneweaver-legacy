@@ -92,9 +92,9 @@
         font-size: 11px;
     }
 
-    .remove_button{
+    .remove_button {
         padding: 7px 7px;
-        background-color:darkred;
+        background-color: darkred;
 
     }
 
@@ -386,9 +386,9 @@
     };
 
     $(document).ready(function () {
-        var selectOnt=[]
+        var selectOnt = []
         console.log("document ready check")
-        console.log("the datatable version is"+$.fn.DataTable.version)
+        console.log("the datatable version is" + $.fn.DataTable.version)
         // DataTable initialization for the list of gene set annotations
         var table = $('#annotation-list').DataTable({
             'paging': false,
@@ -405,20 +405,31 @@
             ],
             'aoColumnDefs': [{
                 'aTargets': [0],
-                'fnCreatedCell': function(nTd, _, oData, _, _) {
+                'fnCreatedCell': function (nTd, _, oData, _, _) {
                     var roCheck = $('<button class="remove_button"></button>');
 
-                        {#$('<div class="ui-checkbox">' +#}
-                        {#    '<input class="addGene" name="gsoptions[]" ' +#}
-                        {#    'id="addRDF' +  oData['ont_id'] + '-' + oData['ro_id'] + '" ' +#}
-                        {#    'value="' +  oData['ont_id'] + '" ' +#}
-                        {#    'type="checkbox"' +#}
-                        {#    'onchange="updateCheckedOnts(' + oData['ont_id']+ ', ' + oData['ro_id'] + ');' +#}
-                        {#    '"></div>');#}
+                    {#$('<div class="ui-checkbox">' +#}
+                    {#    '<input class="addGene" name="gsoptions[]" ' +#}
+                    {#    'id="addRDF' +  oData['ont_id'] + '-' + oData['ro_id'] + '" ' +#}
+                    {#    'value="' +  oData['ont_id'] + '" ' +#}
+                    {#    'type="checkbox"' +#}
+                    {#    'onchange="updateCheckedOnts(' + oData['ont_id']+ ', ' + oData['ro_id'] + ');' +#}
+                    {#    '"></div>');#}
                     $(nTd).append(roCheck);
                 }
+            }, {
+                'aTargets': [2],
+                fnCreatedCell: function (nTd, sData, oData, _, _) {
+                    var roCheck = $('<input type="hidden" ' +
+                        'name=selected_ontology ' +
+                        'value=' + '"' + sData + '">');
+                    console.log("input cell is "+ sData)
+                    $(nTd).append(roCheck);
+
+                }
+
             }]
-         });
+        });
 
         {##}
         {##}
@@ -448,7 +459,7 @@
             }
         });
 
-        $('#annotation-list').on('click','.remove_button',function(){
+        $('#annotation-list').on('click', '.remove_button', function () {
             console.log("delete button clicked");
             table.row($(this).parents('tr')).remove().draw();
         });
@@ -486,9 +497,9 @@
                                     selectOnt.push(result["ontology_id"])
                                     console.log(result)
 
-                                    var selected_ids=table.column(2).data().toArray();
+                                    var selected_ids = table.column(2).data().toArray();
 
-                                    if ( !selected_ids.includes(result["ontology_id"])) {
+                                    if (!selected_ids.includes(result["ontology_id"])) {
 
                                         table.row.add({
                                             "name": result['name'],
@@ -498,7 +509,7 @@
                                             "ro_id": result['ontology_id']
 
                                         }).draw(false);
-                                    }else{
+                                    } else {
 
                                         {# TODO pop the warning message #}
                                         console.log("repeat selection");
