@@ -419,11 +419,12 @@
                 }
             }, {
                 'aTargets': [2],
-                fnCreatedCell: function (nTd, sData, oData, _, _) {
+                fnCreatedCell: function (nTd, sData, oData, iRow, _) {
+                    var fixed_data=table.column(2).data().toArray();
                     var roCheck = $('<input type="hidden" ' +
-                        'name=selected_ontology ' +
-                        'value=' + '"' + sData + '">');
-                    console.log("input cell is "+ sData)
+                        ' name=selected_ontology_' +iRow+
+                        ' value=' + '"' + sData + '">');
+                    console.log("input cell is "+ fixed_data)
                     $(nTd).append(roCheck);
 
                 }
