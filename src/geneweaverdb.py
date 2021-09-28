@@ -3138,6 +3138,7 @@ class Ontology:
 
 class Ontology_Term:
     def __init__(self, ont_dict):
+        self.id = ont_dict['ont_id']
         self.ontology_id = ont_dict['ont_ref_id']
         self.ontdb_name = ont_dict['ontdb_name']
         self.name = ont_dict['ont_name']
@@ -5922,7 +5923,7 @@ def get_ontologyData_by_id(ont_id):
     with PooledCursor() as cursor:
         cursor.execute(
             '''
-                SELECT ont.ont_ref_id, ont_db.ontdb_name, ont.ont_name, ont.ont_description
+                SELECT ont.ont_id,ont.ont_ref_id, ont_db.ontdb_name, ont.ont_name, ont.ont_description
                 FROM extsrc.ontology ont, odestatic.ontologydb ont_db
                 WHERE ont.ont_id = %s AND ont.ontdb_id = ont_db.ontdb_id
             ''', (ont_id,)
