@@ -210,34 +210,34 @@
 
                                     <br/>
 
-                                    <div class="row">
-                                        <div class="col-xs-3">
-                                            <select name="ontology_db" id="ontology_db"
-                                                    class="form-control"
-                                                    style="margin-bottom: 20px;" required>
-                                                {% for ont in ont_dbs %}
-                                                    <option value="{{ ont.ontologydb_id }}">
-                                                        {{ ont.name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div id="genesetOntologyAlert"
-                                             class="alert alert-warning fade in col-xs-3"
-                                             style="width:400px; text-align:center;">
-                                            <button type="button" class="close"
-                                                    data-dismiss="alert" aria-hidden="true">
-                                                x
-                                            </button>
-                                            <strong>
-                                                Annotation changes persist on (de)selection.
-                                            </strong>
-                                        </div>
-                                    </div>
-
-                                    <div style="border: 1px solid #afafaf;">
-                                        <div id="tree" name="selNodes" style="overflow:auto; max-height:600px"></div>
-                                    </div>
+{#                                    <div class="row">#}
+{#                                        <div class="col-xs-3">#}
+{#                                            <select name="ontology_db" id="ontology_db"#}
+{#                                                    class="form-control"#}
+{#                                                    style="margin-bottom: 20px;" required>#}
+                                                {#% for ont in ont_dbs %#}
+{#                                                    <option value="{{ ont.ontologydb_id }}">#}
+{#                                                        {{ ont.name }}#}
+{#                                                    </option>#}
+{#                                                {% endfor %}#}
+{#                                            </select>#}
+{#                                        </div>#}
+{#                                        <div id="genesetOntologyAlert"#}
+{#                                             class="alert alert-warning fade in col-xs-3"#}
+{#                                             style="width:400px; text-align:center;">#}
+{#                                            <button type="button" class="close"#}
+{#                                                    data-dismiss="alert" aria-hidden="true">#}
+{#                                                x#}
+{#                                            </button>#}
+{#                                            <strong>#}
+{#                                                Annotation changes persist on (de)selection.#}
+{#                                            </strong>#}
+{#                                        </div>#}
+{#                                    </div>#}
+{##}
+{#                                    <div style="border: 1px solid #afafaf;">#}
+{#                                        <div id="tree" name="selNodes" style="overflow:auto; max-height:600px"></div>#}
+{#                                    </div>#}
                                 </div>
 
 

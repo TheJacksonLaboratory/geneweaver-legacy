@@ -17,6 +17,10 @@ def run_tool():
 
     form = flask.request.form
 
+    with open('/Ontology2GenesViewer.txt', 'w') as out:
+        out.write(json.dumps(form))
+        out.close()
+
     # pull out the selected geneset IDs
     selected_geneset_ids = tc.selected_geneset_ids(form)
     # Used only when rerunning the tool from the results page
