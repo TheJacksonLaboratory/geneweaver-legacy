@@ -24,23 +24,23 @@ def run_tool():
     # pull out ontology term ids
     selected_ontology_ids = tc.selected_ontology_ids(form)
 
+
+    # # Used only when rerunning the tool from the results page
+    # if 'selected_ontology_0' in form:
+    #     add_ontology = []
+    #     for item in form.keys():
+    #         if item.startswith("selected_ontology"):
+    #             data = form[item].split(' ')
+    #             for entry in data:
+    #                 add_ontology.append(entry)
+    #     edited_add_ontology = [ont for ont in add_ontology]
+    #     selected_ontology_ids = selected_ontology_ids + edited_add_ontology
+
     with open('/TermExtracted_Ontology2GenesViewer.txt', 'w') as out:
         for item in selected_ontology_ids:
             out.write(item + "\n")
         out.close()
 
-
-    # Used only when rerunning the tool from the results page
-    if 'selected_ontology_0' in form:
-        add_ontology = []
-        for item in form.keys():
-            if item.startswith("selected_ontology"):
-                data = form[item].split(' ')
-                for entry in data:
-                    add_ontology.append(entry)
-        edited_add_ontology = [ont for ont in add_ontology]
-        selected_ontology_ids = selected_ontology_ids + edited_add_ontology
-    
     if len(selected_ontology_ids) < 2:
         flask.flash(('You need to select at least 2 ontology as input for '
                     'this tool.'))
@@ -96,7 +96,7 @@ def run_tool():
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'ontids': selected_ontology_ids,
+            'gsids': selected_ontology_ids,
             'output_prefix': task_id,
             'params': params,
         },
@@ -171,7 +171,7 @@ def run_tool_api(apikey, supressDisconnected, minDegree, ontology ):
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'ontids': selected_ontology_ids,
+            'gsids': selected_ontology_ids,
             'output_prefix': task_id,
             'params': params,
         },
