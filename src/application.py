@@ -1316,7 +1316,8 @@ def get_ontology_term_by_id():
     ont={'ontology_id':ontology.ontology_id,
           'ontdb_name':ontology.ontdb_name,
           'name':ontology.name,
-          'description':ontology.description}
+          'description':ontology.description,
+         'id':ontology.id}
 
 
     data = {'list': ont}
