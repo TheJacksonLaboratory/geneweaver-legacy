@@ -21,16 +21,28 @@ def run_tool():
         out.write(json.dumps(form))
         out.close()
 
-    # pull out the selected geneset IDs
-    selected_geneset_ids = tc.selected_geneset_ids(form)
+    # pull out ontology term ids
+    selected_ontology_ids = tc.selected_ontology_ids(form)
+
+    with open('/TermExtracted_Ontology2GenesViewer.txt', 'w') as out:
+        for item in selected_ontology_ids:
+            out.write(item + "\n")
+        out.close()
+
+
     # Used only when rerunning the tool from the results page
-    if 'genesets' in form:
-        add_genesets = form['genesets'].split(' ')
-        edited_add_genesets = [gs[2:] for gs in add_genesets]
-        selected_geneset_ids = selected_geneset_ids + edited_add_genesets
+    if 'selected_ontology_0' in form:
+        add_ontology = []
+        for item in form.keys():
+            if item.startswith("selected_ontology"):
+                data = form[item].split(' ')
+                for entry in data:
+                    add_ontology.append(entry)
+        edited_add_ontology = [ont for ont in add_ontology]
+        selected_ontology_ids = selected_ontology_ids + edited_add_ontology
     
-    if len(selected_geneset_ids) < 2:
-        flask.flash(('You need to select at least 2 genesets as input for '
+    if len(selected_ontology_ids) < 2:
+        flask.flash(('You need to select at least 2 ontology as input for '
                     'this tool.'))
 
         return flask.redirect('/analyze_ont')
@@ -42,7 +54,7 @@ def run_tool():
     params = {}
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
         params[tool_param.name] = form[tool_param.name]
-    # Ontology set viewer does not need homology
+    # Ontology2Genes viewer does not need homology
     '''   
         if tool_param.name.endswith('_' + homology_str):
             params[homology_str] = form[tool_param.name]
@@ -61,19 +73,21 @@ def run_tool():
         return flask.redirect('/analyze_ont')
 
     # Gather emphasis gene ids and put them in paramters
+    '''
     emphgeneids = []
     emphgenes = gwdb.get_gene_and_species_info_by_user(user_id)
     for row in emphgenes:
         emphgeneids.append(str(row['ode_gene_id']))
     params['EmphasisGenes'] = emphgeneids
-
+    selected_geneset_ids = []
+    '''
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
-    desc = '{} on {} GeneSets'.format(tool.name, len(selected_geneset_ids))
+    desc = '{} on {} Ontology'.format(tool.name, len(selected_ontology_ids))
     gwdb.insert_result(
         user_id,
         task_id,
-        selected_geneset_ids,
+        selected_ontology_ids,
         json.dumps(params),
         tool.name,
         desc,
@@ -82,7 +96,7 @@ def run_tool():
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': selected_geneset_ids,
+            'ontids': selected_ontology_ids,
             'output_prefix': task_id,
             'params': params,
         },
@@ -98,7 +112,7 @@ def run_tool():
     return response
     
 @ontology2genes_viewer_blueprint.route('/run-ontology2genes-viewer-api.html', methods=['POST'])
-def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
+def run_tool_api(apikey, supressDisconnected, minDegree, ontology ):
     # TODO need to check for read permissions on genesets
 
     user_id = gwdb.get_user_id_by_apikey(apikey)
@@ -134,8 +148,8 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
 
     
     # pull out the selected geneset IDs
-    selected_geneset_ids = genesets.split(":")
-    if len(selected_geneset_ids) < 2:
+    selected_ontology_ids = ontology.split(":")
+    if len(selected_ontology_ids) < 2:
         # TODO add nice error message about missing genesets
         raise Exception('there must be at least two genesets selected to run this tool')
 
@@ -144,11 +158,11 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
 
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
-    desc = '{} on {} GeneSets'.format(tool.name, len(selected_geneset_ids))
+    desc = '{} on {} Ontology'.format(tool.name, len(selected_ontology_ids))
     gwdb.insert_result(
         user_id,
         task_id,
-        selected_geneset_ids,
+        selected_ontology_ids,
         json.dumps(params),
         tool.name,
         desc,
@@ -157,7 +171,7 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': selected_geneset_ids,
+            'ontids': selected_ontology_ids,
             'output_prefix': task_id,
             'params': params,
         },

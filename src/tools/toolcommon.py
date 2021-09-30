@@ -27,6 +27,7 @@ celery_app.conf.update(
 
 geneset_html_id_prefix = "geneset_"
 project_html_id_prefix = "project_"
+ontology_html_id_prefix = "selected_ontology"
 
 
 def selected_geneset_ids(form):
@@ -42,6 +43,22 @@ def selected_geneset_ids(form):
         for id_with_prefix in form.keys()
         if id_with_prefix.startswith(geneset_html_id_prefix)
     ]
+
+def selected_ontology_ids(form):
+    """
+    this function takes a submitted form and extracts ontology
+    ids for all selected ontology term ids
+    :param form:    flask form (as in flask.request.form)
+    :return:        the list of ontology term ids
+    """
+    Ontology_terms = []
+    for item in form.keys():
+        if item.startswith(ontology_html_id_prefix):
+            data = form[item].split(' ')
+            for entry in data:
+                Ontology_terms.append(entry)
+    return Ontology_terms
+
 
 def selected_project_ids(form):
     """
