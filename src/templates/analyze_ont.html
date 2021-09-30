@@ -547,7 +547,7 @@
                 {data: 'reference_id'},
                 {data: 'description'},
                 {data: 'ref_type'},
-                {data: 'ro_id', visible: false}
+                {data: 'id', visible: false}
             ],
             'aoColumnDefs': [{
                 'aTargets': [0],
@@ -569,8 +569,8 @@
                     var fixed_data = table.column(2).data().toArray();
                     var roCheck = $('<input type="hidden" ' +
                         ' name=selected_ontology_' + iRow +
-                        ' value=' + '"' + sData + '">');
-                    console.log("input cell is " + fixed_data)
+                        ' value=' + '"' + oData['id'] + '">');
+                    console.log("input cell is " + oData['id'])
                     $(nTd).append(roCheck);
 
                 }
@@ -653,7 +653,7 @@
                                             "reference_id": result['ontology_id'],
                                             "ref_type": result['ontdb_name'],
                                             "description": result['description'],
-                                            "ro_id": result['ontology_id']
+                                            "id": result['id']
 
                                         }).draw(false);
                                     } else {
@@ -668,28 +668,6 @@
 
                                     }
 
-                                    {#var table = document.getElementById("annotation-list")#}
-                                    {#var newRow = table.insertRow(-1)#}
-                                    {#var c1 = newRow.insertCell(0)#}
-                                    {#var c2 = newRow.insertCell(1)#}
-                                    {#var c3 = newRow.insertCell(2)#}
-                                    {#var c4 = newRow.insertCell(3)#}
-                                    {#var c5 = newRow.insertCell(4)#}
-                                    {##}
-                                    {#c1.innerHTML = '<div class="ui-checkbox">' +#}
-                                    {#    '<input class="addGene" name="gsoptions[]" ' +#}
-                                    {#    'id="addRDF' + "oData['ont_id']" + '-' + "oData['ro_id']" + '" ' +#}
-                                    {#    'value="' + "oData['ont_id']" + '" ' +#}
-                                    {#    'type="checkbox"' +#}
-                                    {#    '"></div>'#}
-                                    {##}
-                                    {#c2.innerHTML = result["name"]#}
-                                    {#c3.innerHTML = result["ontology_id"]#}
-                                    {#c4.innerHTML = result["description"]#}
-                                    {#c5.innerHTML = result["ontdb_name"]#}
-
-
-                                    $("#tree").dynatree("getTree").reload();
                                 }
                             })
                         },
@@ -827,100 +805,6 @@
         toggleElementDisabled('#run-annotator');
     };
 
-    $(function () {
-        //Initialize dynatree data and functions
-        $("#tree").dynatree({
-            checkbox: true,
-            selectMode: 2,
-            // Prevents the page from focusing and auto scrolling to the tree
-            autoFocus: false,
-            initAjax: {
-                url: "/initOntTree",
-                data: {
-                    gs_id: "86623",
-                    universe: getSelectedRefType()
-                }
-            },
-
-            //Performs lazy ajax call when new nodes need to be viewed
-            onLazyRead: function (node) {
-                node.appendAjax({
-                    url: "/expandOntNode",
-                    data: {
-                        key: node.data.key,
-                        is_db: node.data.db,
-                        universe: getSelectedRefType()
-                    }
-                })
-            },
-
-            // Does nothing but needs to be present for nodes to be unselected.
-            onClick: function (node, event) {
-            },
-
-            /**
-             * Called during node creation. If a node has the "Manual
-             * Rejection" reference type we alter the style. Every node gets
-             * its reference type added to the span title so it can be viewed
-             * when a user hovers over the node.
-             *
-             * arguments
-             *     node:       the node object being initialized
-             *     nodeSpan:   jQuery object representing the node's span
-             *                 element
-             */
-            onCreate: function (node, nodeSpan) {
-
-                if (node.data.ref === undefined)
-                    return;
-
-                if (node.data.ref === 'Manual Rejection') {
-
-                    $(nodeSpan)
-                        .children('.dynatree-title')
-                        .css('text-decoration', 'line-through')
-                        .css('background-color', 'none')
-                        .css('font-weight', 'normal');
-                }
-
-                $(nodeSpan).attr('title', node.data.ref);
-            }
-
-            // Updates the database based on the ontology terms a user selects.
-            {#onSelect: termSelectionHandler#}
-        });
-
-        /**
-         * Clicking this button reruns the annotator tool on the geneset's
-         * description and publication text.
-         */
-        $('#run-annotator').on('click', function (event) {
-            event.preventDefault();
-
-            var postData = getGenesetText();
-            postData.gs_id = gsID;
-
-            // Style changes so the user knows something is happening
-            changeAnnotatorButton();
-
-            $.post("{{ url_for('rerun_annotator') }}", postData, function (data) {
-                changeAnnotatorButton();
-                $('#tree').dynatree('getTree').reload();
-            }, "json").fail(function (data) {
-                // failure, log error message returned
-                console.error(data.responseJSON.error);
-                changeAnnotatorButton();
-            });
-
-        });
-
-        /**
-         * Should eventually redirect the user to the edit genes page.
-         */
-        $('#edit-genes').on('click', function (event) {
-            event.preventDefault();
-        });
-    });
 
     //This refreshes all tree data based on changing gso_ref_type (universe) seen in the gso_ref_type select tag
     $($("#ontology_db").change(function () {
