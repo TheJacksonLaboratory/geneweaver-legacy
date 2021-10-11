@@ -45,6 +45,7 @@ from tools import similargenesetsblueprint
 from tools import tricliqueblueprint
 from tools import ontologysetviewerblueprint
 from tools import ontology2genesviewerblueprint
+from tools import ontologyHiSimViewerblueprint
 
 import adminviews
 import annotator
@@ -76,7 +77,7 @@ app.register_blueprint(msetblueprint.mset_blueprint)
 app.register_blueprint(similargenesetsblueprint.similar_genesets_blueprint)
 app.register_blueprint(ontologysetviewerblueprint.ontologyset_viewer_blueprint)
 app.register_blueprint(ontology2genesviewerblueprint.ontology2genes_viewer_blueprint)
-
+app.register_blueprint(ontologyHiSimViewerblueprint.ontologyHiSim_viewer_blueprint)
 # *************************************
 
 admin = Admin(app, name='GeneWeaver', index_view=adminviews.AdminHome(
@@ -2282,6 +2283,11 @@ def viewStoredResults_by_runhash():
     elif results['res_tool'] == 'Ontology2Gene Graph':
         return url_for(
             ontology2genesviewerblueprint.TOOL_CLASSNAME + '.view_result',
+            task_id=runhash
+        )
+    elif results['res_tool'] == 'OntologyHiSim Graph':
+        return url_for(
+            ontologyHiSimViewerblueprint.TOOL_CLASSNAME + '.view_result',
             task_id=runhash
         )
 
@@ -4867,7 +4873,21 @@ class ToolPhenomeMapProjects(restful.Resource):
                                                 permutations, disableBootstrap, minOverlap, nodeCutoff, geneIsNode,
                                                 useFDR, hideUnEmphasized, p_Value, maxLevel, genesets)
 
+class ToolOntologyHiSimViewer(restful.Resource):
+    def get(self, apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+            minOverlap, nodeCutoff, geneIsNode, useFDR, p_Value, maxLevel, genesets):
+        return ontologyHiSimViewerblueprint.run_tool_api(apikey,  minOntologies, permutationTimeLimit, maxInNode,
+                                                permutations, disableBootstrap, minOverlap, nodeCutoff, geneIsNode,
+                                                useFDR,  p_Value, maxLevel, genesets)
 
+
+class ToolOntologyHiSimViewerProjects(restful.Resource):
+    def get(self, apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+            minOverlap, nodeCutoff, geneIsNode, useFDR, p_Value, maxLevel, projects):
+        genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
+        return ontologyHiSimViewerblueprint.run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode,
+                                                permutations, disableBootstrap, minOverlap, nodeCutoff, geneIsNode,
+                                                useFDR, p_Value, maxLevel, genesets)
 class ToolBooleanAlgebra(restful.Resource):
     def get(self, apikey, homology, minGenes, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
             minOverlap, nodeCutoff, geneIsNode, useFDR, hideUnEmphasized, p_Value, maxLevel, projects):
@@ -4985,6 +5005,11 @@ api.add_resource(ToolPhenomeMap,
                  '/api/tool/phenomemap/<apikey>/<homology>/<minGenes>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<hideUnEmphasized>/<p_Value>/<maxLevel>/<genesets>/')
 api.add_resource(ToolPhenomeMapProjects,
                  '/api/tool/phenomemap/byprojects/<apikey>/<homology>/<minGenes>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<hideUnEmphasized>/<p_Value>/<maxLevel>/<projects>/')
+
+api.add_resource(ToolOntologyHiSimViewer,
+                 '/api/tool/OntologyHiSimViewer/<apikey>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<p_Value>/<maxLevel>/<genesets>/')
+api.add_resource(ToolOntologyHiSimViewerProjects,
+                 '/api/tool/OntologyHiSimViewer/byprojects/<apikey>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<p_Value>/<maxLevel>/<projects>/')
 
 api.add_resource(ToolBooleanAlgebra, '/api/tool/booleanalgebra/<apikey>/<relation>/<genesets>/')
 api.add_resource(ToolBooleanAlgebraProjects, '/api/tool/booleanalgebra/byprojects/<apikey>/<relation>/<projects>/')

@@ -10,8 +10,8 @@ import geneweaverdb as gwdb
 import tools.toolcommon as tc
 
 
-TOOL_CLASSNAME = 'PhenomeMap'
-phenomemap_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
+TOOL_CLASSNAME = 'OntologyHiSimViewer'
+ontologyHiSim_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
 """
 HiSim Result and Parameter Docs
@@ -28,7 +28,7 @@ The HiSim tool requires (and returns) the following tool parameters:
     PhenomeMap_Homology
     PhenomeMap_MaxInNode
     PhenomeMap_MaxLevel
-    PhenomeMap_MinGenes
+    PhenomeMap_minOntologies
     PhenomeMap_MinOverlap
     PhenomeMap_NodeCutoff
     PhenomeMap_p-Value
@@ -55,7 +55,7 @@ some reason).
 Another is a JSON file containing the nodes and edges needed for the d3js viz.
 """
 
-@phenomemap_blueprint.route('/run-phenome-map.html', methods=['POST'])
+@ontologyHiSim_viewer_blueprint.route('/run-ontologyHiSim-viewer.html', methods=['POST'])
 def run_tool():
     # TODO need to check for read permissions on genesets
 
@@ -135,9 +135,9 @@ def run_tool():
     return response
 
 
-@phenomemap_blueprint.route('/run-phenome-map-api.html', methods=['POST'])
-def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
-                 minOverlap, nodeCutoff, geneIsNode, useFDR, hideUnEmphasized, p_Value, maxLevel, genesets):
+@ontologyHiSim_viewer_blueprint.route('/run-phenome-map-api.html', methods=['POST'])
+def run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+                 minOverlap, nodeCutoff, geneIsNode, useFDR, p_Value, maxLevel, genesets):
     print('dbg run tool api')
     # TODO need to check for read permissions on genesets
     user_id = gwdb.get_user_id_by_apikey(apikey)
@@ -148,9 +148,9 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
     params = {homology_str: None}
 
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
-        if tool_param.name.endswith('_' + 'MinGenes'):
-            params[tool_param.name] = minGenes
-            if minGenes not in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', '25']:
+        if tool_param.name.endswith('_' + 'MinOntologies'):
+            params[tool_param.name] = minOntologies
+            if minOntologies not in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '15', '20', '25']:
                 params[tool_param.name] = '1'
         if tool_param.name.endswith('_' + 'PermutationTimeLimit'):
             params[tool_param.name] = permutationTimeLimit
@@ -184,10 +184,6 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
             params[tool_param.name] = useFDR
             if useFDR not in ['False', 'True']:
                 params[tool_param.name] = 'False'
-        if tool_param.name.endswith('_' + 'HideUnEmphasized'):
-            params[tool_param.name] = hideUnEmphasized
-            if hideUnEmphasized not in ['False', 'True']:
-                params[tool_param.name] = 'False'
         if tool_param.name.endswith('_' + 'p-Value'):
             params[tool_param.name] = p_Value
             if p_Value not in ['1.0', '0.5', '0.10', '0.05', '0.01']:
@@ -196,13 +192,6 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
             params[tool_param.name] = maxLevel
             if maxLevel not in ['0', '10', '20', '40', '60', '80', '100']:
                 params[tool_param.name] = '40'
-        if tool_param.name.endswith('_' + homology_str):
-            params[homology_str] = 'Excluded'
-            params[tool_param.name] = 'Excluded'
-            if homology != 'Excluded':
-                params[homology_str] = 'Included'
-                params[tool_param.name] = 'Included'
-
     # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
     selected_geneset_ids = genesets.split(":")
     if len(selected_geneset_ids) < 2:
@@ -242,7 +231,7 @@ def run_tool_api(apikey, homology, minGenes, permutationTimeLimit, maxInNode, pe
     return task_id
 
 
-@phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.csv')
+@ontologyHiSim_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.csv')
 def download_csv(task_id):
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
@@ -257,7 +246,7 @@ def download_csv(task_id):
         return flask.send_file(filepath, 'text/csv', True, 'HiSimGraph_Result.csv')
 
 
-@phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.bmp?svg=<svg>')
+@ontologyHiSim_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.bmp?svg=<svg>')
 def download_bmp(task_id):
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
@@ -272,7 +261,7 @@ def download_bmp(task_id):
         return flask.send_file(filepath, 'text/csv', True, 'HiSimGraph_Result.bmp')
 
 
-@phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
+@ontologyHiSim_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
 def view_result(task_id):
     """
     """
@@ -324,7 +313,7 @@ def view_result(task_id):
         return tc.render_tool_pending(async_result, tool)
 
 
-@phenomemap_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
+@ontologyHiSim_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
