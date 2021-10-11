@@ -155,11 +155,11 @@
                         </div>
                     </div>
 
-                    <div id="substitute_interface">
-                        <form id="analyzeOntology" name="analyzeOntology" method="post" action="#"
+                    <!-- <div id="substitute_interface"> -->
+                        <form name="analyzeOntology" method="post" action="#"
                               class="form-horizontal form-inline" novalidate="novalidate">
                             <!-- the projects column -->
-                            <div class="col-md-8">
+                            <div class="col-md-8" id="analyzeOntology">
                                 <div class="page-header" id="Ontology_interface_header" style="margin-bottom:0;">
                                     <h2>Ontology <span id="ontologyInformation" tabindex="0"
                                                    data-trigger="focus">
@@ -251,13 +251,13 @@
                                 {% endif %}
 
                             </div>
-                        </form>
-                    </div>
+                        <!-- </form> -->
+                    <!-- </div> -->
 
-                    <form id="analyzeGenesets" name="analyzeGenesets" method="post" action="#"
-						  class="form-horizontal form-inline" novalidate="novalidate" style="display:none">
+                    <!-- <form id="analyzeGenesets" name="analyzeGenesets" method="post" action="#"
+						  class="form-horizontal form-inline" novalidate="novalidate" style="display:none"> -->
                         <!-- the projects column -->
-                        <div class="col-md-8">
+                        <div class="col-md-8" id="analyzeGenesets" style="visibility: hidden">
                             <div class="page-header" style="margin-bottom:0;">
 							    <h2>Projects <span id="geneset-count"></span></h2>
 						    </div>
