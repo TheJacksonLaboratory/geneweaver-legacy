@@ -126,51 +126,51 @@
                         border-radius:5px; padding:15px; width:100%">
                 <div class="row">
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_DisableBootstrap']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_DisableBootstrap']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_NodeCutoff']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_NodeCutoff']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_radio(tool.params['PhenomeMap_Homology']) }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_GenesInNode']) }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_UseFDR']) }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_HideUnEmphasized']) }}
+                        {{ macros.tool_param_radio(tool.params['OntologyHiSimViewer_Homology']) }}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_p-Value']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_GenesInNode']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_MinOverlap']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_UseFDR']) }}
                     </div>
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_MinGenes']) }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_PermutationTimeLimit']) }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_MaxInNode']) }}
-                    </div>
-                    <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_Permutations']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_HideUnEmphasized']) }}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4">
-                        {{ macros.tool_param_select(tool.params['PhenomeMap_MaxLevel']) }}
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_p-Value']) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_MinOverlap']) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_MinGenes']) }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_PermutationTimeLimit']) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_MaxInNode']) }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_Permutations']) }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['OntologyHiSimViewer_MaxLevel']) }}
                     </div>
                     <div class="col-md-4">
                         <input type="hidden" name="genesets" value="{{ async_result.gs_ids|join(' ') }}"/>
@@ -181,7 +181,7 @@
                         <button class="btn btn-primary"
                                 type='submit'
                                 value='run'
-                                onclick='this.form.action="{{ url_for('PhenomeMap.run_tool') }}";'>
+                                onclick='this.form.action="{{ url_for('OntologyHiSimViewer.run_tool') }}";'>
                             Re-Run Tool
                         </button>
                     </div>
@@ -273,7 +273,7 @@
                             <li role="separator" class="divider"></li>
                             <li>
                                 <a class="download-text" id="dl-csv" 
-                                   href="/PhenomeMap-result/{{ async_result.parameters.output_prefix }}.csv">
+                                   href="/ontologyHiSimViewer-result/{{ async_result.parameters.output_prefix }}.csv">
                                     CSV
                                 </a>
                             </li>
@@ -345,7 +345,7 @@
 	contains the error message for the failure.
 #}
 {% if not async_result.failed %}
-<div id="PhenomeMap_cyt" 
+<div id="ontologyHiSimViewer_cyt"
      style="display:hidden; position: relative; margin: 10px auto; height: 600px; width: 95%; border-style: solid;">
     <br/>
     <br/>
@@ -469,7 +469,7 @@
 
 	$(function() {
         // Initially hide the classic HiSim display
-        $('#PhenomeMap_cyt').hide();
+        $('#ontologyHiSimViewer_cyt').hide();
 
 		var graphData = {{data | safe}};
 		var graphStats = {{async_result | tojson}};
@@ -594,11 +594,11 @@
             if (event.target.value === 'classic') {
 
                 $('#viz2').hide();
-                $('#PhenomeMap_cyt').show();
+                $('#ontologyHiSimViewer_cyt').show();
 
             } else {
 
-                $('#PhenomeMap_cyt').hide();
+                $('#ontologyHiSimViewer_cyt').hide();
                 $('#viz2').show();
             }
         });
