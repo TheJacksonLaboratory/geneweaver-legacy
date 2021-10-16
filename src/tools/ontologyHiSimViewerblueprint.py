@@ -23,7 +23,7 @@ The HiSim tool requires (and returns) the following tool parameters:
     gs_dict
     output_prefix
     PhenomeMap_DisableBootstrap
-    PhenomeMap_GenesInNode
+    PhenomeMap_OntologiesInNode
     PhenomeMap_HideUnEmphasized
     PhenomeMap_Homology
     PhenomeMap_MaxInNode
@@ -137,7 +137,7 @@ def run_tool():
 
 @ontologyHiSim_viewer_blueprint.route('/run-phenome-map-api.html', methods=['POST'])
 def run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
-                 minOverlap, nodeCutoff, geneIsNode, useFDR, p_Value, maxLevel, genesets):
+                 minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
     print('dbg run tool api')
     # TODO need to check for read permissions on genesets
     user_id = gwdb.get_user_id_by_apikey(apikey)
@@ -176,9 +176,9 @@ def run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode, permuta
             params[tool_param.name] = nodeCutoff
             if nodeCutoff not in ['Auto', '1.0', '0.1', '0.01', '0.001', '0.0001', '0.00001']:
                 params[tool_param.name] = 'Auto'
-        if tool_param.name.endswith('_' + 'GeneIsNode'):
-            params[tool_param.name] = geneIsNode
-            if geneIsNode not in ['All', 'Exclusive']:
+        if tool_param.name.endswith('_' + 'ontologiesInNode'):
+            params[tool_param.name] = ontologiesInNode
+            if ontologiesInNode not in ['All', 'Exclusive']:
                 params[tool_param.name] = 'All'
         if tool_param.name.endswith('_' + 'UseFDR'):
             params[tool_param.name] = useFDR
