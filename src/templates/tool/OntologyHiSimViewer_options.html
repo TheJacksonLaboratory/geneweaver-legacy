@@ -79,4 +79,20 @@
         {# TODO:documentation for ontologyHiSim Graph#}
         window.open('http://geneweaver.org/help/#hisim-graph');
     });
+
+    var obj = document.getElementById("substitute_interface");
+    $('#ohsCollapse').on('shown.bs.collapse',function (){
+        console.log('it is opened');
+
+        $('#analyzeOntology')[0].style.display = 'none';
+        $('#analyzeGenesets')[0].style.visibility = 'visible';
+        //obj.remove();
+        //$('#substitute_interface').load('/tool/analyze_geneSet_panel.html');
+    });
+
+    $('#ohsCollapse').on('hidden.bs.collapse',function (){
+        console.log('it is closed');
+        $('#analyzeOntology')[0].style.display = 'block';
+        $('#analyzeGenesets')[0].style.visibility = 'hidden';
+    });
 </script>
