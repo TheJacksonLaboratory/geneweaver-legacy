@@ -304,7 +304,7 @@ def view_result(task_id):
                 json_result += ln
 
         return flask.render_template(
-            'tool/PhenomeMap_result.html',
+            'tool/OntologyHiSimViewer_result.html',
             data=json_result,
             async_result=results,
             tool=tool)
