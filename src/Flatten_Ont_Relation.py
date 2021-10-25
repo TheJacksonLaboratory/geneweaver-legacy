@@ -115,51 +115,79 @@ def dictify_cursor(cursor):
     """converts all cursor rows into dictionaries where the keys are the column names"""
     return (_dictify_row(cursor, row) for row in cursor)
 
+
 def Union(list1, list2):
-    return list(set(list1)|set(list2))
-def flatten(parent:int, tree_dict:dict, is_flattened=dict):
-    print(f'current parent: {parent} \t current children: {tree_dict[parent]}')
+    return list(set(list1) | set(list2))
+
+
+def flatten(parent: int, tree_dict: dict, is_flattened:dict, loops_record: list,path_tracer: list):
+    path_tracer.append(parent)
+    #print(f'current parent: {parent} \t current children: {tree_dict[parent]}')
+    # print(f'current path_tracer is {path_tracer}')
+    is_flattened[parent] = 'C'
+
+    appending_list=[]
     for n in tree_dict[parent]:
+        # print(f"travel to {n} from {tree_dict[parent]}")
         if n not in tree_dict:
+            #print("leaf node")
             continue
-        elif is_flattened[n]:
-            tree_dict[parent]=Union(tree_dict[parent],tree_dict[n])
+        elif is_flattened[n] == 'T':
+            #tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
+            appending_list=Union(appending_list,tree_dict[n])
+        elif is_flattened[n] == 'C':
+            print("detect a loop!")
+            print(f'path tracer: {path_tracer}')
+
+            loop=path_tracer[path_tracer.index(n):]
+            loops_record.append(loop)
+            print(f"loop start from {path_tracer.index(n)} to {len(path_tracer)}")
+            print(f'loop is: {loop}\n\n')
+
         else:
             # if the sub tree is not flattened
-            print(f"flatten {n}")
-            flatten(n,tree_dict,is_flattened)
-            tree_dict[parent] = Union(tree_dict[parent],tree_dict[n])
+            #print(f"flattening {n}")
+            flatten(n, tree_dict, is_flattened,loops_record,path_tracer)
+            # tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
+            appending_list = Union(appending_list, tree_dict[n])
 
-    is_flattened[parent]=True
+    tree_dict[parent]=Union(tree_dict[parent],appending_list)
+    is_flattened[parent] = 'T'
+    path_tracer.remove(parent)
+    # print(f'after removing: {path_tracer}')
+    # print(f'------------------------------------------\n')
+
 
 '''
 test code
 
 
-
-test_dict={
-    'A':['B','C','D'],
-    'B':['E','F','G','H'],
-    'C':['I'],
-    'D':['J','K','M'],
-    'G':['L'],
-    'L':['M'],
-    'H':['N'],
-    'I':['M'],
+test_dict = {
+    'A': ['B', 'C', 'D'],
+    'B': ['E', 'F', 'G', 'H'],
+    'C': ['I'],
+    'D': ['J', 'K'],
+    'G': ['L'],
+    'L': ['M'],
+    'H': ['N'],
+    'M': ['O', 'B'],
+    'O': ['P', 'Q']
 
 }
 
-is_flatterned={}
+is_flatterned = {}
 for parent in test_dict.keys():
-    is_flatterned[parent]=False
+    is_flatterned[parent] = 'F'
 
 print(is_flatterned)
-
+loops_record = []
+path_tracer=[]
 for parent, children in test_dict.items():
-    if not is_flatterned[parent]:
-        flatten(parent, test_dict,is_flatterned)
+    if is_flatterned[parent] == 'F':
+        flatten(parent, test_dict, is_flatterned, loops_record,path_tracer)
 
 print(test_dict)
+print(f"{loops_record}")
 '''
 
 
@@ -191,18 +219,13 @@ with PooledCursor() as cursor:
             tree_dict[parent].append(child)
         elif parent != child:
             tree_dict[parent]=[child]
-            is_flattened[parent]=False
+            is_flattened[parent]='F'
 
-
-
-    #start flatten the trees
+    loops_record = []
+    path_tracer = []
     for parent, children in tree_dict.items():
-        if is_flattened[parent] is False:
-            flatten(parent,tree_dict, is_flattened)
+        if is_flattened[parent] == 'F':
+            flatten(parent, tree_dict, is_flattened, loops_record, path_tracer)
 
-
-    print("finished!")
-    print(len(tree_dict.keys()))
-
-
-
+    print('finish!')
+    print(f"{len(loops_record)}")
