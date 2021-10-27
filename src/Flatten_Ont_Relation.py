@@ -126,38 +126,41 @@ def flatten(parent: int, tree_dict: dict, is_flattened:dict, loops_record: list,
     # print(f'current path_tracer is {path_tracer}')
     is_flattened[parent] = 'C'
 
-    appending_list=[]
-    for n in tree_dict[parent]:
+    appending_list=set([])
+    for n in list(tree_dict[parent]):
         # print(f"travel to {n} from {tree_dict[parent]}")
         if n not in tree_dict:
             #print("leaf node")
             continue
         elif is_flattened[n] == 'T':
             #tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
-            appending_list=Union(appending_list,tree_dict[n])
+            appending_list=appending_list | tree_dict[n]
         elif is_flattened[n] == 'C':
-            print("detect a loop!")
-            print(f'path tracer: {path_tracer}')
+            # print("detect a loop!")
+            # print(f'path tracer: {path_tracer}')
 
             loop=path_tracer[path_tracer.index(n):]
             loops_record.append(loop)
-            print(f"loop start from {path_tracer.index(n)} to {len(path_tracer)}")
-            print(f'loop is: {loop}\n\n')
+            # print(f"loop start from {path_tracer.index(n)} to {len(path_tracer)}")
+            # print(f'loop is: {loop}\n\n')
+
 
         else:
             # if the sub tree is not flattened
             #print(f"flattening {n}")
             flatten(n, tree_dict, is_flattened,loops_record,path_tracer)
             # tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
-            appending_list = Union(appending_list, tree_dict[n])
+            appending_list = appending_list | tree_dict[n]
 
-    tree_dict[parent]=Union(tree_dict[parent],appending_list)
+    # print(type(tree_dict[parent]))
+    # print(type(appending_list))
+    tree_dict[parent]=tree_dict[parent] | appending_list
     is_flattened[parent] = 'T'
     path_tracer.remove(parent)
     # print(f'after removing: {path_tracer}')
     # print(f'------------------------------------------\n')
 
-
+    print(tree_dict[311950])
 '''
 test code
 
@@ -216,11 +219,12 @@ with PooledCursor() as cursor:
     for child,parent in child_parent:
 
         if (parent in tree_dict) and (parent != child):
-            tree_dict[parent].append(child)
+            tree_dict[parent].add(child)
         elif parent != child:
-            tree_dict[parent]=[child]
+            tree_dict[parent]={child}
             is_flattened[parent]='F'
 
+    print(tree_dict)
     loops_record = []
     path_tracer = []
     for parent, children in tree_dict.items():
@@ -228,4 +232,18 @@ with PooledCursor() as cursor:
             flatten(parent, tree_dict, is_flattened, loops_record, path_tracer)
 
     print('finish!')
-    print(f"{len(loops_record)}")
+    #
+    # new_loops_records=set([])
+    # for loop in loops_record:
+    #     # print(loop)
+    #     new_loops_records.update(loop)
+    # cursor.execute(
+    #     '''
+    #     select distinct ontdb_id
+    #     from extsrc.ontology
+    #     where ont_id IN (%s)
+    #     ''',(list(new_loops_records))
+    # )
+    #
+    # print("done!")
+    # print(cursor.fetchall())
