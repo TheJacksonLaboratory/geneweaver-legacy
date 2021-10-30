@@ -136,7 +136,7 @@ def run_tool():
 
 
 @ontologyHiSim_viewer_blueprint.route('/run-phenome-map-api.html', methods=['POST'])
-def run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+def run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
                  minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
     print('dbg run tool api')
     # TODO need to check for read permissions on genesets
@@ -156,6 +156,10 @@ def run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode, permuta
             params[tool_param.name] = permutationTimeLimit
             if permutationTimeLimit not in ['5', '10', '15', '20']:
                 params[tool_param.name] = '5'
+        if tool_param.name.endswith('_'+'OntologyHierarchy'):
+            params[tool_param.name]=OntologyHierarchy
+            if OntologyHierarchy not in ['Off','On']:
+                params[tool_param.name]='Off'
         if tool_param.name.endswith('_' + 'MaxInNode'):
             params[tool_param.name] = maxInNode
             if maxInNode not in ['4', '8', '12', '16', '20', '24', '28', '32']:

@@ -4874,7 +4874,7 @@ class ToolPhenomeMapProjects(restful.Resource):
                                                 useFDR, hideUnEmphasized, p_Value, maxLevel, genesets)
 
 class ToolOntologyHiSimViewer(restful.Resource):
-    def get(self, apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+    def get(self, apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
             minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
         return ontologyHiSimViewerblueprint.run_tool_api(apikey,  minOntologies, permutationTimeLimit, maxInNode,
                                                 permutations, disableBootstrap, minOverlap, nodeCutoff, ontologiesInNode,
@@ -4882,7 +4882,7 @@ class ToolOntologyHiSimViewer(restful.Resource):
 
 
 class ToolOntologyHiSimViewerProjects(restful.Resource):
-    def get(self, apikey, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
+    def get(self, apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
             minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, projects):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
         return ontologyHiSimViewerblueprint.run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode,
@@ -5002,12 +5002,12 @@ api.add_resource(ToolCombine, '/api/tool/combine/<apikey>/<homology>/<genesets>/
 api.add_resource(ToolCombineProjects, '/api/tool/combine/byprojects/<apikey>/<homology>/<projects>/')
 
 api.add_resource(ToolPhenomeMap,
-                 '/api/tool/phenomemap/<apikey>/<homology>/<minGenes>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<hideUnEmphasized>/<p_Value>/<maxLevel>/<genesets>/')
+                 '/api/tool/phenomemap/<apikey>/<OntologyHierarchy>/<homology>/<minGenes>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<hideUnEmphasized>/<p_Value>/<maxLevel>/<genesets>/')
 api.add_resource(ToolPhenomeMapProjects,
                  '/api/tool/phenomemap/byprojects/<apikey>/<homology>/<minGenes>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<geneIsNode>/<useFDR>/<hideUnEmphasized>/<p_Value>/<maxLevel>/<projects>/')
 
 api.add_resource(ToolOntologyHiSimViewer,
-                 '/api/tool/OntologyHiSimViewer/<apikey>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<genesets>/')
+                 '/api/tool/OntologyHiSimViewer/<apikey>/<OntologyHierarchy>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<genesets>/')
 api.add_resource(ToolOntologyHiSimViewerProjects,
                  '/api/tool/OntologyHiSimViewer/byprojects/<apikey>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<projects>/')
 
