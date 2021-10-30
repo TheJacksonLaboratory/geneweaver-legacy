@@ -198,7 +198,7 @@ with PooledCursor() as cursor:
     cursor.execute(
         # TODO: documentation
         '''
-    select left_ont_id,right_ont_id from extsrc.ontology_relation where right_ont_id NOT IN(
+        select left_ont_id,right_ont_id from extsrc.ontology_relation JOIN extsrc.ontology ON extsrc.ontology_relation.right_ont_id=extsrc.ontology.ont_id where right_ont_id NOT IN(
     select left_ont_id
      from extsrc.ontology_relation
      where right_ont_id In (select ont_id from extsrc.ontology where ont_parents = 0 and ont_children != 0) and or_type='is_a'
@@ -206,7 +206,7 @@ with PooledCursor() as cursor:
      select ont_id
      from extsrc.ontology
      where ont_parents = 0
-       and ont_children != 0) and or_type='is_a';
+       and ont_children != 0) and or_type='is_a' and ontdb_id!=11;
         '''
     )
 
@@ -215,7 +215,7 @@ with PooledCursor() as cursor:
     #start to conver the list of tupe into the dictionary which the key is the parent and value is the children
     tree_dict={}
     is_flattened={}
-
+    print(len(child_parent))
     for child,parent in child_parent:
 
         if (parent in tree_dict) and (parent != child):
@@ -224,7 +224,7 @@ with PooledCursor() as cursor:
             tree_dict[parent]={child}
             is_flattened[parent]='F'
 
-    # print(tree_dict)
+    print(len(tree_dict.keys()))
     loops_record = []
     path_tracer = []
     for parent, children in tree_dict.items():
@@ -232,7 +232,7 @@ with PooledCursor() as cursor:
             flatten(parent, tree_dict, is_flattened, loops_record, path_tracer)
 
     print('finish!')
-    # print(len(tree_dict.keys()))
+    print(len(tree_dict))
     #
     # new_loops_records=set([])
     # for loop in loops_record:
