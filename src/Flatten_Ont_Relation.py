@@ -8,6 +8,8 @@ import psycopg2
 from psycopg2 import Error
 from psycopg2.extras import execute_values
 from psycopg2.pool import ThreadedConnectionPool
+from typing import List
+
 from tools import toolcommon as tc
 import os
 import flask
@@ -91,6 +93,9 @@ class PooledCursor(object):
         if self.connection is not None:
             if self.rollback_on_exception and exc_type is not None:
                 self.connection.rollback()
+            else:
+                print("committing changes")
+                self.connection.commit()
 
             self.conn_pool.putconn(self.connection)
 
@@ -195,7 +200,7 @@ print(f"{loops_record}")
 
 SQL_QUERY = [
     # 0
-    r'''INSERT INTO extsrc.flattened_ontology_relation VALUES(%s);'''
+    r'''INSERT INTO extsrc.flattened_ontology_relation (ont_id, descendants_ont_id) VALUES(%s, %s);'''
 ]
 
 with PooledCursor() as cursor:
@@ -238,23 +243,30 @@ with PooledCursor() as cursor:
     print('finish!')
 
     print("creating table row format for insert into...")
+    #flattened_tree_index = []
     flattened_tree_data = []
     i = 0
     for parent, children in tree_dict.items():
-
-        children = ",".join(map(str, children))
-        modified_children = "\'{" + children + "}\'"
-        temp_tuple = (parent, modified_children)
-        flattened_tree_data.append(temp_tuple)
+        #flattened_tree_index.append(parent)
+        #children = ",".join(map(str, children))
+        #modified_children = "\'{" + children + "}\'"
+        #temp_list = str(parent) + "," + modified_children
+        #flattened_tree_data.append(temp_list)
+        flattened_tree_data.append((int(parent), list(children)))
         if i < 10:
-            print(temp_tuple)
+            print(parent, " - ", children)
         i+=1
     print("there are ", len(flattened_tree_data), " entries")
     print("Inserting into the flattened_ontology_relation table...", end='')
-    cursor.execute(SQL_QUERY[0], (flattened_tree_data,))
+    cursor.executemany(SQL_QUERY[0], flattened_tree_data)
+
     print("Done")
+
+    #cursor.execute('''INSERT INTO extsrc.flattened_ontology_relation (ont_id, descendants_ont_id) VALUES(0, '{0, 0, 0}');''')
 
 
 
     # print(len(tree_dict.keys()))
     print(len(tree_dict))
+
+
