@@ -193,6 +193,10 @@ print(test_dict)
 print(f"{loops_record}")
 '''
 
+SQL_QUERY = [
+    # 0
+    r'''INSERT INTO extsrc.flattened_ontology_relation VALUES(%s);'''
+]
 
 with PooledCursor() as cursor:
     cursor.execute(
@@ -232,6 +236,26 @@ with PooledCursor() as cursor:
             flatten(parent, tree_dict, is_flattened, loops_record, path_tracer)
 
     print('finish!')
+
+    print("creating table row format for insert into...")
+    flattened_tree_data = []
+    i = 0
+    for parent, children in tree_dict.items():
+
+        children = ",".join(map(str, children))
+        modified_children = "\'{" + children + "}\'"
+        temp_tuple = (parent, modified_children)
+        flattened_tree_data.append(temp_tuple)
+        if i < 10:
+            print(temp_tuple)
+        i+=1
+    print("there are ", len(flattened_tree_data), " entries")
+    print("Inserting into the flattened_ontology_relation table...", end='')
+    cursor.execute(SQL_QUERY[0], (flattened_tree_data,))
+    print("Done")
+
+
+
     # print(len(tree_dict.keys()))
     #
     # new_loops_records=set([])
