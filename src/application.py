@@ -4876,7 +4876,7 @@ class ToolPhenomeMapProjects(restful.Resource):
 class ToolOntologyHiSimViewer(restful.Resource):
     def get(self, apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
             minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
-        return ontologyHiSimViewerblueprint.run_tool_api(apikey,  minOntologies, permutationTimeLimit, maxInNode,
+        return ontologyHiSimViewerblueprint.run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode,
                                                 permutations, disableBootstrap, minOverlap, nodeCutoff, ontologiesInNode,
                                                 useFDR,  p_Value, maxLevel, genesets)
 
@@ -4885,7 +4885,7 @@ class ToolOntologyHiSimViewerProjects(restful.Resource):
     def get(self, apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
             minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, projects):
         genesets = geneweaverdb.get_genesets_by_projects(apikey, projects)
-        return ontologyHiSimViewerblueprint.run_tool_api(apikey, minOntologies, permutationTimeLimit, maxInNode,
+        return ontologyHiSimViewerblueprint.run_tool_api(apikey, OntologyHierarchy,minOntologies, permutationTimeLimit, maxInNode,
                                                 permutations, disableBootstrap, minOverlap, nodeCutoff, ontologiesInNode,
                                                 useFDR, p_Value, maxLevel, genesets)
 class ToolBooleanAlgebra(restful.Resource):
@@ -5009,7 +5009,7 @@ api.add_resource(ToolPhenomeMapProjects,
 api.add_resource(ToolOntologyHiSimViewer,
                  '/api/tool/OntologyHiSimViewer/<apikey>/<OntologyHierarchy>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<genesets>/')
 api.add_resource(ToolOntologyHiSimViewerProjects,
-                 '/api/tool/OntologyHiSimViewer/byprojects/<apikey>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<projects>/')
+                 '/api/tool/OntologyHiSimViewer/byprojects/<apikey>/<OntologyHierarchy>/<minOntologies>/<permutationTimeLimit>/<maxInNode>/<permutations>/<disableBootstrap>/<minOverlap>/<nodeCutoff>/<ontologiesInNode>/<useFDR>/<p_Value>/<maxLevel>/<projects>/')
 
 api.add_resource(ToolBooleanAlgebra, '/api/tool/booleanalgebra/<apikey>/<relation>/<genesets>/')
 api.add_resource(ToolBooleanAlgebraProjects, '/api/tool/booleanalgebra/byprojects/<apikey>/<relation>/<projects>/')

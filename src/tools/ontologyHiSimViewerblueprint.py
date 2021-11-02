@@ -75,6 +75,7 @@ def run_tool():
 
         return flask.redirect('/analyze_ont')
 
+
     # gather the params into a dictionary
     homology_str = 'Homology'
     params = {homology_str: None}
@@ -135,7 +136,7 @@ def run_tool():
     return response
 
 
-@ontologyHiSim_viewer_blueprint.route('/run-phenome-map-api.html', methods=['POST'])
+@ontologyHiSim_viewer_blueprint.route('/run-ontologyHiSim-viewer-api.html', methods=['POST'])
 def run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
                  minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
     print('dbg run tool api')
@@ -159,7 +160,7 @@ def run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit,
         if tool_param.name.endswith('_'+'OntologyHierarchy'):
             params[tool_param.name]=OntologyHierarchy
             if OntologyHierarchy not in ['Off','On']:
-                params[tool_param.name]='Off'
+                params[tool_param.name]='On'
         if tool_param.name.endswith('_' + 'MaxInNode'):
             params[tool_param.name] = maxInNode
             if maxInNode not in ['4', '8', '12', '16', '20', '24', '28', '32']:
