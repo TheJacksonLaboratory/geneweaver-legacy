@@ -61,27 +61,44 @@ class PooledCursor(object):
 
             self.conn_pool.putconn(self.connection)
 
-def get_geneset_hom_ids_v3(gs_id):
+# original
+def get_geneset_hom_ids(gs_id):
+    """
+    Gets all hom_ids that are associated with a gs_id
+    :param gs_id:
+    :return:
+    """
     with PooledCursor() as cursor:
-        cursor.execute('''SELECT hom_id, ode_ref_id, gene.ode_gene_id, gdb_id FROM extsrc.gene INNER JOIN extsrc.geneset_value gsv
+        cursor.execute('''SELECT DISTINCT hom_id FROM extsrc.homology h INNER JOIN extsrc.geneset_value gsv 
+                ON h.ode_gene_id=gsv.ode_gene_id INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id 
+                WHERE gs_status not like 'de%%' AND g.gs_id=%s''', (gs_id,))
+        if cursor.rowcount == 0:
+            return 0
+        else:
+            return [r[0] for r in cursor.fetchall()]
+
+def get_geneset_hom_ids_agr(gs_id):
+    with PooledCursor() as cursor:
+        cursor.execute('''SELECT hom_id, ode_ref_id, gene.ode_gene_id FROM extsrc.gene INNER JOIN extsrc.geneset_value gsv
                                 ON gene.ode_gene_id=gsv.ode_gene_id INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id
                                 LEFT JOIN extsrc.homology h ON  gene.ode_gene_id = h.ode_gene_id
                                 WHERE gdb_id IN (10,11,12,13,14,15,16) AND gs_status not like 'de%%' AND g.gs_id=%s''', (gs_id,))
         genes = cursor.fetchall()
+        final_result = []
         for g in genes:
-            g = list(g)
-            ode_gene_id = g[0]
+            hom_id = g[0]
             ode_ref_id = g[1]
-            gdb_id = g[2]
-            response = requests.get(
-                f"{str(agr_url)}ortholog/get_id_by_from_gene/{str(ode_gene_id)}/{str(ode_ref_id)}/{str(gdb_id)}")
+            ode_gene_id = g[2]
+            result = [ode_gene_id, ode_ref_id, hom_id]
+            response = requests.get(f"{str(agr_url)}get_ortho_id_if_gene_is_ortholog/{str(ode_gene_id)}/{str(ode_ref_id)}")
             if(response.ok):
-                g.append(response.json())
+                result.append(response.json())
             else:
-                g.append("NA")
-        return genes
+                result.append("NA")
+            final_result.append(result)
+        return final_result
 
-info = get_geneset_hom_ids_v3(338314)
+info = get_geneset_hom_ids_agr(338547)
 print(info)
 
 print("\n--- %s seconds ---" % (time.time() - start_time))
