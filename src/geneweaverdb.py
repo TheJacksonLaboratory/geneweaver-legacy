@@ -19,6 +19,10 @@ import pubmedsvc
 import annotator as ann
 import re
 
+import requests
+# edit once deployed, currently running on crick server
+agr_url = 'http://127.0.0.1:5000/agr_service/'
+
 app = flask.Flask(__name__)
 
 class GeneWeaverThreadedConnectionPool(ThreadedConnectionPool):
@@ -847,6 +851,7 @@ def get_all_species_resources():
     with PooledCursor() as cursor:
         cursor.execute('''SELECT sp_name, sp_taxid, sp_date FROM species WHERE sp_name != '' ORDER BY sp_id;''')
         return list(dictify_cursor(cursor))
+
 
 
 def get_all_platform_resources():
@@ -2600,7 +2605,7 @@ def get_species_id_by_name(sp_name):
     with PooledCursor() as cursor:
         cursor.execute('''SELECT sp_id FROM species WHERE sp_name=%s''', (sp_name,))
         results = cursor.fetchone()[0]
-        return results
+    return results
 
 
 def get_gdb_id_by_name(gdb_name):
@@ -2635,7 +2640,6 @@ def monthly_tool_stats():
         return response
     except Exception as e:
         return str(e)
-
 
 def get_bimodal_threshold(gs_id):
     with PooledCursor() as cursor:
@@ -3465,7 +3469,7 @@ def update_annotation_pref(user_id, annotator):
     return {'error': 'unable to update user annotation'}
 
 
-def get_geneset_tier(gsid):
+def ier(gsid):
     """
     Returns the tier associated with the given gene set ID.
 
@@ -3544,7 +3548,7 @@ def get_similar_genesets(geneset_id, user_id, grp_by):
     """
 
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id is 0:
+    if user_id == 0:
         user_id = -1
 
     # updating the sql to include a partition_by clause. 0 = sorted by jaccard (no grouping; 1 = group by tier;
@@ -3599,7 +3603,7 @@ def get_similar_genesets_by_publication(geneset_id, user_id):
     gs_ids = []
     gs_ids_clean = []
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id is 0:
+    if user_id == 0:
         user_id = -1
     # print geneset_id
     with PooledCursor() as cursor:
@@ -3637,7 +3641,7 @@ def get_genesets_for_publication(pub_id, user_id):
     genesets = []
 
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id is 0:
+    if user_id == 0:
         user_id = -1
 
     with PooledCursor() as cursor:
@@ -4148,7 +4152,7 @@ def transpose_genes_by_species(attr):
                                 NATURAL JOIN homology h2
                                 NATURAL JOIN gene
                                 WHERE h2.hom_source_name='Homologene'
-                                      AND h1.hom_source_id=h2.hom_source_id
+                                      AND h1.hom_source_id=h2.hom_source_ido
                                       AND {} IN %(genelist)s)
                             AND sp_id=%(newSpecies)s AND ode_pref='t' AND gdb_id=7;'''.format(gene_id_type)
 
@@ -4160,6 +4164,16 @@ def transpose_genes_by_species(attr):
         if res is not None:
             for r in res:
                 transposedGenes.append(r[0])
+
+        ### temp agr code ###
+        if gene_id_type == 'ode_ref_id':
+            payload = {'genes': g, 'species': newSpecies}
+            response = (requests.get(f'{agr_url}transpose_genes_by_species', params=payload)).json()
+            for i in response:
+                    if i not in transposedGenes:
+                        transposedGenes.append(i)
+        ##################
+
         return transposedGenes
 
 
@@ -4223,7 +4237,7 @@ def get_species_homologs(hom_id):
 
 def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
     """
-    This geneset value query has been augmented to return a list of sp_ids that can be used
+    This geneset value query has been augmen ted to return a list of sp_ids that can be used
     on the geneset information page.
     Also, augmented to add a session call for sorting
     :param geneset_id:
@@ -4264,6 +4278,7 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
 	                FROM production.project2geneset
 	                WHERE pj_id = %s)
 	              AND
+	              
 		          gsv.ode_gene_id IN
 		          ((SELECT DISTINCT ode_gene_id
 					FROM geneset_value
@@ -4282,6 +4297,7 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
 						(SELECT gs_id
 						FROM production.project2geneset
 						WHERE pj_id = %s))))
+				
 		          AND
                   -- This checks to see if the alternate symbol the user wants to view actually exists
                   -- for the given gene. If it doesn't, a default gene symbol is returned. If null was
@@ -4294,7 +4310,7 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
                   -- When viewing symbols, always pick the preferred gene symbol
                   CASE WHEN g.gdb_id = 7
                   THEN g.ode_pref = 't'
-                  ELSE true
+                  ELSE truet
                   END''' + s, (pj_tg_id, pj_int_id, pj_tg_id, ode_ref))
 
         return [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
@@ -4371,7 +4387,7 @@ def geneset_intersection_values_for_mset(gs_a, gs_b):
             
             INNER JOIN gene AS g
             ON gsv.ode_gene_id = g.ode_gene_id
-            WHERE gsv.gs_id = %s
+            WHERE gsv.gs_id = %so
             AND
             gsv.ode_gene_id IN
             (
@@ -4414,7 +4430,6 @@ def get_genecount_in_geneset(geneset_id):
         cursor.execute(stmt)
         return cursor.fetchone()[0]
 
-
 def get_gene_homolog_ids(ode_gene_ids, gdb_id):
     """
     Maps genes in a given gene set to their homolog IDs, then uses those
@@ -4439,23 +4454,35 @@ def get_gene_homolog_ids(ode_gene_ids, gdb_id):
     with PooledCursor() as cursor:
         cursor.execute(
             '''
-            SELECT      h.ode_gene_id, g.ode_ref_id 
-            FROM        homology AS h 
-            INNER JOIN  homology AS h2 
-            ON          h.hom_id = h2.hom_id 
+            SELECT      h.ode_gene_id, g.ode_ref_id
+            FROM        homology AS h
+            INNER JOIN  homology AS h2
+            ON          h.hom_id = h2.hom_id
             INNER JOIN  gene AS g
-            ON          g.ode_gene_id = h2.ode_gene_id 
-            WHERE       h.ode_gene_id in %s AND 
+            ON          g.ode_gene_id = h2.ode_gene_id
+            WHERE       h.ode_gene_id in %s AND
                         g.gdb_id = %s;
             ''', (ode_gene_ids, gdb_id,)
         )
+        ode2ref = cursor.fetchall()
 
-        ode2ref = {}
+    #####
+    # temp agr code
+    #####
 
-        for row in cursor.fetchall():
-            ode2ref[row[0]] = row[1]
+    # get info from agr
+    agr_compatible_gdb_ids = [10, 11, 12, 13, 14, 15, 16]
+    agr_results = []
 
-        return ode2ref
+    if gdb_id in agr_compatible_gdb_ids:
+        for id in ode_gene_ids:
+            response = requests.get(f"{agr_url}get_ortholog_by_from_gene_and_gdb/{id}/{gdb_id}")
+            if (response.ok and len(response.json()) > 0):
+                for r in response.json():
+                    temp = (id, r[0])
+                    agr_results.append(temp)
+        ode2ref = ode2ref + agr_results
+    return ode2ref
 
 def get_geneset_values(
     gs_id, gdb_id='7', limit=50, offset=0, search='', sort='', direct='asc'
@@ -4905,7 +4932,7 @@ def get_all_gene_ids(gs_id):
                 data[gid[0]][name] = '-'
             cur_value = data[gid[0]][name]
             if str(gid[2]) == name:
-                if data[gid[0]][name] is '-':
+                if data[gid[0]][name] == '-':
                     data[gid[0]][name] = str(gid[1])
                 else:
                     data[gid[0]][name] = '|'.join((cur_value + '|' + str(gid[1])).split('|'))
@@ -4958,16 +4985,21 @@ def if_gene_has_homology(gene_id):
     :param gene_id:
     :return:
     """
+    result = 0
     with PooledCursor() as cursor:
         cursor.execute(
-                '''SELECT hom_id
-               FROM extsrc.homology
-               where ode_gene_id = %s;
-            ''', (gene_id,))
+            '''SELECT hom_id
+           FROM extsrc.homology
+           where ode_gene_id = %s;
+        ''', (gene_id,))
         if cursor.fetchone():
-            return 1
+            result = 1
+        #### temp agr code ####
         else:
-            return 0
+            response = requests.get(f"{agr_url}/if_ode_gene_has_ortholog/{gene_id}")
+            result = response.json()
+        ##########
+    return result
 
 
 def get_intersect_by_homology(gsid1, gsid2):
