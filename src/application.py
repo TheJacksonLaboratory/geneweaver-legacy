@@ -4818,14 +4818,14 @@ class ToolOntologysetViewerProjects(restful.Resource):
         return genesetviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, genesets)
 
 class ToolOntology2GenesViewer(restful.Resource):
-    def get(self, apikey, supressDisconnected, minDegree, ontologyset):
-        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, ontologyset)
+    def get(self, apikey, supressDisconnected, minDegree,homology, ontologyset):
+        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree,homology, ontologyset)
 
 class ToolOntology2GenesViewerProjects(restful.Resource):
-    def get(self, apikey, supressDisconnected, minDegree, projects):
+    def get(self, apikey, supressDisconnected, minDegree, homology,projects):
         # @TODO assign set of ontology from user selection to ontologyset
         ontologyset = None
-        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree, ontologyset)
+        return ontology2genesviewerblueprint.run_tool_api(apikey, supressDisconnected, minDegree,homology, ontologyset)
 
 class ToolJaccardSimilarity(restful.Resource):
     def get(self, apikey, homology, pairwiseDeletion, genesets):
@@ -4980,9 +4980,9 @@ api.add_resource(ToolOntologysetViewerProjects,
                  '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
 
 api.add_resource(ToolOntology2GenesViewer,
-                 '/api/tool/ontology2genesviewer/<apikey>/<supressDisconnected>/<minDegree>/<ontologyset>/')
+                 '/api/tool/ontology2genesviewer/<apikey>/<supressDisconnected>/<minDegree>/<Homology>/<ontologyset>/')
 api.add_resource(ToolOntology2GenesViewerProjects,
-                 '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<projects>/')
+                 '/api/tool/genesetviewer/byprojects/<apikey>/<supressDisconnected>/<minDegree>/<Homology>/<projects>/')
 
 api.add_resource(ToolJaccardClustering, '/api/tool/jaccardclustering/<apikey>/<homology>/<method>/<genesets>/')
 api.add_resource(ToolJaccardClusteringProjects,

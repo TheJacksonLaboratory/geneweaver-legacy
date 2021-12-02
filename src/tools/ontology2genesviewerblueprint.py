@@ -112,7 +112,7 @@ def run_tool():
     return response
     
 @ontology2genes_viewer_blueprint.route('/run-ontology2genes-viewer-api.html', methods=['POST'])
-def run_tool_api(apikey, supressDisconnected, minDegree, ontology ):
+def run_tool_api(apikey, supressDisconnected, minDegree,homology, ontology ):
     # TODO need to check for read permissions on genesets
 
     user_id = gwdb.get_user_id_by_apikey(apikey)
@@ -130,6 +130,8 @@ def run_tool_api(apikey, supressDisconnected, minDegree, ontology ):
                 params[tool_param.name] = 'On'
         if tool_param.name.endswith('_' + 'MinDegree'):
             params[tool_param.name] = minDegree
+        if tool_param.name.endswith('_'+'Homology'):
+            params[tool_param.name] = homology
         # if minDegree not in ['Auto','1','2','3','4','5','10','20']:
         #     params[tool_param.name] = 'Auto'
         if minDegree not in range(1, 20, 1):
