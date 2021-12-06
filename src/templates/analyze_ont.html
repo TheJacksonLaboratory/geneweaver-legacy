@@ -93,8 +93,11 @@
     }
 
     .remove_button {
-        padding: 7px 7px;
-        background-color: darkred;
+        padding: 12px 16px;
+        border:none;
+        color: darkred;
+        font-size:16px;
+        background-color: transparent;
 
     }
 
@@ -538,7 +541,7 @@
             'aoColumnDefs': [{
                 'aTargets': [0],
                 'fnCreatedCell': function (nTd, _, oData, _, _) {
-                    var roCheck = $('<button class="remove_button"></button>');
+                    var roCheck = $('<button class="remove_button"><i class="fa fa-trash"></i></button>');
 
                     {#$('<div class="ui-checkbox">' +#}
                     {#    '<input class="addGene" name="gsoptions[]" ' +#}
