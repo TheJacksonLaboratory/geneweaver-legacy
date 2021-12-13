@@ -104,11 +104,7 @@ def _dictify_row(cursor, row):
     """Turns the given row into a dictionary where the keys are the column names"""
     d = OrderedDict()
     for i, col in enumerate(cursor.description):
-        # TODO find out what the right way to do unicode for postgres is? Is UTF-8 the right encoding here?
-        # This prevents exceptions when non-ascii chars show up in a jinja2 template variable
-        # but I'm not sure if it's the correct solution
         if sys.version_info[0] < 3:
-            # TODO: Should be deprecated with python2
             d[col[0]] = row[i].decode('utf-8') if type(row[i]) == str else row[i]
         else:
             d[col[0]] = row[i] if type(row[i]) == str else row[i]
@@ -127,18 +123,13 @@ def Union(list1, list2):
 
 def flatten(parent: int, tree_dict: dict, is_flattened:dict, loops_record: list,path_tracer: list):
     path_tracer.append(parent)
-    #print(f'current parent: {parent} \t current children: {tree_dict[parent]}')
-    # print(f'current path_tracer is {path_tracer}')
     is_flattened[parent] = 'C'
 
     appending_list=set([])
     for n in list(tree_dict[parent]):
-        # print(f"travel to {n} from {tree_dict[parent]}")
         if n not in tree_dict:
-            #print("leaf node")
             continue
         elif is_flattened[n] == 'T':
-            #tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
             appending_list=appending_list | tree_dict[n]
         elif is_flattened[n] == 'C':
             print("detect a loop!")
@@ -152,51 +143,12 @@ def flatten(parent: int, tree_dict: dict, is_flattened:dict, loops_record: list,
 
         else:
             # if the sub tree is not flattened
-            #print(f"flattening {n}")
             flatten(n, tree_dict, is_flattened,loops_record,path_tracer)
-            # tree_dict[parent] = Union(tree_dict[parent], tree_dict[n])
             appending_list = appending_list | tree_dict[n]
 
-    # print(type(tree_dict[parent]))
-    # print(type(appending_list))
     tree_dict[parent]=tree_dict[parent] | appending_list
     is_flattened[parent] = 'T'
     path_tracer.remove(parent)
-    # print(f'after removing: {path_tracer}')
-    # print(f'------------------------------------------\n')
-
-
-'''
-test code
-
-
-test_dict = {
-    'A': ['B', 'C', 'D'],
-    'B': ['E', 'F', 'G', 'H'],
-    'C': ['I'],
-    'D': ['J', 'K'],
-    'G': ['L'],
-    'L': ['M'],
-    'H': ['N'],
-    'M': ['O', 'B'],
-    'O': ['P', 'Q']
-
-}
-
-is_flatterned = {}
-for parent in test_dict.keys():
-    is_flatterned[parent] = 'F'
-
-print(is_flatterned)
-loops_record = []
-path_tracer=[]
-for parent, children in test_dict.items():
-    if is_flatterned[parent] == 'F':
-        flatten(parent, test_dict, is_flatterned, loops_record,path_tracer)
-
-print(test_dict)
-print(f"{loops_record}")
-'''
 
 SQL_QUERY = [
     # 0
@@ -205,7 +157,6 @@ SQL_QUERY = [
 
 with PooledCursor() as cursor:
     cursor.execute(
-        # TODO: documentation
         '''
         select left_ont_id,right_ont_id from extsrc.ontology_relation JOIN extsrc.ontology ON extsrc.ontology_relation.right_ont_id=extsrc.ontology.ont_id where right_ont_id NOT IN(
     select left_ont_id
@@ -243,15 +194,9 @@ with PooledCursor() as cursor:
     print('finish!')
 
     print("creating table row format for insert into...")
-    #flattened_tree_index = []
     flattened_tree_data = []
     i = 0
     for parent, children in tree_dict.items():
-        #flattened_tree_index.append(parent)
-        #children = ",".join(map(str, children))
-        #modified_children = "\'{" + children + "}\'"
-        #temp_list = str(parent) + "," + modified_children
-        #flattened_tree_data.append(temp_list)
         flattened_tree_data.append((int(parent), list(children)))
         if i < 10:
             print(parent, " - ", children)
@@ -261,12 +206,6 @@ with PooledCursor() as cursor:
     cursor.executemany(SQL_QUERY[0], flattened_tree_data)
 
     print("Done")
-
-    #cursor.execute('''INSERT INTO extsrc.flattened_ontology_relation (ont_id, descendants_ont_id) VALUES(0, '{0, 0, 0}');''')
-
-
-
-    # print(len(tree_dict.keys()))
     print(len(tree_dict))
 
 
