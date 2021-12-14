@@ -163,7 +163,11 @@
                             if (data['tool'] === 'OntologySet Graph')
                                 $.redirectPost('/run-ontologyset-viewer.html', form);
                             if (data['tool'] === 'Ontology2Genes Graph')
-                                $.redirectPost('/run-ontology2genes-viewer.html')
+                                $.redirectPost('/run-ontology2genes-viewer.html',form);
+                            if (data['tool'] === 'OntHiSim Graph')
+                                $.redirectPost('/run-OntHiSim-viewer.html',form);
+
+
 
 						});
 					});
