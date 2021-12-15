@@ -59,8 +59,32 @@
     }
 
 </style>
+<!--CUR_ID Implementation Start-->
+<style>
 
+    .alert {
+        padding: 10px;
+        background-color: #f44336;
+        color: white;
+    }
 
+    .closewarning {
+        margin-left: 15px;
+        color: white;
+        font-weight: bold;
+        float: right;
+        font-size: 22px;
+        line-height: 20px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .closewarning:hover {
+        color: black;
+    }
+
+</style>
+<!--CUR_ID Implementation End-->
 
 
 {% if geneset.geneset_id is not defined or view != 'True' %}
@@ -172,7 +196,14 @@
                 Access Permissions
             </h2>
         </div>
-
+        <!--CUR_ID Implementation Start-->
+        {% if user_info.is_admin %}
+        <div class="alert">
+            <span class="closewarning" onclick="this.parentElement.style.display='none';">&times;</span>
+            <strong>Warning!</strong> You are logged in as admin. Changing the curation tier will change it for all users.
+        </div>
+        {% endif %}
+        <!--CUR_ID Implementation End-->
         <div style="margin-left: 1em;">
             <br>
             <br>
@@ -195,6 +226,29 @@
                 </div>
             </div>
         </div>
+
+<!--CUR_ID Implementation Start-->
+        {% if user_info.is_admin %}
+        <div style="margin-left: 1em;">
+            <br>
+            <br>
+            <div class="row">
+                <div class="col-md-2">
+                    Curation Tier <strong>*</strong>:
+                </div>
+            <div class="col-xs-2">
+                <select name="tier" class="form-control" required>
+                    <option value="1" {% if geneset.cur_id == 1 %} selected {% endif %}>Tier One</option>
+                    <option value="2" {% if geneset.cur_id == 2 %} selected {% endif %}>Tier Two</option>
+                    <option value="3" {% if geneset.cur_id == 3 %} selected {% endif %}>Tier Three</option>
+                    <option value="4" {% if geneset.cur_id == 4 %} selected {% endif %}>Tier Four</option>
+                    <option value="5" {% if geneset.cur_id == 5 %} selected {% endif %}>Tier Five</option>
+                </select>
+            </div>
+            </div>
+        </div>
+        {% endif %}
+<!--CUR_ID Implementation End-->
         <br>
 
         <div class="panel-heading" style="border-bottom-width: thick; border-bottom-color: #006400;">

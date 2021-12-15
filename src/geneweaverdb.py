@@ -1408,6 +1408,9 @@ def update_geneset(usr_id, form):
     pub_pubmed = form.get('pub_pubmed', '').strip()
     pub_id = form.get('pub_id', '').strip()
     private_public = form.get('permissions', 'private').strip()
+    # CUR_ID Implementation Start
+    tier_id = int(form.get('tier'))
+    # CUR_ID Implmentation End
 
     ## Should have already been checked but does't hurt to do it again I guess
     if ((get_user(usr_id).is_admin == False and\
@@ -1506,14 +1509,27 @@ def update_geneset(usr_id, form):
 
     # Apply private/public logic to tier 4 and 5 Gene Sets
     current_version = get_geneset(gs_id, usr_id)
-    if current_version.cur_id == 5 and private_public == 'public':
+    # Added for loop tier_id change at the top
+    # Not doing so gets tier_id code overwritten by the tier 4 and 5 public/private logic
+    # CUR_ID Implementation Start
+    if tier_id in [1,2,3,4] and private_public == 'public':
+        cur_id = tier_id
+        # gs_groups is a comma separated string in the dataase, so here we need to use a string
+        gs_groups = 0
+    elif tier_id in [1,2,3,4,5] and private_public == 'private':
+        cur_id = 5
+        # gs_groups is a comma separated string in the dataase, so here we need to use a string
+        gs_groups = -1
+    # CUR_ID Implementation End
+    elif current_version.cur_id == 5 and private_public == 'public':
         cur_id = 4
-        # gs_groups is a comma seperated string in the database, so here we need to use a string
-        gs_groups = '0'
+        # gs_groups is a comma separated string in the database, so here we need to use a string
+        cur_id = 4
+        gs_groups = 0
     elif current_version.cur_id == 4 and private_public == 'private':
         cur_id = 5
-        # gs_groups is a comma seperated string in the database, so here we need to use a string
-        gs_groups = '-1'
+        # gs_groups is a comma separated string in the dataase, so here we need to use a string
+        gs_groups = -1
     else:
         cur_id = current_version.cur_id
         gs_groups = current_version.group_ids
