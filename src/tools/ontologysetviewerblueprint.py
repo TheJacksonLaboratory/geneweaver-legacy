@@ -13,8 +13,6 @@ ontologyset_viewer_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
 @ontologyset_viewer_blueprint.route('/run-ontologyset-viewer.html', methods=['POST'])
 def run_tool():
-    # TODO need to check for read permissions on genesets
-
     form = flask.request.form
 
     # pull out the selected geneset IDs
@@ -126,7 +124,6 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
                 params[homology_str] = 'Included'
                 params[tool_param.name] = 'Included'
         '''
-    # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
 
     
     # pull out the selected geneset IDs
@@ -164,7 +161,6 @@ def run_tool_api(apikey, supressDisconnected, minDegree, genesets ):
 
 @ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
 def view_result(task_id):
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
 
@@ -205,7 +201,6 @@ def view_result(task_id):
 
 @ontologyset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
 
     if async_result.state == states.PENDING:
