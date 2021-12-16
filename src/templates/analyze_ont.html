@@ -522,8 +522,6 @@
 
     $(document).ready(function () {
         var selectOnt = []
-        console.log("document ready check")
-        console.log("the datatable version is" + $.fn.DataTable.version)
         // DataTable initialization for the list of gene set annotations
         var table = $('#annotation-list').DataTable({
             'paging': false,
@@ -559,7 +557,7 @@
                     var roCheck = $('<input type="hidden" ' +
                         ' name=selected_ontology_' + iRow +
                         ' value=' + '"' + oData['id'] + '">');
-                    console.log("input cell is " + oData['id'])
+
                     $(nTd).append(roCheck);
 
                 }
@@ -596,13 +594,12 @@
         });
 
         $('#annotation-list').on('click', '.remove_button', function () {
-            console.log("delete button clicked");
+
             table.row($(this).parents('tr')).remove().draw();
         });
 
         $('#add-annotation').on('keyup', function () {
 
-            console.log("adding the annotation")
             var value = $(this).val();
 
             if (value.length < 3)
@@ -622,8 +619,7 @@
                         // Custom function for handling selection events
                         select: function (event, ui) {
                             event.preventDefault();
-                            console.log("the ontology id you selected is " + ui.item.ont_id)
-
+\
                             $.ajax({
                                 url: '/getOntologyTermsByID.json',
                                 data: {ID: ui.item.ont_id},
@@ -631,7 +627,6 @@
                                 success: function (r) {
                                     var result = r.list
                                     selectOnt.push(result["ontology_id"])
-                                    console.log(result)
 
                                     var selected_ids = table.column(2).data().toArray();
 
@@ -648,7 +643,6 @@
                                     } else {
 
                                         {# TODO pop the warning message #}
-                                        console.log("repeat selection");
                                         var warning_section = document.getElementById("ontology_Warning");
                                         warning_section.innerHTML = '<div class="alert alert-danger fade in" style="text-align:center"> ' +
                                             '<button type="button" class="close" data-dismiss="alert" aria-hidden="true" >' +
