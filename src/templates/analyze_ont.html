@@ -619,7 +619,7 @@
                         // Custom function for handling selection events
                         select: function (event, ui) {
                             event.preventDefault();
-\
+
                             $.ajax({
                                 url: '/getOntologyTermsByID.json',
                                 data: {ID: ui.item.ont_id},
