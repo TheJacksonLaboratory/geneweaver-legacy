@@ -57,8 +57,6 @@ Another is a JSON file containing the nodes and edges needed for the d3js viz.
 
 @ontologyHiSim_viewer_blueprint.route('/run-ontologyHiSim-viewer.html', methods=['POST'])
 def run_tool():
-    # TODO need to check for read permissions on genesets
-
     form = flask.request.form
 
     # pull out the selected geneset IDs
@@ -86,7 +84,6 @@ def run_tool():
     if params[homology_str] != 'Excluded':
         params[homology_str] = 'Included'
 
-    # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
 
     # insert result for this run
     user_id = None
@@ -140,7 +137,6 @@ def run_tool():
 def run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit, maxInNode, permutations, disableBootstrap,
                  minOverlap, nodeCutoff, ontologiesInNode, useFDR, p_Value, maxLevel, genesets):
     print('dbg run tool api')
-    # TODO need to check for read permissions on genesets
     user_id = gwdb.get_user_id_by_apikey(apikey)
 
     # pull out the selected geneset IDs
@@ -197,7 +193,7 @@ def run_tool_api(apikey, OntologyHierarchy, minOntologies, permutationTimeLimit,
             params[tool_param.name] = maxLevel
             if maxLevel not in ['0', '10', '20', '40', '60', '80', '100']:
                 params[tool_param.name] = '40'
-    # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
+
     selected_geneset_ids = genesets.split(":")
     if len(selected_geneset_ids) < 2:
         # TODO add nice error message about missing genesets
@@ -270,8 +266,6 @@ def download_bmp(task_id):
 def view_result(task_id):
     """
     """
-    
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     resultpath = config.get('application', 'results')
@@ -320,7 +314,6 @@ def view_result(task_id):
 
 @ontologyHiSim_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
 
     print(async_result)
