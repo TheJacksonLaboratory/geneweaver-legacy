@@ -36,11 +36,6 @@ def run_tool():
     #     edited_add_ontology = [ont for ont in add_ontology]
     #     selected_ontology_ids = selected_ontology_ids + edited_add_ontology
 
-    with open('/TermExtracted_Ontology2GenesViewer.txt', 'w') as out:
-        for item in selected_ontology_ids:
-            out.write(item + "\n")
-        out.close()
-
     if len(selected_ontology_ids) < 2:
         flask.flash(('You need to select at least 2 ontology as input for '
                     'this tool.'))
@@ -48,20 +43,9 @@ def run_tool():
         return flask.redirect('/analyze_ont')
 
     # gather the params into a dictionary
-    # Ontology set viewer does not need homology
-    #homology_str = 'Homology'
-    #params = {homology_str: None}
     params = {}
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
         params[tool_param.name] = form[tool_param.name]
-    # Ontology2Genes viewer does not need homology
-    '''   
-        if tool_param.name.endswith('_' + homology_str):
-            params[homology_str] = form[tool_param.name]
-    if params[homology_str] != 'Excluded':
-        params[homology_str] = 'Included'
-    '''
-
 
     # insert result for this run
     user_id = None
@@ -72,15 +56,6 @@ def run_tool():
 
         return flask.redirect('/analyze_ont')
 
-    # Gather emphasis gene ids and put them in paramters
-    '''
-    emphgeneids = []
-    emphgenes = gwdb.get_gene_and_species_info_by_user(user_id)
-    for row in emphgenes:
-        emphgeneids.append(str(row['ode_gene_id']))
-    params['EmphasisGenes'] = emphgeneids
-    selected_geneset_ids = []
-    '''
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
     desc = '{} on {} Ontology'.format(tool.name, len(selected_ontology_ids))
@@ -119,8 +94,6 @@ def run_tool_api(apikey, supressDisconnected, minDegree,homology, ontology ):
     
 
     # gather the params into a dictionary
-    #homology_str = 'Homology'
-    #params = {homology_str: None}
     params = {}
     
     for tool_param in gwdb.get_tool_params(TOOL_CLASSNAME, True):
@@ -132,27 +105,13 @@ def run_tool_api(apikey, supressDisconnected, minDegree,homology, ontology ):
             params[tool_param.name] = minDegree
         if tool_param.name.endswith('_'+'Homology'):
             params[tool_param.name] = homology
-        # if minDegree not in ['Auto','1','2','3','4','5','10','20']:
-        #     params[tool_param.name] = 'Auto'
         if minDegree not in range(1, 20, 1):
             params[tool_param.name] = 'Auto'
-
-        # homology is not needed in ontologySetViewer
-        '''
-        if tool_param.name.endswith('_' + homology_str):
-            params[homology_str] = 'Excluded'
-            params[tool_param.name] = 'Excluded'
-            if homology != 'Excluded':
-                params[homology_str] = 'Included'
-                params[tool_param.name] = 'Included'
-        '''
-    # TODO include logic for "use emphasis" (see prepareRun2(...) in Analyze.php)
 
     
     # pull out the selected geneset IDs
     selected_ontology_ids = ontology.split(":")
     if len(selected_ontology_ids) < 2:
-        # TODO add nice error message about missing genesets
         raise Exception('there must be at least two genesets selected to run this tool')
 
     
@@ -184,7 +143,6 @@ def run_tool_api(apikey, supressDisconnected, minDegree,homology, ontology ):
 
 @ontology2genes_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
 def view_result(task_id):
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
     tool = gwdb.get_tool(TOOL_CLASSNAME)
 
@@ -225,7 +183,6 @@ def view_result(task_id):
 
 @ontology2genes_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
-    # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
 
     if async_result.state == states.PENDING:
