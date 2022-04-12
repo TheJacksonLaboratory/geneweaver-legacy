@@ -173,6 +173,9 @@
                         {{ macros.tool_param_select(tool.params['PhenomeMap_MaxLevel']) }}
                     </div>
                     <div class="col-md-4">
+                        {{ macros.tool_param_select(tool.params['PhenomeMap_EnrichedSimilarity']) }}
+                    </div>
+                    <div class="col-md-4">
                         <input type="hidden" name="genesets" value="{{ async_result.gs_ids|join(' ') }}"/>
                     </div>
                 </div>
