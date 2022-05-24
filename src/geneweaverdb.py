@@ -3469,7 +3469,7 @@ def update_annotation_pref(user_id, annotator):
     return {'error': 'unable to update user annotation'}
 
 
-def ier(gsid):
+def get_geneset_tier(gsid):
     """
     Returns the tier associated with the given gene set ID.
 
@@ -3548,7 +3548,7 @@ def get_similar_genesets(geneset_id, user_id, grp_by):
     """
 
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id == 0:
+    if user_id is 0:
         user_id = -1
 
     # updating the sql to include a partition_by clause. 0 = sorted by jaccard (no grouping; 1 = group by tier;
@@ -3603,7 +3603,7 @@ def get_similar_genesets_by_publication(geneset_id, user_id):
     gs_ids = []
     gs_ids_clean = []
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id == 0:
+    if user_id is 0:
         user_id = -1
     # print geneset_id
     with PooledCursor() as cursor:
@@ -3641,7 +3641,7 @@ def get_genesets_for_publication(pub_id, user_id):
     genesets = []
 
     # TODO not sure if we really need to convert to -1 here. The geneset_is_readable2 function may be able to handle None
-    if user_id == 0:
+    if user_id is 0:
         user_id = -1
 
     with PooledCursor() as cursor:
@@ -4063,14 +4063,12 @@ class GenesetValue:
         self.value_list = gsv_dict['gsv_value_list']
         self.is_in_threshold = gsv_dict['gsv_in_threshold']
         self.date = gsv_dict['gsv_date']
-        #self.hom_id = gsv_dict['hom_id']
         self.gene_rank = ((float(gsv_dict['gene_rank']) / 0.15) * 100)
         #self.ode_ref = gsv_dict['ode_ref']
         self.ode_ref = gsv_dict['ode_ref_id']
         self.gdb_id = gsv_dict['gdb_id']
 
         hom_ids = list(set((requests.get(f"{agr_url}get_homology_by_ode_gene_id/{gsv_dict['ode_gene_id']}")).json()))
-
         self.hom_id = hom_ids
 
         hom = gsv_dict.get('hom')
@@ -4159,7 +4157,7 @@ def transpose_genes_by_species(attr):
                                 NATURAL JOIN homology h2
                                 NATURAL JOIN gene
                                 WHERE h2.hom_source_name='Homologene'
-                                      AND h1.hom_source_id=h2.hom_source_ido
+                                      AND h1.hom_source_id=h2.hom_source_id
                                       AND {} IN %(genelist)s)
                             AND sp_id=%(newSpecies)s AND ode_pref='t' AND gdb_id=7;'''.format(gene_id_type)
 
@@ -4172,14 +4170,12 @@ def transpose_genes_by_species(attr):
             for r in res:
                 transposedGenes.append(r[0])
 
-        ### temp agr code ###
         if gene_id_type == 'ode_ref_id':
             payload = {'genes': g, 'species': newSpecies}
             response = (requests.get(f'{agr_url}transpose_genes_by_species', params=payload)).json()
             for i in response:
                     if i not in transposedGenes:
                         transposedGenes.append(i)
-        ##################
 
         return transposedGenes
 
@@ -4230,7 +4226,7 @@ def get_species_homologs(hom_id):
 
 def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
     """
-    This geneset value query has been augmen ted to return a list of sp_ids that can be used
+    This geneset value query has been augmented to return a list of sp_ids that can be used
     on the geneset information page.
     Also, augmented to add a session call for sorting
     :param geneset_id:
@@ -4303,7 +4299,7 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
                   -- When viewing symbols, always pick the preferred gene symbol
                   CASE WHEN g.gdb_id = 7
                   THEN g.ode_pref = 't'
-                  ELSE truet
+                  ELSE true
                   END''' + s, (pj_tg_id, pj_int_id, pj_tg_id, ode_ref))
 
         return [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
@@ -4380,7 +4376,7 @@ def geneset_intersection_values_for_mset(gs_a, gs_b):
             
             INNER JOIN gene AS g
             ON gsv.ode_gene_id = g.ode_gene_id
-            WHERE gsv.gs_id = %so
+            WHERE gsv.gs_id = %s
             AND
             gsv.ode_gene_id IN
             (
@@ -4425,6 +4421,22 @@ def get_genecount_in_geneset(geneset_id):
 
 
 def get_gene_homolog_ids(ode_gene_ids, gdb_id):
+    """
+    Maps genes in a given gene set to their homolog IDs, then uses those
+    homolog IDs to retrieve MOD gene identifiers for another species.
+    Used when for e.g. a user is viewing a human gene set but wants to see
+    equivalent genes using MGI or ZFIN identifiers.
+
+    arguments
+        ode_gene_ids:   list of ode_gene_ids in the gene set
+        gdb_id:         ID of the different gene type the user wants to see
+
+    returns
+        a mapping of ode_gene_ids to ode_ref_ids.
+        The ode_gene_ids in this case are the originals provided in the first
+        argument of this function. The ode_ref_ids are the reference IDs to
+        some other MOD, mapped across species.
+    """
     ode_gene_ids = list(set(ode_gene_ids))
     ode_gene_ids = tuple(ode_gene_ids)
 
@@ -4556,6 +4568,26 @@ def get_geneset_values(
             '''
             LIMIT %s OFFSET %s
             ''',
+            #ORDER BY
+            #    CASE WHEN %s = 'asc' THEN
+            #        CASE %s
+            #            WHEN 'value' THEN gsv.gsv_value :: character varying
+            #            WHEN 'alt' THEN gsv.ode_ref_id
+            #            ELSE gsv.gsv_source_list :: character varying
+            #        END
+            #    ELSE ''
+            #    END asc,
+            #    CASE WHEN %s = 'desc' THEN
+            #        CASE %s
+            #            WHEN 'value' THEN gsv.gsv_value :: character varying
+            #            WHEN 'alt' THEN gsv.ode_ref_id
+            #            ELSE gsv.gsv_source_list :: character varying
+            #        END
+            #    ELSE ''
+            #    END desc
+            #LIMIT %s OFFSET %s
+            #''',
+            #(gs_id, gdb_id, search, search, direct, sort, direct, sort, limit, offset)
             (gs_id, gdb_id, search, search, limit, offset)
         )
 
@@ -4857,7 +4889,7 @@ def get_all_gene_ids(gs_id):
                 data[gid[0]][name] = '-'
             cur_value = data[gid[0]][name]
             if str(gid[2]) == name:
-                if data[gid[0]][name] == '-':
+                if data[gid[0]][name] is '-':
                     data[gid[0]][name] = str(gid[1])
                 else:
                     data[gid[0]][name] = '|'.join((cur_value + '|' + str(gid[1])).split('|'))
@@ -4916,6 +4948,18 @@ def if_gene_has_homology(gene_id):
 
 
 def get_intersect_by_homology_agr(gsid1, gsid2):
+    """
+    Returns genes found in the intersection of two gene sets while including
+    homologous relationships. If a gene has no homologs, it is not returned.
+
+    arguments
+        gsid1: gene set ID for the first set
+        gsid2: gene set ID for the second set
+
+    returns
+        a list of dicts containing gene symbols, ODE IDs, and homology IDs for
+        each gene found at the intersection of both sets
+    """
     gsid1_refs = get_geneset_values_simple(gsid1)
     gsid2_refs = get_geneset_values_simple(gsid2)
 
