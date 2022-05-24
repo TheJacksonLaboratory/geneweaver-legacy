@@ -120,280 +120,6 @@ def dictify_cursor(cursor):
     return (_dictify_row(cursor, row) for row in cursor)
 
 
-########################################################################################
-###################### AGR-GW INTEGRATION CHANGES ######################################
-########################################################################################
-# CODE CURRENTLY COMMENTED OUT:
-# - GenesetValue
-# - get_gene_homolog_ids
-# - get_species_homologs
-# - get_geneset_values
-# - if_gene_has_homology
-# - get_intersect_by_homology
-# - transpose_genes_by_species
-
-class GenesetValue:
-    def __init__(self, gsv_dict):
-        self.gs_id = gsv_dict['gs_id']
-        self.ode_gene_id = gsv_dict['ode_gene_id']
-        self.value = gsv_dict['gsv_value']
-        self.hits = gsv_dict['gsv_hits']
-        self.source_list = gsv_dict['gsv_source_list']
-        self.value_list = gsv_dict['gsv_value_list']
-        self.is_in_threshold = gsv_dict['gsv_in_threshold']
-        self.date = gsv_dict['gsv_date']
-        #self.hom_id = gsv_dict['hom_id']
-        self.gene_rank = ((float(gsv_dict['gene_rank']) / 0.15) * 100)
-        #self.ode_ref = gsv_dict['ode_ref']
-        self.ode_ref = gsv_dict['ode_ref_id']
-        self.gdb_id = gsv_dict['gdb_id']
-
-        hom_ids = list(set((requests.get(f"{agr_url}get_homology_by_ode_gene_id/{gsv_dict['ode_gene_id']}")).json()))
-        print(hom_ids)
-        self.hom_id = hom_ids
-
-        hom = gsv_dict.get('hom')
-        # Semi-private
-        self._hom = list(set(hom)) if hom else []
-
-    @property
-    def hom(self):
-        if not self._hom:
-            homs = []
-            for h in self.hom_id:
-                homs.extend(get_species_homologs(h))
-            self._hom = tuple(set(homs))
-        return self._hom
-
-    def __getitem__(self, index):
-        if index > len(self.source_list) - 1:
-            return self.source_list[0]
-        else:
-            return self.source_list[index]
-
-def get_gene_homolog_ids(ode_gene_ids, gdb_id):
-    ode_gene_ids = list(set(ode_gene_ids))
-    ode_gene_ids = tuple(ode_gene_ids)
-
-    ode2refs = {}
-    for g in ode_gene_ids:
-        hom_ids = (requests.get(f"{agr_url}get_homology_by_ode_gene_id/{g}")).json()
-        refs = []
-        for h in hom_ids:
-            refs.extend((requests.get(f"{agr_url}get_ode_genes_from_hom_id/{h}/{gdb_id}")).json())
-        if len(refs) != 0:
-            ode2refs[g] = refs
-
-    return ode2refs
-
-
-def get_species_homologs(hom_id):
-    if not hom_id:
-        return []
-    response = requests.get(f"{agr_url}get_sp_id_by_hom_id/{hom_id}")
-    return response.json()
-
-def get_geneset_values(
-        gs_id, gdb_id='7', limit=50, offset=0, search='', sort='', direct='asc'
-):
-    """
-    Retrieves the list of gene set values for the given gene set.
-    Updated version of the get_geneset_values function designed to remove
-    dependence on session variables and fix several bugs: 1) genes without
-    homologs don't show up in the gene list, 2) paralogs for all genes show up
-    in the gene list, 3) genes with more than one of the same identifier
-    types prevent other identifiers from showing up.
-    The original function was a nightmare to debug so this is split into
-    a separate component for retrieving IDs across species.
-
-    arguments
-        gs_id:  gene set ID for the values being retrieved
-        gdb_id: gene type (genedb) ID to use when retrieving gene set genes
-        limit:  number of rows to return
-        offset: used in conjuction w/ limit to paginate the returned results
-        search: gene symbol string to filter results with
-        sort:   string specifying how the results should be sorted, this can be
-                one of several values:
-                    value:  sort by the gene score
-                    alt:    sort by the currently displayed gene identifier
-                    otherwise the default sort is the originally uploaded gene
-                    identifier
-        direct: specifies the direction of the sort, either 'asc' or 'desc'
-
-    returns
-        a list of GenesetValue objects
-    """
-
-    sp_id = get_sp_id_by_gsid(gs_id)[0]['sp_id']
-    ## stupid return value for this function needs to be changed
-    gdb_spid = get_gdb_sp(gdb_id)[0]['sp_id']
-
-    ## The user wants to convert identifiers to another species' MOD IDs. We
-    ## temporarily set gdb_id to symbols (7) otherwise the query below won't
-    ## return anything since the original gdb_id is for a different species
-    if gdb_spid != 0 and gdb_spid != sp_id:
-        original_gdb_id = gdb_id
-        gdb_id = 7
-
-    ## Not supposed to do this 'cause potential SQL injection vector but
-    ## ORDER BY CASE doesn't work with mixed types (varchar and int in our
-    ## case)
-    if sort == 'value':
-        sort = 'gsv.gsv_value'
-    elif sort == 'alt':
-        sort = 'gsv.ode_ref_id'
-    elif sort == 'priority':
-        sort = 'gi.gene_rank'
-    else:
-        sort = 'gsv.gsv_source_list'
-
-    with PooledCursor() as cursor:
-        cursor.execute(
-            '''
-            SELECT gsv.gs_id, gsv.ode_gene_id, gsv.gsv_value, gsv.gsv_hits,
-                   gsv.gsv_source_list, gsv.gsv_value_list,
-                   gsv.gsv_in_threshold, gsv.gsv_date, gi.gene_rank,
-                   gsv.ode_ref_id, gsv.gdb_id
-
-            --
-            -- Use a subquery here so we can prevent duplicate gene identifiers
-            -- of the same type from being returned (the DISTINCT ON section)
-            -- otherwise when we try to change identifier types from the view
-            -- GS page, duplicate entries screw things up
-            --
-            FROM (
-                SELECT DISTINCT ON (g.ode_gene_id, g.gdb_id)
-                        gsv.*, g.ode_ref_id, g.gdb_id, g.ode_pref
-                FROM    geneset_value as gsv, gene as g
-                WHERE   gsv.gs_id = %s AND
-                        g.ode_gene_id = gsv.ode_gene_id AND
-                        g.gdb_id = (SELECT COALESCE (
-                            (SELECT gdb_id
-                             FROM   gene AS g2
-                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
-                                   g2.gdb_id = %s
-                             LIMIT 1),
-                            (SELECT gdb_id
-                             FROM   gene AS g2
-                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
-                                   g2.gdb_id = 7
-                             LIMIT 1)
-                        )) AND
-
-                        --
-                        -- When the user provides a gene to search for in the
-                        -- gene list. If no search query is provided, skip it.
-                        --
-                        CASE %s
-                            WHEN '' THEN true
-                            ELSE g.ode_ref_id ~* %s
-                        END AND
-
-                        --
-                        -- When viewing symbols, always pick the preferred gene symbol
-                        --
-                        CASE
-                            WHEN g.gdb_id = 7 THEN g.ode_pref = 't'
-                            ELSE true
-                        END
-            ) gsv
-
-            --
-            -- gene_info necessary for the priority scores
-            --
-            INNER JOIN  gene_info AS gi
-            ON          gsv.ode_gene_id = gi.ode_gene_id
-
-            ORDER BY
-            ''' + sort + ' ' + direct +
-            '''
-            LIMIT %s OFFSET %s
-            ''',
-            (gs_id, gdb_id, search, search, limit, offset)
-        )
-
-        gsvs = [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
-
-        ## We are converting IDs from this set to identifiers belonging to a
-        ## separate species. e.g. human symbols to MGI IDs
-
-        if gdb_spid != 0 and gdb_spid != sp_id:
-            ode2ref = get_gene_homolog_ids(
-                [v.ode_gene_id for v in gsvs], original_gdb_id
-            )
-
-            for gsv in gsvs:
-                if gsv.ode_gene_id in ode2ref:
-                    gsv.ode_ref = ode2ref[gsv.ode_gene_id]
-                else:
-                    gsv.ode_ref = 'None'
-
-                gsv.gdb_id = original_gdb_id
-
-        return gsvs
-
-def if_gene_has_homology(gene_id):
-    """
-    Check if the gene has homology (use in intersection page)
-    :param gene_id: ode_gene_id
-    :return:
-    """
-    response = requests.get(f"{agr_url}if_gene_has_homolog/{gene_id}")
-    result = response.json()
-    return result
-
-
-def get_intersect_by_homology(gsid1, gsid2):
-    """
-    Returns genes found in the intersection of two gene sets while including
-    homologous relationships. If a gene has no homologs, it is not returned.
-
-    arguments
-        gsid1: gene set ID for the first set
-        gsid2: gene set ID for the second set
-
-    returns
-        a list of dicts containing gene symbols, ODE IDs, and homology IDs for
-        each gene found at the intersection of both sets
-    """
-
-    genes = []
-
-    with PooledCursor() as cursor:
-        genes_list = []
-        for gsid in [gsid1, gsid2]:
-            cursor.execute(
-                '''
-                SELECT      g.ode_gene_id, g.ode_ref_id, gi.gi_symbol, h.hom_id
-                FROM        extsrc.gene AS g
-                INNER JOIN  geneset_value AS gsv
-                USING       (ode_gene_id)
-                INNER JOIN  homology AS h
-                USING       (ode_gene_id)
-                INNER JOIN  gene_info AS gi
-                USING       (ode_gene_id)
-                WHERE       gs_id = %s
-                AND         gdb_id IN (10,11,12,13,14,15,16)
-                ''', [gsid]
-            )
-            genes = cursor.fetchall()
-            genes_list.append(genes)
-        result = []
-
-        if len(genes) > 0:
-            payload = {'gs1': genes_list[0], 'gs2': genes_list[1]}
-            response = requests.get(f"{agr_url}get_intersect_by_orthology", params=payload)
-            result = response.json()
-
-        return result
-
-
-########################################################################################
-########################################################################################
-########################################################################################
-
-
-
 class Project:
     def __init__(self, proj_dict):
         self.name = str(proj_dict['pj_name'])
@@ -4327,37 +4053,44 @@ def get_all_root_ontology_for_database(ontdb_id):
     return [Ontology(row_dict) for row_dict in dictify_cursor(cursor)]
 
 
-# class GenesetValue:
-#     def __init__(self, gsv_dict):
-#         self.gs_id = gsv_dict['gs_id']
-#         self.ode_gene_id = gsv_dict['ode_gene_id']
-#         self.value = gsv_dict['gsv_value']
-#         self.hits = gsv_dict['gsv_hits']
-#         self.source_list = gsv_dict['gsv_source_list']
-#         self.value_list = gsv_dict['gsv_value_list']
-#         self.is_in_threshold = gsv_dict['gsv_in_threshold']
-#         self.date = gsv_dict['gsv_date']
-#         self.hom_id = gsv_dict['hom_id']
-#         self.gene_rank = ((float(gsv_dict['gene_rank']) / 0.15) * 100)
-#         #self.ode_ref = gsv_dict['ode_ref']
-#         self.ode_ref = gsv_dict['ode_ref_id']
-#         self.gdb_id = gsv_dict['gdb_id']
-#
-#         hom = gsv_dict.get('hom')
-#         # Semi-private
-#         self._hom = list(set(hom)) if hom else []
-#
-#     @property
-#     def hom(self):
-#         if not self._hom:
-#             self._hom = get_species_homologs(self.hom_id) if self.hom_id else []
-#         return self._hom
-#
-#     def __getitem__(self, index):
-#         if index > len(self.source_list) - 1:
-#             return self.source_list[0]
-#         else:
-#             return self.source_list[index]
+class GenesetValue:
+    def __init__(self, gsv_dict):
+        self.gs_id = gsv_dict['gs_id']
+        self.ode_gene_id = gsv_dict['ode_gene_id']
+        self.value = gsv_dict['gsv_value']
+        self.hits = gsv_dict['gsv_hits']
+        self.source_list = gsv_dict['gsv_source_list']
+        self.value_list = gsv_dict['gsv_value_list']
+        self.is_in_threshold = gsv_dict['gsv_in_threshold']
+        self.date = gsv_dict['gsv_date']
+        #self.hom_id = gsv_dict['hom_id']
+        self.gene_rank = ((float(gsv_dict['gene_rank']) / 0.15) * 100)
+        #self.ode_ref = gsv_dict['ode_ref']
+        self.ode_ref = gsv_dict['ode_ref_id']
+        self.gdb_id = gsv_dict['gdb_id']
+
+        hom_ids = list(set((requests.get(f"{agr_url}get_homology_by_ode_gene_id/{gsv_dict['ode_gene_id']}")).json()))
+
+        self.hom_id = hom_ids
+
+        hom = gsv_dict.get('hom')
+        # Semi-private
+        self._hom = list(set(hom)) if hom else []
+
+    @property
+    def hom(self):
+        if not self._hom:
+            homs = []
+            for h in self.hom_id:
+                homs.extend(get_species_homologs(h))
+            self._hom = tuple(set(homs))
+        return self._hom
+
+    def __getitem__(self, index):
+        if index > len(self.source_list) - 1:
+            return self.source_list[0]
+        else:
+            return self.source_list[index]
 
 
 class TempGenesetValue:
@@ -4488,26 +4221,12 @@ def get_all_geneset_values(gs_id):
 							  g.ode_pref='t' ORDER BY gv.gsv_value ASC''', (gs_id,))
         return list(dictify_cursor(cursor)) if cursor.rowcount != 0 else None
 
-# def get_species_homologs(hom_id):
-#     """
-#     Uses a given homology ID to return a list of homologous species.
-#
-#     :type hom_id: int (const)
-#     :param hom_id: Homology ID
-#
-#     :return:
-#     """
-#
-#     if not hom_id:
-#         return []
-#
-#     with PooledCursor() as cursor:
-#         cursor.execute('''
-#             SELECT sp_id
-#             FROM homology
-#             WHERE hom_id = %s''', (hom_id,))
-#
-#     return [l[0] for l in set(cursor)]
+
+def get_species_homologs(hom_id):
+    if not hom_id:
+        return []
+    response = requests.get(f"{agr_url}get_sp_id_by_hom_id/{hom_id}")
+    return response.json()
 
 def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
     """
@@ -4703,230 +4422,162 @@ def get_genecount_in_geneset(geneset_id):
     with PooledCursor() as cursor:
         cursor.execute(stmt)
         return cursor.fetchone()[0]
-#
-# def get_gene_homolog_ids(ode_gene_ids, gdb_id):
-#     """
-#     Maps genes in a given gene set to their homolog IDs, then uses those
-#     homolog IDs to retrieve MOD gene identifiers for another species.
-#     Used when for e.g. a user is viewing a human gene set but wants to see
-#     equivalent genes using MGI or ZFIN identifiers.
-#
-#     arguments
-#         ode_gene_ids:   list of ode_gene_ids in the gene set
-#         gdb_id:         ID of the different gene type the user wants to see
-#
-#     returns
-#         a mapping of ode_gene_ids to ode_ref_ids.
-#         The ode_gene_ids in this case are the originals provided in the first
-#         argument of this function. The ode_ref_ids are the reference IDs to
-#         some other MOD, mapped across species.
-#     """
-#
-#     ode_gene_ids = list(set(ode_gene_ids))
-#     ode_gene_ids = tuple(ode_gene_ids)
-#
-#     with PooledCursor() as cursor:
-#         cursor.execute(
-#             '''
-#             SELECT      h.ode_gene_id, g.ode_ref_id
-#             FROM        homology AS h
-#             INNER JOIN  homology AS h2
-#             ON          h.hom_id = h2.hom_id
-#             INNER JOIN  gene AS g
-#             ON          g.ode_gene_id = h2.ode_gene_id
-#             WHERE       h.ode_gene_id in %s AND
-#                         g.gdb_id = %s;
-#             ''', (ode_gene_ids, gdb_id,)
-#         )
-#         ode2ref = cursor.fetchall()
-#
-#     #####
-#     # temp agr code
-#     #####
-#
-#     # get info from agr
-#     agr_compatible_gdb_ids = [10, 11, 12, 13, 14, 15, 16]
-#     agr_results = []
-#
-#     if gdb_id in agr_compatible_gdb_ids:
-#         for id in ode_gene_ids:
-#             response = requests.get(f"{agr_url}get_ortholog_by_from_gene_and_gdb/{id}/{gdb_id}")
-#             if (response.ok and len(response.json()) > 0):
-#                 for r in response.json():
-#                     temp = (id, r[0])
-#                     agr_results.append(temp)
-#         ode2ref = ode2ref + agr_results
-#     return ode2ref
 
-# def get_geneset_values(
-#     gs_id, gdb_id='7', limit=50, offset=0, search='', sort='', direct='asc'
-# ):
-#     """
-#     Retrieves the list of gene set values for the given gene set.
-#     Updated version of the get_geneset_values function designed to remove
-#     dependence on session variables and fix several bugs: 1) genes without
-#     homologs don't show up in the gene list, 2) paralogs for all genes show up
-#     in the gene list, 3) genes with more than one of the same identifier
-#     types prevent other identifiers from showing up.
-#     The original function was a nightmare to debug so this is split into
-#     a separate component for retrieving IDs across species.
-#
-#     arguments
-#         gs_id:  gene set ID for the values being retrieved
-#         gdb_id: gene type (genedb) ID to use when retrieving gene set genes
-#         limit:  number of rows to return
-#         offset: used in conjuction w/ limit to paginate the returned results
-#         search: gene symbol string to filter results with
-#         sort:   string specifying how the results should be sorted, this can be
-#                 one of several values:
-#                     value:  sort by the gene score
-#                     alt:    sort by the currently displayed gene identifier
-#                     otherwise the default sort is the originally uploaded gene
-#                     identifier
-#         direct: specifies the direction of the sort, either 'asc' or 'desc'
-#
-#     returns
-#         a list of GenesetValue objects
-#     """
-#
-#     sp_id = get_sp_id_by_gsid(gs_id)[0]['sp_id']
-#     ## stupid return value for this function needs to be changed
-#     gdb_spid = get_gdb_sp(gdb_id)[0]['sp_id']
-#
-#     ## The user wants to convert identifiers to another species' MOD IDs. We
-#     ## temporarily set gdb_id to symbols (7) otherwise the query below won't
-#     ## return anything since the original gdb_id is for a different species
-#     if gdb_spid != 0 and gdb_spid != sp_id:
-#         original_gdb_id = gdb_id
-#         gdb_id = 7
-#
-#     ## Not supposed to do this 'cause potential SQL injection vector but
-#     ## ORDER BY CASE doesn't work with mixed types (varchar and int in our
-#     ## case)
-#     if sort == 'value':
-#         sort = 'gsv.gsv_value'
-#     elif sort == 'alt':
-#         sort = 'gsv.ode_ref_id'
-#     elif sort == 'priority':
-#         sort = 'gi.gene_rank'
-#     else:
-#         sort = 'gsv.gsv_source_list'
-#
-#     with PooledCursor() as cursor:
-#         cursor.execute(
-#             '''
-#             SELECT gsv.gs_id, gsv.ode_gene_id, gsv.gsv_value, gsv.gsv_hits,
-#                    gsv.gsv_source_list, gsv.gsv_value_list,
-#                    gsv.gsv_in_threshold, gsv.gsv_date, h.hom_id, gi.gene_rank,
-#                    gsv.ode_ref_id, gsv.gdb_id
-#
-#             --
-#             -- Use a subquery here so we can prevent duplicate gene identifiers
-#             -- of the same type from being returned (the DISTINCT ON section)
-#             -- otherwise when we try to change identifier types from the view
-#             -- GS page, duplicate entries screw things up
-#             --
-#             FROM (
-#                 SELECT DISTINCT ON (g.ode_gene_id, g.gdb_id)
-#                         gsv.*, g.ode_ref_id, g.gdb_id, g.ode_pref
-#                 FROM    geneset_value as gsv, gene as g
-#                 WHERE   gsv.gs_id = %s AND
-#                         g.ode_gene_id = gsv.ode_gene_id AND
-#                         g.gdb_id = (SELECT COALESCE (
-#                             (SELECT gdb_id
-#                              FROM   gene AS g2
-#                              WHERE g2.ode_gene_id = gsv.ode_gene_id AND
-#                                    g2.gdb_id = %s
-#                              LIMIT 1),
-#                             (SELECT gdb_id
-#                              FROM   gene AS g2
-#                              WHERE g2.ode_gene_id = gsv.ode_gene_id AND
-#                                    g2.gdb_id = 7
-#                              LIMIT 1)
-#                         )) AND
-#
-#                         --
-#                         -- When the user provides a gene to search for in the
-#                         -- gene list. If no search query is provided, skip it.
-#                         --
-#                         CASE %s
-#                             WHEN '' THEN true
-#                             ELSE g.ode_ref_id ~* %s
-#                         END AND
-#
-#                         --
-#                         -- When viewing symbols, always pick the preferred gene symbol
-#                         --
-#                         CASE
-#                             WHEN g.gdb_id = 7 THEN g.ode_pref = 't'
-#                             ELSE true
-#                         END
-#             ) gsv
-#
-#             --
-#             -- gene_info necessary for the priority scores
-#             --
-#             INNER JOIN  gene_info AS gi
-#             ON          gsv.ode_gene_id = gi.ode_gene_id
-#
-#             --
-#             -- Have to use a left outer join because some genes may not have homologs
-#             --
-#             LEFT OUTER JOIN homology AS h
-#             ON          gsv.ode_gene_id = h.ode_gene_id
-#
-#             WHERE h.hom_source_name = 'Homologene' OR
-#                   -- In case the gene doesn't have any homologs
-#                   h.hom_source_name IS NULL
-#
-#             ORDER BY
-#             ''' + sort + ' ' + direct +
-#             '''
-#             LIMIT %s OFFSET %s
-#             ''',
-#             (gs_id, gdb_id, search, search, limit, offset)
-#             #ORDER BY
-#             #    CASE WHEN %s = 'asc' THEN
-#             #        CASE %s
-#             #            WHEN 'value' THEN gsv.gsv_value :: character varying
-#             #            WHEN 'alt' THEN gsv.ode_ref_id
-#             #            ELSE gsv.gsv_source_list :: character varying
-#             #        END
-#             #    ELSE ''
-#             #    END asc,
-#             #    CASE WHEN %s = 'desc' THEN
-#             #        CASE %s
-#             #            WHEN 'value' THEN gsv.gsv_value :: character varying
-#             #            WHEN 'alt' THEN gsv.ode_ref_id
-#             #            ELSE gsv.gsv_source_list :: character varying
-#             #        END
-#             #    ELSE ''
-#             #    END desc
-#             #LIMIT %s OFFSET %s
-#             #''',
-#             #(gs_id, gdb_id, search, search, direct, sort, direct, sort, limit, offset)
-#         )
-#
-#         gsvs = [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
-#
-#         ## We are converting IDs from this set to identifiers belonging to a
-#         ## separate species. e.g. human symbols to MGI IDs
-#
-#         if gdb_spid != 0 and gdb_spid != sp_id:
-#             ode2ref = get_gene_homolog_ids(
-#                 [v.ode_gene_id for v in gsvs], original_gdb_id
-#             )
-#
-#             for gsv in gsvs:
-#                 if gsv.ode_gene_id in ode2ref:
-#                     gsv.ode_ref = ode2ref[gsv.ode_gene_id]
-#                 else:
-#                     gsv.ode_ref = 'None'
-#
-#                 gsv.gdb_id = original_gdb_id
-#
-#         return gsvs
-#         #return [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
+
+def get_gene_homolog_ids(ode_gene_ids, gdb_id):
+    ode_gene_ids = list(set(ode_gene_ids))
+    ode_gene_ids = tuple(ode_gene_ids)
+
+    ode2refs = {}
+    for g in ode_gene_ids:
+        hom_ids = (requests.get(f"{agr_url}get_homology_by_ode_gene_id/{g}")).json()
+        refs = []
+        for h in hom_ids:
+            refs.extend((requests.get(f"{agr_url}get_ode_genes_from_hom_id/{h}/{gdb_id}")).json())
+        if len(refs) != 0:
+            ode2refs[g] = refs
+
+    return ode2refs
+
+
+def get_geneset_values(
+        gs_id, gdb_id='7', limit=50, offset=0, search='', sort='', direct='asc'
+):
+    """
+    Retrieves the list of gene set values for the given gene set.
+    Updated version of the get_geneset_values function designed to remove
+    dependence on session variables and fix several bugs: 1) genes without
+    homologs don't show up in the gene list, 2) paralogs for all genes show up
+    in the gene list, 3) genes with more than one of the same identifier
+    types prevent other identifiers from showing up.
+    The original function was a nightmare to debug so this is split into
+    a separate component for retrieving IDs across species.
+
+    arguments
+        gs_id:  gene set ID for the values being retrieved
+        gdb_id: gene type (genedb) ID to use when retrieving gene set genes
+        limit:  number of rows to return
+        offset: used in conjuction w/ limit to paginate the returned results
+        search: gene symbol string to filter results with
+        sort:   string specifying how the results should be sorted, this can be
+                one of several values:
+                    value:  sort by the gene score
+                    alt:    sort by the currently displayed gene identifier
+                    otherwise the default sort is the originally uploaded gene
+                    identifier
+        direct: specifies the direction of the sort, either 'asc' or 'desc'
+
+    returns
+        a list of GenesetValue objects
+    """
+
+    sp_id = get_sp_id_by_gsid(gs_id)[0]['sp_id']
+    ## stupid return value for this function needs to be changed
+    gdb_spid = get_gdb_sp(gdb_id)[0]['sp_id']
+
+    ## The user wants to convert identifiers to another species' MOD IDs. We
+    ## temporarily set gdb_id to symbols (7) otherwise the query below won't
+    ## return anything since the original gdb_id is for a different species
+    if gdb_spid != 0 and gdb_spid != sp_id:
+        original_gdb_id = gdb_id
+        gdb_id = 7
+
+    ## Not supposed to do this 'cause potential SQL injection vector but
+    ## ORDER BY CASE doesn't work with mixed types (varchar and int in our
+    ## case)
+    if sort == 'value':
+        sort = 'gsv.gsv_value'
+    elif sort == 'alt':
+        sort = 'gsv.ode_ref_id'
+    elif sort == 'priority':
+        sort = 'gi.gene_rank'
+    else:
+        sort = 'gsv.gsv_source_list'
+
+    with PooledCursor() as cursor:
+        cursor.execute(
+            '''
+            SELECT gsv.gs_id, gsv.ode_gene_id, gsv.gsv_value, gsv.gsv_hits,
+                   gsv.gsv_source_list, gsv.gsv_value_list,
+                   gsv.gsv_in_threshold, gsv.gsv_date, gi.gene_rank,
+                   gsv.ode_ref_id, gsv.gdb_id
+
+            --
+            -- Use a subquery here so we can prevent duplicate gene identifiers
+            -- of the same type from being returned (the DISTINCT ON section)
+            -- otherwise when we try to change identifier types from the view
+            -- GS page, duplicate entries screw things up
+            --
+            FROM (
+                SELECT DISTINCT ON (g.ode_gene_id, g.gdb_id)
+                        gsv.*, g.ode_ref_id, g.gdb_id, g.ode_pref
+                FROM    geneset_value as gsv, gene as g
+                WHERE   gsv.gs_id = %s AND
+                        g.ode_gene_id = gsv.ode_gene_id AND
+                        g.gdb_id = (SELECT COALESCE (
+                            (SELECT gdb_id
+                             FROM   gene AS g2
+                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
+                                   g2.gdb_id = %s
+                             LIMIT 1),
+                            (SELECT gdb_id
+                             FROM   gene AS g2
+                             WHERE g2.ode_gene_id = gsv.ode_gene_id AND
+                                   g2.gdb_id = 7
+                             LIMIT 1)
+                        )) AND
+
+                        --
+                        -- When the user provides a gene to search for in the
+                        -- gene list. If no search query is provided, skip it.
+                        --
+                        CASE %s
+                            WHEN '' THEN true
+                            ELSE g.ode_ref_id ~* %s
+                        END AND
+
+                        --
+                        -- When viewing symbols, always pick the preferred gene symbol
+                        --
+                        CASE
+                            WHEN g.gdb_id = 7 THEN g.ode_pref = 't'
+                            ELSE true
+                        END
+            ) gsv
+
+            --
+            -- gene_info necessary for the priority scores
+            --
+            INNER JOIN  gene_info AS gi
+            ON          gsv.ode_gene_id = gi.ode_gene_id
+
+            ORDER BY
+            ''' + sort + ' ' + direct +
+            '''
+            LIMIT %s OFFSET %s
+            ''',
+            (gs_id, gdb_id, search, search, limit, offset)
+        )
+
+        gsvs = [GenesetValue(gsv_dict) for gsv_dict in dictify_cursor(cursor)]
+
+        ## We are converting IDs from this set to identifiers belonging to a
+        ## separate species. e.g. human symbols to MGI IDs
+
+        if gdb_spid != 0 and gdb_spid != sp_id:
+            ode2ref = get_gene_homolog_ids(
+                [v.ode_gene_id for v in gsvs], original_gdb_id
+            )
+
+            for gsv in gsvs:
+                if gsv.ode_gene_id in ode2ref:
+                    gsv.ode_ref = ode2ref[gsv.ode_gene_id]
+                else:
+                    gsv.ode_ref = 'None'
+
+                gsv.gdb_id = original_gdb_id
+
+        return gsvs
 
 
 def get_geneset_values_simple(gsid):
@@ -5253,69 +4904,25 @@ def get_gene_sym_by_intersection(geneset_id1, geneset_id2):
         return intersect_sym, intersect_id
 
 
-# def if_gene_has_homology(gene_id):
-#     """
-#     Chech if the gene has homolgy (use in intersection page)
-#     :param gene_id:
-#     :return:
-#     """
-#     result = 0
-#     with PooledCursor() as cursor:
-#         cursor.execute(
-#             '''SELECT hom_id
-#            FROM extsrc.homology
-#            where ode_gene_id = %s;
-#         ''', (gene_id,))
-#         if cursor.fetchone():
-#             result = 1
-#     return result
+def if_gene_has_homology(gene_id):
+    """
+    Check if the gene has homology (use in intersection page)
+    :param gene_id: ode_gene_id
+    :return:
+    """
+    response = requests.get(f"{agr_url}if_gene_has_homolog/{gene_id}")
+    result = response.json()
+    return result
 
 
-# def get_intersect_by_homology(gsid1, gsid2):
-#     """
-#     Returns genes found in the intersection of two gene sets while including
-#     homologous relationships. If a gene has no homologs, it is not returned.
-#
-#     arguments
-#         gsid1: gene set ID for the first set
-#         gsid2: gene set ID for the second set
-#
-#     returns
-#         a list of dicts containing gene symbols, ODE IDs, and homology IDs for
-#         each gene found at the intersection of both sets
-#     """
-#
-#     genes = []
-#
-#     with PooledCursor() as cursor:
-#         ## Retrieves gene set values for each gene set then finds genes at the
-#         ## intersection of both sets using homology IDs
-#         cursor.execute(
-#             '''
-#             SELECT g1.gi_symbol, g1.ode_gene_id, g1.hom_id
-#             FROM   (
-#                 SELECT      gv.ode_gene_id, gi.gi_symbol, h.hom_id
-#                 FROM        extsrc.geneset_value AS gv
-#                 INNER JOIN  homology AS h
-#                 USING       (ode_gene_id)
-#                 INNER JOIN  gene_info AS gi
-#                 USING       (ode_gene_id)
-#                 WHERE       gs_id = %s
-#             ) g1
-#             INNER JOIN (
-#                 SELECT      gv.ode_gene_id, gi.gi_symbol, h.hom_id
-#                 FROM        extsrc.geneset_value AS gv
-#                 INNER JOIN  homology AS h
-#                 USING       (ode_gene_id)
-#                 INNER JOIN  gene_info AS gi
-#                 USING       (ode_gene_id)
-#                 WHERE       gs_id = %s
-#             ) g2
-#             ON g1.hom_id = g2.hom_id;
-#             ''', (gsid1, gsid2)
-#         )
-#
-#         return dictify_cursor(cursor)
+def get_intersect_by_homology_agr(gsid1, gsid2):
+    gsid1_refs = get_geneset_values_simple(gsid1)
+    gsid2_refs = get_geneset_values_simple(gsid2)
+
+    payload = {'gs1': gsid1_refs, 'gs2': gsid2_refs}
+    response = requests.get(f"{agr_url}get_intersect_by_homology", params=payload)
+
+    return response
 
 
 def get_geneset_intersect(gsid1, gsid2):

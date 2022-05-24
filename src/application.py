@@ -1840,7 +1840,7 @@ def render_editgeneset_genes(gs_id, curation_view=False):
 def render_remove_genesets(gs_id):
     user_id = session['user_id'] if 'user_id' in session else 0
     gs_and_proj = None
-    if user_id is not 0:
+    if user_id != 0:
         gs_and_proj = geneweaverdb.get_selected_genesets_by_projects(gs_id)
     return render_template('removegenesets.html', user_id=user_id, gs_and_proj=gs_and_proj)
 
@@ -2443,6 +2443,7 @@ def get_geneset_genes():
 
     session['extsrc'] = genedict['Gene Symbol']
 
+
     gsvs = geneweaverdb.get_geneset_values(
         gs_id, 
         alt_gene_id,
@@ -2458,10 +2459,10 @@ def get_geneset_genes():
     symbols = []
     session['extsrc'] = alt_gene_id
 
-    for gsv in gs.geneset_values:
+    for gsv in gsvs:
         symbols.append(gsv.ode_ref)
 
-    print(gsvs)
+    # print(gsvs)
     #map each GenesetValue object's contents back onto a dictionary, turn geneset value (decimal) into string
     for i in range(len(gsvs)):
         gene_id = gsvs[i].ode_gene_id
