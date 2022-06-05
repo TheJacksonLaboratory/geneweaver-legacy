@@ -4152,32 +4152,11 @@ def transpose_genes_by_species(attr):
         g.append(str(i))
     newSpecies = json.loads(attr['newSpecies'])
 
-    sql = '''SELECT ode_ref_id FROM gene WHERE gene.ode_gene_id IN
-                            (SELECT distinct h2.ode_gene_id FROM homology h1
-                                NATURAL JOIN homology h2
-                                NATURAL JOIN gene
-                                WHERE h2.hom_source_name='Homologene'
-                                      AND h1.hom_source_id=h2.hom_source_id
-                                      AND {} IN %(genelist)s)
-                            AND sp_id=%(newSpecies)s AND ode_pref='t' AND gdb_id=7;'''.format(gene_id_type)
-
-
-    with PooledCursor() as cursor:
-        cursor.execute(sql, {'genelist': tuple(g), 'newSpecies': newSpecies})
-        res = cursor.fetchall()
-        transposedGenes = []
-        if res is not None:
-            for r in res:
-                transposedGenes.append(r[0])
-
-        if gene_id_type == 'ode_ref_id':
-            payload = {'genes': g, 'species': newSpecies}
-            response = (requests.get(f'{agr_url}transpose_genes_by_species', params=payload)).json()
-            for i in response:
-                    if i not in transposedGenes:
-                        transposedGenes.append(i)
-
-        return transposedGenes
+    transposedGenes = []
+    if gene_id_type == 'ode_ref_id':
+        payload = {'genes': g, 'species': newSpecies}
+        transposedGenes = (requests.get(f'{agr_url}transpose_genes_by_species', params=payload)).json()
+    return list(set(transposedGenes))
 
 
 def get_omicssoft(gs_id):
@@ -4267,7 +4246,6 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
 	                FROM production.project2geneset
 	                WHERE pj_id = %s)
 	              AND
-	              
 		          gsv.ode_gene_id IN
 		          ((SELECT DISTINCT ode_gene_id
 					FROM geneset_value
@@ -4286,7 +4264,6 @@ def get_geneset_values_for_mset(pj_tg_id, pj_int_id):
 						(SELECT gs_id
 						FROM production.project2geneset
 						WHERE pj_id = %s))))
-				
 		          AND
                   -- This checks to see if the alternate symbol the user wants to view actually exists
                   -- for the given gene. If it doesn't, a default gene symbol is returned. If null was
