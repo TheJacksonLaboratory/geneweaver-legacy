@@ -4078,10 +4078,9 @@ class GenesetValue:
     @property
     def hom(self):
         if not self._hom:
-            homs = []
-            for h in self.hom_id:
-                homs.extend(get_species_homologs(h))
-            self._hom = tuple(set(homs))
+            payload = {'hom_ids': self.hom_id}
+            homs = requests.get(f"{agr_url}/get_species_homologs_list", params=payload)
+            self._hom = tuple(homs.json())
         return self._hom
 
     def __getitem__(self, index):
@@ -4924,7 +4923,7 @@ def if_gene_has_homology(gene_id):
     return result
 
 
-def get_intersect_by_homology_agr(gsid1, gsid2):
+def get_intersect_by_homology(gsid1, gsid2):
     """
     Returns genes found in the intersection of two gene sets while including
     homologous relationships. If a gene has no homologs, it is not returned.
