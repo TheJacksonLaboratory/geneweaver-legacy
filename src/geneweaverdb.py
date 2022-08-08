@@ -4057,7 +4057,6 @@ def get_all_root_ontology_for_database(ontdb_id):
 
 
 class GenesetValue:
-    agr_url = config.get('AGR', 'url')
     def __init__(self, gsv_dict):
         self.gs_id = gsv_dict['gs_id']
         self.ode_gene_id = gsv_dict['ode_gene_id']
@@ -4072,7 +4071,7 @@ class GenesetValue:
         self.ode_ref = gsv_dict['ode_ref_id']
         self.gdb_id = gsv_dict['gdb_id']
 
-        hom_ids = list(set((requests.get(f"{agr_url}get_homology_by_ode_gene_id/{gsv_dict['ode_gene_id']}")).json()))
+        hom_ids = list(set((requests.get(f"{config.get('AGR', 'url')}get_homology_by_ode_gene_id/{gsv_dict['ode_gene_id']}")).json()))
         self.hom_id = hom_ids
 
         hom = gsv_dict.get('hom')
@@ -4083,7 +4082,7 @@ class GenesetValue:
     def hom(self):
         if not self._hom:
             payload = {'hom_ids': self.hom_id}
-            homs = requests.get(f"{agr_url}/get_species_homologs_list", params=payload)
+            homs = requests.get(f"{config.get('AGR', 'url')}get_species_homologs_list", params=payload)
             self._hom = tuple(homs.json())
         return self._hom
 
@@ -5512,6 +5511,12 @@ def get_genesets_by_gene_id(apikey, gene_ref_id, gdb_name, homology):
     :return: the geneset into matching the given ID or None if no such gene is found
     """
     curUsrId = get_user_id_by_apikey(apikey)
+
+    if homology:
+        agr_url = config.get('AGR', 'url')
+        possible_ode_gene_ids_from_homology = (requests.get(
+            f"{agr_url}get_homologous_ode_gene_ids_for_gene/{gene_ref_id}/{gdb_name}")).json()
+
     if (curUsrId):
         if not homology:
             with PooledCursor() as cursor:
@@ -5530,27 +5535,16 @@ def get_genesets_by_gene_id(apikey, gene_ref_id, gdb_name, homology):
         else:
             with PooledCursor() as cursor:
                 cursor.execute(
-                        ''' SELECT row_to_json(row, true)
+                        f''' SELECT row_to_json(row, true)
                         FROM (	SELECT geneset.*
                                 FROM production.geneset
                                 WHERE geneset.gs_id in
                                 (
                                     SELECT gs_id
                                     FROM extsrc.geneset_value
-                                    WHERE geneset_value.ode_gene_id in
-                                    (
-                                        SELECT ode_gene_id
-                                        FROM extsrc.homology
-                                        WHERE hom_id in
-                                        (
-                                            SELECT hom_id
-                                            FROM extsrc.homology join extsrc.gene using(ode_gene_id)
-                                                join odestatic.genedb using(gdb_id)
-                                            WHERE ode_ref_id = %s and gdb_name = %s
-                                        )
-                                    )
-                                ) and ( cur_id < 5 or (cur_id = 5 and usr_id = %s) )
-                            ) row; ''', (gene_ref_id, gdb_name, curUsrId,))
+                                    WHERE geneset_value.ode_gene_id in in {tuple(possible_ode_gene_ids_from_homology)}
+                                ) and ( cur_id < 5 or (cur_id = 5 and usr_id = {curUsrId}) )
+                            ) row; ''')
     else:
         if not homology:
             with PooledCursor() as cursor:
@@ -5569,27 +5563,16 @@ def get_genesets_by_gene_id(apikey, gene_ref_id, gdb_name, homology):
         else:
             with PooledCursor() as cursor:
                 cursor.execute(
-                        ''' SELECT row_to_json(row, true)
+                    f''' SELECT row_to_json(row, true)
                         FROM (	SELECT geneset.*
                                 FROM production.geneset
                                 WHERE geneset.gs_id in
                                 (
                                     SELECT gs_id
                                     FROM extsrc.geneset_value
-                                    WHERE geneset_value.ode_gene_id in
-                                    (
-                                        SELECT ode_gene_id
-                                        FROM extsrc.homology
-                                        WHERE hom_id in
-                                        (
-                                            SELECT hom_id
-                                            FROM extsrc.homology join extsrc.gene using(ode_gene_id)
-                                                join odestatic.genedb using(gdb_id)
-                                            WHERE ode_ref_id = %s and gdb_name = %s
-                                        )
-                                    )
+                                    WHERE geneset_value.ode_gene_id in {tuple(possible_ode_gene_ids_from_homology)}
                                 ) and cur_id < 5
-                            ) row; ''', (gene_ref_id, gdb_name,))
+                            ) row; ''')
     return cursor.fetchall()
 
 
