@@ -6,8 +6,9 @@ import binascii
 ## Just as a reminder: the configuration file (geneweaver.cfg) should NEVER be
 ## included in version control, especially if it has any usernames, passwords,
 ## or API keys.
-rootpath=""
-CONFIG_PATH = rootpath+'geneweaver.cfg'
+# rootpath=""
+# CONFIG_PATH = rootpath+'geneweaver.cfg'
+CONFIG_PATH = '/Users/sophiekearney/srv/geneweaver/py3-geneweaver-websitegeneweaver.cfg'
 
 ## Global config object, sholudn't be accessed directly but using the helper
 ## functions found below.
@@ -49,6 +50,8 @@ def createConfig():
         print('[sphinx]', file=fl)
         print('host = 127.0.0.1', file=fl)
         print('port = 9312', file=fl)
+        print('[AGR]', file=fl)
+        print('url = http://127.0.0.1:5001/agr-service/', file=fl)
         print('', file=fl)
 
 def checkIntegrity():

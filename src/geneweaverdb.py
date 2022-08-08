@@ -20,8 +20,6 @@ import annotator as ann
 import re
 
 import requests
-# edit once deployed, currently running on crick server
-agr_url = 'http://127.0.0.1:5001/agr-service/'
 
 app = flask.Flask(__name__)
 
@@ -3858,14 +3856,19 @@ def get_geneset_hom_ids(gs_id):
     :param gs_id:
     :return:
     """
+    agr_url = config.get('AGR', 'url')
     with PooledCursor() as cursor:
-        cursor.execute('''SELECT DISTINCT hom_id FROM extsrc.homology h INNER JOIN extsrc.geneset_value gsv 
-                ON h.ode_gene_id=gsv.ode_gene_id INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id 
+        cursor.execute('''SELECT DISTINCT gsv.ode_gene_id FROM extsrc.geneset_value gsv
+                INNER JOIN production.geneset g ON gsv.gs_id=g.gs_id 
                 WHERE gs_status not like 'de%%' AND g.gs_id=%s''', (gs_id,))
         if cursor.rowcount == 0:
             return 0
         else:
-            return [r[0] for r in cursor.fetchall()]
+            ode_gene_ids = [r[0] for r in cursor.fetchall()]
+            hom_ids = []
+            payload = {"ode_gene_ids": ode_gene_ids}
+            hom_ids = (requests.get(f"{agr_url}get_homology_by_ode_gene_ids", params=payload)).json()
+            return hom_ids
 
 
 def get_genesets_by_hom_id(hom_ids):
@@ -4054,6 +4057,7 @@ def get_all_root_ontology_for_database(ontdb_id):
 
 
 class GenesetValue:
+    agr_url = config.get('AGR', 'url')
     def __init__(self, gsv_dict):
         self.gs_id = gsv_dict['gs_id']
         self.ode_gene_id = gsv_dict['ode_gene_id']
@@ -4142,6 +4146,7 @@ def transpose_genes_by_species(attr):
     :param attr:
     :return:
     """
+    agr_url = config.get('AGR', 'url')
     genes = json.loads(attr['genes'])
     gene_id_type = attr['gene_id_type']
     if gene_id_type == '':
@@ -4197,6 +4202,7 @@ def get_all_geneset_values(gs_id):
 
 
 def get_species_homologs(hom_id):
+    agr_url = config.get('AGR', 'url')
     if not hom_id:
         return []
     response = requests.get(f"{agr_url}get_sp_id_by_hom_id/{hom_id}")
@@ -4415,6 +4421,7 @@ def get_gene_homolog_ids(ode_gene_ids, gdb_id):
     """
     ode_gene_ids = list(set(ode_gene_ids))
     ode_gene_ids = tuple(ode_gene_ids)
+    agr_url = config.get('AGR', 'url')
 
     ode2refs = {}
     for g in ode_gene_ids:
@@ -4918,6 +4925,7 @@ def if_gene_has_homology(gene_id):
     :param gene_id: ode_gene_id
     :return:
     """
+    agr_url = config.get('AGR', 'url')
     response = requests.get(f"{agr_url}if_gene_has_homolog/{gene_id}")
     result = response.json()
     return result
@@ -4938,6 +4946,7 @@ def get_intersect_by_homology(gsid1, gsid2):
     """
     gsid1_refs = get_geneset_values_simple(gsid1)
     gsid2_refs = get_geneset_values_simple(gsid2)
+    agr_url = config.get('AGR', 'url')
 
     payload = {'gs1': gsid1_refs, 'gs2': gsid2_refs}
     response = requests.get(f"{agr_url}get_intersect_by_homology", params=payload)
