@@ -16,6 +16,7 @@ import os
 import os.path as path
 import re
 import urllib
+import textwrap
 
 from flask import Flask, Response
 from flask import (abort, jsonify, make_response, redirect, render_template,
@@ -3414,68 +3415,118 @@ def render_export_jac_genelist(gs_id):
 
 @app.route('/HBA_batch_converter', methods=['GET', 'POST'])
 def HBA_batch_converter():
-    '''
+    """
     converts HBA-deals output csv file into a txt file that can be used on the
     batch upload page
-    '''
-    header = {}
-    # length of header is the number of rows included in the header of the HBA deals
-    #     input CSV file
-    LENGTH_OF_HEADER = 9
+    """
+    HEADER_KEY_MAP = {
+        'gw id': None,
+        'geneset figure label': None,
+        'geneset abbreviation': ':',
+        ':': ':',
+        'geneset name': '=',
+        '=': '=',
+        'geneset description': '+',
+        '+': '+',
+        'pubmed id': 'P',
+        'P': 'P',
+        'public or private': 'A',
+        'A': 'A',
+        'species': '@',
+        '@': '@',
+        'gene id type': '%',
+        '%': '%',
+    }
+
     if request.method == 'POST':
         f = request.files['filename']
         content = str(f.read())
-        content = content[2:(len(content)-1)]
-        if (content.find('\\r\\n') != -1):
+
+        # Q: Why do we chop off the firs two and last characters here?
+        content = content[2:-1]
+        if content.find('\\r\\n') != -1:
             content = content.split('\\r\\n')
         else:
             content = content.split('\\r')
 
-        for i in range(LENGTH_OF_HEADER):
-            raw = content[i].split(',')
-            header[raw[0]] = raw[1]
+        gs_abbrev = ''
+        in_header = True
+        head = ['!1.5 < Effect < 2.0']
+        remaining_required_headers = {':', '=', '+', '@', '%'}
+        this_row = 0
+        while in_header:
+            split_row = content[this_row].split(',')
+            unmapped_key = split_row[0].lower()
+            value = split_row[1]
 
-        output = '! ' + "1.5 < Effect < 2.0" + '\n'
-        output = output + '@ ' + header['Species'] + '\n'
-        output = output + '% ' + header['Gene ID Type'] + '\n\n'
-        output = output + ': ' + header['GeneSet Abbreviation'] + '\n'
+            # Skip empty rows
+            if unmapped_key == '':
+                this_row += 1
+                continue
 
-        num_of_lines = len(header['GeneSet Name']) // 130
-        end = 0
-        for i in range(0, num_of_lines):
-            start = i * 130
-            end = i * 130 + 130
-            output = output + '= ' + (header['GeneSet Name'])[start:end] + '\n'
-        if (end != len(header['GeneSet Name'])):
-            output = output + '= ' + (header['GeneSet Name'])[end:] + '\n'
+            # If the key value is not one of our header keys, it's probably a gene id.
+            if unmapped_key not in HEADER_KEY_MAP:
+                # If te value can be turned into a float, it definitely is
+                try:
+                    float(value)
+                    in_header = False
+                    head.append('')
+                    continue
+                # Otherwise skip this row
+                except ValueError:
+                    this_row += 1
+                    continue
 
-        num_of_lines = len(header['GeneSet Description']) // 130
-        end = 0
-        for i in range(0,num_of_lines):
-            start = i*130
-            end = i*130 + 130
-            output = output + '+ ' + (header['GeneSet Description'])[start:end] + '\n'
-        if(end != len(header['GeneSet Description'])):
-            output = output + '+ ' + (header['GeneSet Description'])[end:] + '\n\n'
-        else:
-            output = output + '\n'
+            # Get the abtch upload version of this header key
+            mapped_key = HEADER_KEY_MAP[unmapped_key]
+            if mapped_key is not None:
+                    # The description should be split on multi-lines
+                if mapped_key == '=':
+                    values = textwrap.wrap(value, width=90)
+                    for v in values:
+                        head.append(f"{mapped_key}{v}")
+                    head.append('')
+                else:
+                    head.append(f"{mapped_key}{value}")
 
-        for i in range((LENGTH_OF_HEADER+1),len(content)):
-            gene_info = content[i].split(',')
-            output = output + gene_info[0] + ' ' + gene_info[1] + '\n'
+                remaining_required_headers.discard(mapped_key)
 
-        return render_export_hba(output, (header['GeneSet Abbreviation']).replace(' ',''))
+            # Makesure we have publication information
+            if mapped_key == 'P':
+                _ = geneweaverdb.get_publication_by_pubmed(value)
+            # Grab the gs abbreviation for the file name
+            if mapped_key == ':':
+                gs_abbrev = value.replace(' ','')
+
+            # Move to the next row
+            this_row += 1
+
+        # Raise an error if any required header key was missing
+        if len(remaining_required_headers) > 0:
+            raise ValueError("Must provide all required metacontent headers")
+
+        # For all data lines, replace the CSV with TSV
+        data = [
+            content[row_idx].replace(',', '\t')
+            for row_idx in range(this_row, len(content))
+        ]
+
+        combined = head + data
+        output = '\n'.join(combined)
+
+        return render_export_hba(output, gs_abbrev)
     return render_template('HBA_batch_converter.html')
 
 
 @app.route('/exportHBA/<string:txt>/<string:abbreviation>')
 def render_export_hba(txt, abbreviation):
-    '''
+    """
     exports the txt file for the HBA-deals converter
-    '''
+    """
     title = 'HBA_batch_upload_' + abbreviation + '_' + str(datetime.date.today()) + '.txt'
+
     response = make_response(txt)
-    response.headers["Content-Disposition"] = "attachment; filename=" + title
+    response.headers["Content-Disposition"] = f"attachment; filename={title}"
     response.headers["Cache-Control"] = "must-revalidate"
     response.headers["Pragma"] = "must-revalidate"
     response.headers["Content-type"] = "text/plain"
