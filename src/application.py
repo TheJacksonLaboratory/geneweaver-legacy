@@ -3466,10 +3466,11 @@ def HBA_batch_converter():
 
             # If the key value is not one of our header keys, it's probably a gene id.
             if unmapped_key not in HEADER_KEY_MAP:
-                # If te value can be turned into a float, it definitely is
+                # If the value can be turned into a float, it definitely is
                 try:
                     float(value)
                     in_header = False
+                    # Add a blank linebetween header and content
                     head.append('')
                     continue
                 # Otherwise skip this row
@@ -3477,7 +3478,7 @@ def HBA_batch_converter():
                     this_row += 1
                     continue
 
-            # Get the abtch upload version of this header key
+            # Get the batch upload version of this header key
             mapped_key = HEADER_KEY_MAP[unmapped_key]
             if mapped_key is not None:
                     # The description should be split on multi-lines
@@ -3507,7 +3508,7 @@ def HBA_batch_converter():
 
         # For all data lines, replace the CSV with TSV
         data = [
-            content[row_idx].replace(',', '\t')
+            content[row_idx].replace(',', ' ')
             for row_idx in range(this_row, len(content))
         ]
 
