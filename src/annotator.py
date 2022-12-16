@@ -310,6 +310,10 @@ def annotate_text(text, onts, ncbo=False, monarch=True):
     """
 
     if ncbo:
+        # Union GeneSet upload fix: Everest
+        # Onts that do not exist in the NCBO service call need to be removed or the upload fails
+        # This script removes 'HPO' and 'JAX' onts that do not exist in NCBO's server, otherwise will generate error
+        onts = [ont for ont in onts if ont not in ['HPO', 'JAX']]
         ncbo_onts = fetch_ncbo_annotations(text, onts)
         ncbo_onts = parse_ncbo_annotations(ncbo_onts)
     else:
