@@ -552,7 +552,9 @@ def render_editgenesets(gs_id, curation_view=False):
         user_pref=user_pref,
         # SRP Implementation
         srp=srp,
-        gs_update=gs_update
+        gs_update=gs_update,
+        # Cur_ID Implementation
+        user_info=user_info
     )
 
 @app.route('/addRelationsOntology', methods=['POST'])
