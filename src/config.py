@@ -53,6 +53,12 @@ def createConfig():
         print('[AGR]', file=fl)
         print('url = http://127.0.0.1:5001/agr-service/', file=fl)
         print('', file=fl)
+        print('[landing_page]', file=fl)
+        print('apikey_geneweaver = apikey', file=fl)
+        print('agr_url = https://www.alliancegenome.org/api/', file=fl)
+        print('api_key_disgenet = apikey', file=fl)
+        print('api_host_disgenet = https://www.disgenet.org/api', file=fl)
+        print('', file=fl)
 
 def checkIntegrity():
     """
@@ -60,7 +66,7 @@ def checkIntegrity():
     missing spots so the app won't crash later.
     """
 
-    sections = ['application', 'celery', 'db', 'sphinx']
+    sections = ['application', 'celery', 'db', 'sphinx', 'landing_page']
 
     for sec in sections:
         for key, val in CONFIG.items(sec):
