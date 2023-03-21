@@ -3895,18 +3895,27 @@ def get_genesets_by_hom_id(hom_ids):
         list(set(geneset_list[0]))
     return geneset_list[0]
 
-
-def insert_into_geneset_jaccard(jaccards, gs_id):
+# Added user_id
+def insert_into_geneset_jaccard(jaccards, gs_id, user_id):
+    # Added user_id to input.
     """
+    Delete from table where user id == the one you are using. Special command "Insert where not exist" but look up to avoid duplicates where insert.
+    Make up 5 genesets where you know what the jaccard exists. Make sure to delete before we add.
+    Create 4 new ode_gene_ids and create new genesets: one with all, one with 3, one with 2, one with 1. When you query them, it should give you back all of them in order!
+
+    Update table, insert "blah" into SQL command and into the GW database on bitbucket.
+
+    bitbucket.org > Database > add file (Dr. Baker does this) > file.sql
+
     First deletes existing geneset jac_values from geneset_jaccard where gs_id is true.
     Then insert new values into the table such that gs_id_left < gs_id_right
     :param jaccards: dictionary of jaccard values per gs_id: gs_id => jaccard value
     :param gs_id: gs_id of interest
     :return: 1
     """
-    # delete items from geneset_jaccard
     with PooledCursor() as cursor:
-        cursor.execute('''DELETE FROM geneset_jaccard WHERE gs_id_left=%s OR gs_id_right=%s''', (gs_id, gs_id,))
+        # Overlaid new command onto old script. Now it searches for user_id to delete corresponding rows.
+        cursor.execute('''DELETE FROM geneset_jaccard WHERE gs_id_left=%s OR gs_id_right=%s AND user_id=%s''', (gs_id, gs_id, user_id, ))
         cursor.connection.commit()
         # insert gs_ids left and right
         for key, value in jaccards.items():
@@ -3916,8 +3925,9 @@ def insert_into_geneset_jaccard(jaccards, gs_id):
             else:
                 gs_left = gs_id
                 gs_right = key
-            cursor.execute('''INSERT INTO geneset_jaccard (gs_id_left, gs_id_right, jac_value) VALUES (%s, %s, %s)''',
-                        (gs_left, gs_right, value, ))
+            # Adds back the user_id and does the same as the old script but one new caveat.
+            cursor.execute('''INSERT INTO geneset_jaccard (gs_id_left, gs_id_right, jac_value, user_id) VALUES (%s, %s, %s, %s)''',
+                        (gs_left, gs_right, value, user_id, ))
         cursor.connection.commit()
     return 1
 
