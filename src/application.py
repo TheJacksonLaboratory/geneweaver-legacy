@@ -3144,12 +3144,15 @@ def dynamic_jaccard(gs_id):
     :return: 1 if True
     """
     hom_ids = geneweaverdb.get_geneset_hom_ids(gs_id)
+    # Added user_id so it can be used as input
+    user_id = session['user_id']
     if hom_ids == 0:
         return 0
     else:
         genesets = geneweaverdb.get_genesets_by_hom_id(hom_ids)
         results = calculate_jaccard(gs_id, genesets)
-        if geneweaverdb.insert_into_geneset_jaccard(results, gs_id):
+        # user_id is now set as input so the function won't overlap with other users
+        if geneweaverdb.insert_into_geneset_jaccard(results, gs_id, user_id):
             return 1
 
 
