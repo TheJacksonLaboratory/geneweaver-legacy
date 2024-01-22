@@ -2,6 +2,8 @@ import urllib.request
 import urllib
 import requests
 import xml.etree.ElementTree as ET
+# Everest SRP fix added groupby to group elinks
+from itertools import groupby
 
 # this is a template for a URL that looks like:
 # http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=24818216&retmode=xml
@@ -29,10 +31,23 @@ def get_pubmed_info(pub_med_id):
         add_if_some_val('pub_pages', root.findtext('.//MedlinePgn'))
 
         pub_date_node = root.find('.//PubDate')
+        # Everest PMID fix
+        # If an article is revised, the PubDate section is not
+        # correctly populated with all metadata, namely no month or date
+        # which breaks the dictionary function
+        # Adds a revised version for pubmed dates
+        pub_date_node_revised = root.find('.//DateRevised')
         if pub_date_node is not None:
-            add_if_some_val('pub_year', pub_date_node.findtext('Year'))
-            add_if_some_val('pub_month', pub_date_node.findtext('Month'))
-            add_if_some_val('pub_day', pub_date_node.findtext('Day'))
+            # Everest PMID fix: added an if-else statement so that revised
+            # articles correctly populate dictionary entries
+            if pub_date_node.findtext('Month') is not None:
+                add_if_some_val('pub_year', pub_date_node.findtext('Year'))
+                add_if_some_val('pub_month', pub_date_node.findtext('Month'))
+                add_if_some_val('pub_day', pub_date_node.findtext('Day'))
+            else:
+                add_if_some_val('pub_year', pub_date_node_revised.findtext('Year'))
+                add_if_some_val('pub_month', pub_date_node_revised.findtext('Month'))
+                add_if_some_val('pub_day', pub_date_node_revised.findtext('Day'))
 
         def auth_node_to_str(auth_node):
             name_parts = []
@@ -82,19 +97,27 @@ def get_pubmed_info(pub_med_id):
 def get_SRP(pub_med_id):
     resp = urllib.request.urlopen(SRP_ELINK_URL % pub_med_id).read()
     response_root = ET.fromstring(resp)
-    elink= ''
-    for line in response_root:
-        ID = line.find('LinkSetDb')
-        if ID != None:
-            for link in ID.findall('Link'):
-                elink = link.find('Id').text
+    # Everest SRP fix
+    db = response_root.find('.//LinkSetDb')
+    # The first response is sufficient to obtain to the closest related SRP
+    elink = db.find('Link').find('Id').text
     resp2 = urllib.request.urlopen(SRP_EFETCH_URL % elink).read()
     response_root2 = ET.fromstring(resp2)
-    SRP = ''
-    for line in response_root2:
-        ID =  line.find('STUDY')
-        if ID != None:
-            SRP = ID.find('IDENTIFIERS').find('PRIMARY_ID').text
+    SRP = response_root2.find('.//STUDY').find('IDENTIFIERS').findtext('PRIMARY_ID')
+
+    # elink= ''
+    # for line in response_root:
+    #     ID = line.find('LinkSetDb')
+    #     if ID != None:
+    #         for link in ID.findall('Link'):
+    #             elink = link.find('Id').text
+    # resp2 = urllib.request.urlopen(SRP_EFETCH_URL % elink).read()
+    # response_root2 = ET.fromstring(resp2)
+    # SRP = ''
+    # for line in response_root2:
+    #     ID =  line.find('STUDY')
+    #     if ID != None:
+    #         SRP = ID.find('IDENTIFIERS').find('PRIMARY_ID').text
 
     return SRP
 # END SRP IMPLEMENTATION
