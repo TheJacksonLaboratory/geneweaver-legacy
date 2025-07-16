@@ -103,7 +103,7 @@
             GeneSet Graph as a PDF</a>
         -
         <a target="_blank"
-           href="{{ url_for('static_results', filename=async_result.parameters.output_prefix  + '.svg') }}">Open in new
+           href="{{ url_for('GeneSetViewer.view_window', task_id=async_result.task_id) }}">Open in new
             window</a>
     </div>
 </div>

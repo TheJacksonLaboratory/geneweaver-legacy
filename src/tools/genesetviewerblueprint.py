@@ -193,6 +193,44 @@ def view_result(task_id):
         return tc.render_tool_pending(async_result, tool)
 
 
+@geneset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-window/<task_id>.html')
+def view_window(task_id):
+    # TODO need to check for read permissions on task
+    async_result = tc.celery_app.AsyncResult(task_id)
+    tool = gwdb.get_tool(TOOL_CLASSNAME)
+
+    if async_result.state in states.PROPAGATE_STATES:
+        # TODO render a real descriptive error page not just an exception
+        raise Exception('error while processing: ' + tool.name)
+
+    if async_result.state == states.FAILURE:
+        results = json.loads(async_result.result)
+        if results['error']:
+            flask.flash(results['error'])
+        else:
+            flask.flash('An unknown error occurred. Please contact a GeneWeaver admin.')
+        return flask.redirect('/analyze')
+
+    elif async_result.state in states.READY_STATES:
+        results = json.loads(async_result.result)
+        if 'error' in results and results['error']:
+            flask.flash(results['error'])
+            return flask.redirect('/analyze')
+
+        # Generate the SVG file URL
+        svg_file_path = flask.url_for('static_results', filename=results['parameters']['output_prefix'] + '.svg')
+        
+        return flask.render_template(
+            'tool/GeneSetViewer_window.html',
+            svg_file_path=svg_file_path,
+            async_result=results,
+            tool=tool)
+
+    else:
+        # render a page telling their results are pending
+        return tc.render_tool_pending(async_result, tool)
+
+
 @geneset_viewer_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
 def status_json(task_id):
     # TODO need to check for read permissions on task
