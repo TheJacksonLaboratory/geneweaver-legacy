@@ -226,59 +226,41 @@
         function fitToWindow() {
             if (!svgElement) return;
             
-            // Reset any existing transforms to get accurate measurements
-            svgElement.style.transform = '';
+            // Reset transforms first
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            updateTransform();
             
-            // Update container dimensions to current values
+            // Update container dimensions
             var container = document.getElementById('graph-container');
             containerWidth = container.clientWidth;
             containerHeight = container.clientHeight;
             
-            // Get the actual SVG content dimensions
-            var bbox;
-            try {
-                bbox = svgElement.getBBox();
-            } catch (e) {
-                // Fallback if getBBox fails
-                bbox = {
-                    width: svgElement.clientWidth || 800,
-                    height: svgElement.clientHeight || 600,
-                    x: 0,
-                    y: 0
-                };
-            }
+            // Get SVG dimensions after reset
+            var svgRect = svgElement.getBoundingClientRect();
+            var svgWidth = svgRect.width;
+            var svgHeight = svgRect.height;
             
-            var svgWidth = bbox.width;
-            var svgHeight = bbox.height;
-            
-            // Ensure we have valid dimensions
-            if (svgWidth <= 0 || svgHeight <= 0) {
-                svgWidth = 800;
-                svgHeight = 600;
-            }
-            
-            // Calculate scale to fit with some padding (85% of container)
-            var scaleX = (containerWidth * 0.85) / svgWidth;
-            var scaleY = (containerHeight * 0.85) / svgHeight;
+            // Calculate scale to fit with padding
+            var scaleX = (containerWidth * 0.9) / svgWidth;
+            var scaleY = (containerHeight * 0.9) / svgHeight;
             currentScale = Math.min(scaleX, scaleY);
             
-            // Ensure minimum scale
-            if (currentScale < 0.1) currentScale = 0.1;
-            
-            // Center the SVG in the container
-            currentTranslateX = (containerWidth - svgWidth * currentScale) / 2;
-            currentTranslateY = (containerHeight - svgHeight * currentScale) / 2;
-            
-            // Account for any bbox offset
-            currentTranslateX -= bbox.x * currentScale;
-            currentTranslateY -= bbox.y * currentScale;
+            // Center the scaled SVG
+            var scaledWidth = svgWidth * currentScale;
+            var scaledHeight = svgHeight * currentScale;
+            currentTranslateX = (containerWidth - scaledWidth) / 2;
+            currentTranslateY = (containerHeight - scaledHeight) / 2;
             
             updateTransform();
         }
         
         function resetView() {
-            // Reset view now means fit to window (since that's what users expect)
-            fitToWindow();
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            updateTransform();
         }
         
         function zoomIn() {
