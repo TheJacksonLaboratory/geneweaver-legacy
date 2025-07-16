@@ -186,7 +186,8 @@ def view_result(task_id):
         return flask.render_template(
             'tool/GeneSetViewer_result.html',
             async_result=results,
-            tool=tool)
+            tool=tool,
+            task_id=task_id)
 
     else:
         # render a page telling their results are pending
