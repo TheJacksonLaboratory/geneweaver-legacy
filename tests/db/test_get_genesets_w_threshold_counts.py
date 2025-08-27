@@ -17,7 +17,6 @@ Run this test file using the `unittest` framework:
 import unittest
 from unittest.mock import patch, MagicMock
 import sys
-from src.geneweaverdb import get_geneset_ids_with_threshold_counts
 
 
 class TestGetGenesetIdsWithThresholdCounts(unittest.TestCase):

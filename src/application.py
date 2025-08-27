@@ -18,7 +18,6 @@ import os
 import os.path as path
 import re
 import urllib
-import requests
 from urllib.parse import urlencode
 
 from flask import Flask, Response
@@ -39,7 +38,6 @@ from intermine.webservice import Service
 from psycopg2 import Error
 from psycopg2 import IntegrityError
 from werkzeug.routing import BaseConverter
-import urllib3
 import bleach
 import flask
 import flask_restful as restful
@@ -48,7 +46,6 @@ from authlib.integrations.flask_client import OAuth
 from authlib.integrations.base_client.errors import OAuthError
 
 from decorators import login_required, create_guest, restrict_to_current_user
-from src.error import internal_server_error
 from tools import abbablueprint
 from tools import booleanalgebrablueprint
 from tools import combineblueprint
@@ -740,7 +737,7 @@ def add_relations_ontology():
         for ro_ont_id in ro_ont_ids:
             try:
                 geneweaverdb.add_ro_ont_to_geneset(gs_id, ont_id, ro_ont_id)
-            except IntegrityError as e:
+            except IntegrityError:
                 try:
                     geneweaverdb.update_ro_ont_to_geneset(gs_id, ont_id, ro_ont_id)
                 except Error as e:
@@ -4241,7 +4238,7 @@ def render_emphasis():
             if add_all_genes:
                 genes_list = add_all_genes.split(" ")
                 for gene in genes_list:
-                    if not str(gene) in emphgeneids:
+                    if str(gene) not in emphgeneids:
                         geneweaverdb.create_usr2gene(user_id, gene)
 
         if "Emphasis_RemoveGene" in args:
@@ -5211,7 +5208,6 @@ def render_datasources():
     )
 
 
-import time
 
 
 @app.route("/landing_page")

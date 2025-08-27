@@ -1,12 +1,9 @@
 import json
 import uuid
-from decimal import Decimal
 
-from jinja2 import Environment, meta, PackageLoader, FileSystemLoader
 import celery.states as states
 import flask
 
-import geneweaverdb
 import geneweaverdb as gwdb
 import tools.toolcommon as tc
 

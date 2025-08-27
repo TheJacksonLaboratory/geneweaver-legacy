@@ -25,7 +25,7 @@ python -m unittest tests/test_threshold_value_validation.py
 
 import unittest
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 sys.modules["geneweaverdb"] = MagicMock()
 sys.modules["pubmedsvc"] = MagicMock()

@@ -20,7 +20,7 @@ def results():
     try:
         myfile = open("msetOutput.txt", "r")
         current = myfile.read().replace("\n", "<br/>")
-    except IOError as e:
+    except IOError:
         print("file not ready yet...")
     return """
     <!doctype html>

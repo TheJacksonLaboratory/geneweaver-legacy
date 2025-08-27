@@ -1,5 +1,7 @@
-import unittest, json
-import geneweaverdb, application
+import unittest
+import json
+import geneweaverdb
+import application
 import xmlrunner
 
 """class for testing the paging on the view geneset details page"""

@@ -1,9 +1,6 @@
-from decimal import Decimal
 import json
 import uuid
-import config
 
-import celery.states as states
 import flask
 from flask import request
 

@@ -6,8 +6,6 @@ import uuid
 import geneweaverdb as gwdb
 import toolcommon as tc
 
-from decimal import Decimal
-from jinja2 import Environment, meta, PackageLoader, FileSystemLoader
 
 TOOL_CLASSNAME = "UpSet"
 upset_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)

@@ -1,10 +1,8 @@
 import re
-import sys
 import urllib
 import xml.etree.ElementTree as ET
 
 import geneweaverdb
-import pub_assignments
 
 
 PUBMED_SEARCH_URL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s&usehistory=y"

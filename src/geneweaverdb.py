@@ -5,7 +5,6 @@ import json
 import string
 import random
 import psycopg2
-from psycopg2 import Error
 from psycopg2.extras import execute_values
 from psycopg2.pool import ThreadedConnectionPool
 from tools import toolcommon as tc
@@ -3262,7 +3261,7 @@ def avg_tool_times(keys, tool):
         with PooledCursor() as cursor:
             cursor.execute(sql)
         return cursor.fetchone()[0]
-    except Exception as e:
+    except Exception:
         return 0
 
 
@@ -3275,7 +3274,7 @@ def avg_genes(keys):
         with PooledCursor() as cursor:
             cursor.execute(sql)
         return cursor.fetchone()[0]
-    except Exception as e:
+    except Exception:
         return 0
 
 
@@ -3585,7 +3584,7 @@ def get_publication_by_pubmed(pubmed_id, create=False):
                 pub_dict = pubmedsvc.get_pubmed_info(pubmed_id)
                 pub_dict["pub_pubmed"] = pubmed_id
 
-            except Exception as e:
+            except Exception:
                 pub_dict = {}
 
             if pub_dict:

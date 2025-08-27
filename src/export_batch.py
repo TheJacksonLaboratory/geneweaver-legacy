@@ -7,7 +7,6 @@ This file contains scripts to insert new geneests based on two files:
 """
 
 import psycopg2
-from psycopg2.pool import ThreadedConnectionPool
 
 
 __author__ = "baker"

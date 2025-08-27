@@ -17,7 +17,6 @@ import uuid
 import geneweaverdb as gwdb
 import toolcommon as tc
 
-from jinja2 import Environment, meta, PackageLoader, FileSystemLoader
 
 TOOL_CLASSNAME = "JaccardSimilarity"
 jaccardsimilarity_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)

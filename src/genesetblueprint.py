@@ -1,14 +1,12 @@
 import re
 import batch
 import json
-import sys
 import urllib
 import flask
 
 import geneweaverdb
 import pubmedsvc
-import annotator as ann
-from decorators import login_required, create_guest
+from decorators import login_required
 import curation_assignments
 
 

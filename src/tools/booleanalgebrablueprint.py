@@ -2,7 +2,6 @@ from collections import OrderedDict
 from decimal import Decimal
 import json
 import operator
-import os
 import uuid
 
 import celery.states as states
