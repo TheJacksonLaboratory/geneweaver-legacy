@@ -27,8 +27,8 @@ import unittest
 import sys
 from unittest.mock import patch, MagicMock
 
-sys.modules['geneweaverdb'] = MagicMock()
-sys.modules['pubmedsvc'] = MagicMock()
+sys.modules["geneweaverdb"] = MagicMock()
+sys.modules["pubmedsvc"] = MagicMock()
 
 from src.batch import BatchReader
 
@@ -38,6 +38,7 @@ class TestThresholdValidationMethods(unittest.TestCase):
     Test class for validating threshold values in BatchReader methods.
     This class contains unit tests for the methods that validate correlation and effect ranges.
     """
+
     def test_validate_correlation_range(self):
         """
         Test the validate_correlation_range method of BatchReader class.
@@ -46,23 +47,54 @@ class TestThresholdValidationMethods(unittest.TestCase):
         """
 
         # Valid cases
-        self.assertEqual(BatchReader.validate_correlation_range("-0.75 < correlation < 0.75"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_correlation_range("0 < correlation < 1"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_correlation_range("-1 < correlation < 1"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_correlation_range("0.0 < correlation < 0.5"), (True, unittest.mock.ANY))
+        self.assertEqual(
+            BatchReader.validate_correlation_range("-0.75 < correlation < 0.75"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("0 < correlation < 1"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("-1 < correlation < 1"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("0.0 < correlation < 0.5"),
+            (True, unittest.mock.ANY),
+        )
 
         # Invalid cases
-        self.assertEqual(BatchReader.validate_correlation_range("1 < correlation < -1"), (False, None))
-        self.assertEqual(BatchReader.validate_correlation_range("abc < correlation < 0.5"), (False, None))
-        self.assertEqual(BatchReader.validate_correlation_range("0 < correlation"), (False, None))
-        self.assertEqual(BatchReader.validate_correlation_range("correlation < 0.5"), (False, None))
-        self.assertEqual(BatchReader.validate_correlation_range("0 < correlation <"), (False, None))
+        self.assertEqual(
+            BatchReader.validate_correlation_range("1 < correlation < -1"),
+            (False, None),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("abc < correlation < 0.5"),
+            (False, None),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("0 < correlation"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("correlation < 0.5"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("0 < correlation <"), (False, None)
+        )
 
         # Edge cases
-        self.assertEqual(BatchReader.validate_correlation_range("0 < correlation < 0"), (False, None))
-        self.assertEqual(BatchReader.validate_correlation_range("-0.0001 < correlation < 0.0001"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_correlation_range("-1.0 < correlation < 1.0"), (True, unittest.mock.ANY))
-
+        self.assertEqual(
+            BatchReader.validate_correlation_range("0 < correlation < 0"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("-0.0001 < correlation < 0.0001"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_correlation_range("-1.0 < correlation < 1.0"),
+            (True, unittest.mock.ANY),
+        )
 
     def test_validate_effect_range(self):
         """
@@ -72,36 +104,74 @@ class TestThresholdValidationMethods(unittest.TestCase):
         """
 
         # Valid cases
-        self.assertEqual(BatchReader.validate_effect_range("6.0 < effect < 22.50"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_effect_range("1 < effect < 5"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_effect_range("-5.0 < effect < 10.0"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_effect_range("0 < effect < 1"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_effect_range("-10.5 < effect < 0.5"), (True, unittest.mock.ANY))
+        self.assertEqual(
+            BatchReader.validate_effect_range("6.0 < effect < 22.50"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("1 < effect < 5"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("-5.0 < effect < 10.0"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("0 < effect < 1"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("-10.5 < effect < 0.5"),
+            (True, unittest.mock.ANY),
+        )
 
         # Invalid cases
-        self.assertEqual(BatchReader.validate_effect_range("10 < effect < -5"), (False, None))
-        self.assertEqual(BatchReader.validate_effect_range("6.0 < effect < -22.50"), (False, None))
-        self.assertEqual(BatchReader.validate_effect_range("abc < effect < 5"), (False, None))
+        self.assertEqual(
+            BatchReader.validate_effect_range("10 < effect < -5"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("6.0 < effect < -22.50"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("abc < effect < 5"), (False, None)
+        )
         self.assertEqual(BatchReader.validate_effect_range("0 < effect"), (False, None))
         self.assertEqual(BatchReader.validate_effect_range("effect < 5"), (False, None))
-        self.assertEqual(BatchReader.validate_effect_range("0 < effect <"), (False, None))
+        self.assertEqual(
+            BatchReader.validate_effect_range("0 < effect <"), (False, None)
+        )
 
         # Edge cases
-        self.assertEqual(BatchReader.validate_effect_range("0 < effect < 0"), (False, None))
-        self.assertEqual(BatchReader.validate_effect_range("-0.0001 < effect < 0.0001"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_effect_range("-100.0 < effect < 100.0"), (True, unittest.mock.ANY))
-
+        self.assertEqual(
+            BatchReader.validate_effect_range("0 < effect < 0"), (False, None)
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("-0.0001 < effect < 0.0001"),
+            (True, unittest.mock.ANY),
+        )
+        self.assertEqual(
+            BatchReader.validate_effect_range("-100.0 < effect < 100.0"),
+            (True, unittest.mock.ANY),
+        )
 
     def test_valid_pq_values(self):
         """
         Test valid p-value and q-value inputs.
         """
         self.assertEqual(BatchReader.validate_pq_value("0"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("0.5"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("0.123"), (True, unittest.mock.ANY))
+        self.assertEqual(
+            BatchReader.validate_pq_value("0.5"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("0.123"), (True, unittest.mock.ANY)
+        )
         self.assertEqual(BatchReader.validate_pq_value("1"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("1.0"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("1.000"), (True, unittest.mock.ANY))
+        self.assertEqual(
+            BatchReader.validate_pq_value("1.0"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("1.000"), (True, unittest.mock.ANY)
+        )
 
     def test_invalid_pq_values(self):
         """
@@ -118,11 +188,21 @@ class TestThresholdValidationMethods(unittest.TestCase):
         """
         Test edge cases for p-value and q-value inputs.
         """
-        self.assertEqual(BatchReader.validate_pq_value("0.0000001"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("0.9999999"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("1.0000000"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("0.000"), (True, unittest.mock.ANY))
-        self.assertEqual(BatchReader.validate_pq_value("1.000"), (True, unittest.mock.ANY))
+        self.assertEqual(
+            BatchReader.validate_pq_value("0.0000001"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("0.9999999"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("1.0000000"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("0.000"), (True, unittest.mock.ANY)
+        )
+        self.assertEqual(
+            BatchReader.validate_pq_value("1.000"), (True, unittest.mock.ANY)
+        )
 
     def test_pq_value_whitespace_and_formatting(self):
         """
@@ -134,5 +214,5 @@ class TestThresholdValidationMethods(unittest.TestCase):
         self.assertEqual(BatchReader.validate_pq_value("\n1.000"), (False, None))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

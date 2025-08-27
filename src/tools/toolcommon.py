@@ -3,22 +3,22 @@ import flask
 import config
 import sys
 
-#BROKER_URL = 'amqp://guest@localhost//'
-#CELERY_RESULT_BACKEND = 'amqp'
-#CELERY_RESULT_BACKEND = 'db+postgres://odeadmin:odeadmin@crick.ecs.baylor.edu/celery'
+# BROKER_URL = 'amqp://guest@localhost//'
+# CELERY_RESULT_BACKEND = 'amqp'
+# CELERY_RESULT_BACKEND = 'db+postgres://odeadmin:odeadmin@crick.ecs.baylor.edu/celery'
 
 celery_app = Celery(
-    'geneweaver.tools',
-    #broker=BROKER_URL,
-    #backend=CELERY_RESULT_BACKEND,
-    broker=config.get('celery', 'url'),
-    backend=config.get('celery', 'url'),
+    "geneweaver.tools",
+    # broker=BROKER_URL,
+    # backend=CELERY_RESULT_BACKEND,
+    broker=config.get("celery", "url"),
+    backend=config.get("celery", "url"),
 )
 
 # Optional configuration, see the application user guide.
 celery_app.conf.update(
-    CELERY_TASK_SERIALIZER='json',
-    CELERY_RESULT_SERIALIZER='json',
+    CELERY_TASK_SERIALIZER="json",
+    CELERY_RESULT_SERIALIZER="json",
     CELERY_TASK_RESULT_EXPIRES=None,
     CELERYD_TASK_SOFT_TIME_LIMIT=600,
     CELERYD_TASK_TIME_LIMIT=600,
@@ -43,6 +43,7 @@ def selected_geneset_ids(form):
         if id_with_prefix.startswith(geneset_html_id_prefix)
     ]
 
+
 def selected_project_ids(form):
     """
     this function takes a submitted form and extracts IDs for
@@ -65,12 +66,11 @@ def fully_qualified_name(tool_class_name):
     :param tool_class_name: the tool classname
     :return: the fully qualified name
     """
-    return 'tools.' + tool_class_name + '.' + tool_class_name
+    return "tools." + tool_class_name + "." + tool_class_name
 
 
 def render_tool_pending(async_result, tool):
     sys.stderr.write("Start rendering\n")
     return flask.render_template(
-        'tool/toolstatus.html',
-        async_result=async_result,
-        tool=tool)
+        "tool/toolstatus.html", async_result=async_result, tool=tool
+    )

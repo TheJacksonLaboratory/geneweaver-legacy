@@ -11,11 +11,12 @@ import geneweaverdb as gwdb
 import tools.toolcommon as tc
 
 
-TOOL_CLASSNAME = 'SimilarGenesets'
+TOOL_CLASSNAME = "SimilarGenesets"
 
 similar_genesets_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
 
-@similar_genesets_blueprint.route('/runSimilarGenesets.json', methods=['GET'])
+
+@similar_genesets_blueprint.route("/runSimilarGenesets.json", methods=["GET"])
 def run_tool():
     """
     Runs a similarity analysis--calculates jaccard coefficients between the
@@ -31,34 +32,27 @@ def run_tool():
     args
         request.args['gs_id']: gene set ID
     """
-    
-    gs_id = request.args.get('gs_id')
+
+    gs_id = request.args.get("gs_id")
     task_id = str(uuid.uuid4())
     tool = TOOL_CLASSNAME
-    user_id = flask.session['user_id']
-    desc = '{} on {}'.format(tool, 'GS' + str(gs_id))
+    user_id = flask.session["user_id"]
+    desc = "{} on {}".format(tool, "GS" + str(gs_id))
 
     ## Uses the Jaccard Similarity entry in the tool table so that this tool
     ## doesn't require it's own tool row.
     gwdb.insert_result(
-        user_id,
-        task_id,
-        [gs_id],
-        json.dumps({}),
-        'Jaccard Similarity',
-        desc,
-        desc
+        user_id, task_id, [gs_id], json.dumps({}), "Jaccard Similarity", desc, desc
     )
 
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': [gs_id],
-            'output_prefix': task_id,
-            'params': {},
+            "gsids": [gs_id],
+            "output_prefix": task_id,
+            "params": {},
         },
-        task_id=task_id
+        task_id=task_id,
     )
 
-    return flask.jsonify({'error': None})
-
+    return flask.jsonify({"error": None})

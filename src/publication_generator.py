@@ -7,12 +7,30 @@ import geneweaverdb
 import pub_assignments
 
 
-PUBMED_SEARCH_URL = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s&usehistory=y'
+PUBMED_SEARCH_URL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=%s&usehistory=y"
 
 TO_MONTH_NAME = {
-    '1': 'Jan', '01': 'Jan', '2': 'Feb', '02': 'Feb', '3': 'Mar', '03': 'Mar', '4': 'Apr', '04': 'Apr',
-    '5': 'May', '05': 'May', '6': 'Jun','06': 'Jun', '7': 'Jul', '07': 'Jul', '8': 'Aug', '08': 'Aug',
-    '9': 'Sep', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec'
+    "1": "Jan",
+    "01": "Jan",
+    "2": "Feb",
+    "02": "Feb",
+    "3": "Mar",
+    "03": "Mar",
+    "4": "Apr",
+    "04": "Apr",
+    "5": "May",
+    "05": "May",
+    "6": "Jun",
+    "06": "Jun",
+    "7": "Jul",
+    "07": "Jul",
+    "8": "Aug",
+    "08": "Aug",
+    "9": "Sep",
+    "09": "Sep",
+    "10": "Oct",
+    "11": "Nov",
+    "12": "Dec",
 }
 
 
@@ -38,16 +56,16 @@ class PublicationGenerator(object):
         :param stubgenid:  If this is provided, it is assumed the generator exists in the database, if not, generator is
                            saved, an id is created, and then set.
         """
-        self.name = kwargs.get('name')
-        self.querystring = kwargs.get('querystring')
-        self.last_update = kwargs.get('last_update')
-        self.usr_id = kwargs.get('usr_id')
-        self.grp_id = kwargs.get('grp_id')
-        self.grp_name = kwargs.get('grp_name')
+        self.name = kwargs.get("name")
+        self.querystring = kwargs.get("querystring")
+        self.last_update = kwargs.get("last_update")
+        self.usr_id = kwargs.get("usr_id")
+        self.grp_id = kwargs.get("grp_id")
+        self.grp_name = kwargs.get("grp_name")
 
         # stubgenid is a database generated identifier.  If it is not passed, we assume that this is a new generator
         # thus needing to be inserted into the database.
-        self.stubgenid = kwargs.get('stubgenid')
+        self.stubgenid = kwargs.get("stubgenid")
         if not self.stubgenid:
             self.save()
 
@@ -64,8 +82,10 @@ class PublicationGenerator(object):
         :return:  If ID is valid returns PublicationGenerator object, otherwise returns None
         """
         with geneweaverdb.PooledCursor() as cursor:
-
-            cursor.execute("SELECT * FROM production.stubgenerators WHERE stubgenid=%s;", (generator_id,))
+            cursor.execute(
+                "SELECT * FROM production.stubgenerators WHERE stubgenid=%s;",
+                (generator_id,),
+            )
             rows = geneweaverdb.dictify_cursor(cursor)
             return PublicationGenerator(**next(rows)) if rows else None
 
@@ -79,18 +99,28 @@ class PublicationGenerator(object):
         with geneweaverdb.PooledCursor() as cursor:
             if not self.stubgenid:
                 cursor.execute(
-                    'INSERT INTO production.stubgenerators (name, querystring, grp_id, usr_id) values (%s, %s, %s, %s);',
-                    (self.name, self.querystring, self.grp_id, self.usr_id))
+                    "INSERT INTO production.stubgenerators (name, querystring, grp_id, usr_id) values (%s, %s, %s, %s);",
+                    (self.name, self.querystring, self.grp_id, self.usr_id),
+                )
                 cursor.connection.commit()
 
                 # Get the database generated stubgenid and set the attribute on the instance
-                cursor.execute('''SELECT stubgenid FROM production.stubgenerators
-                               WHERE name = %s AND grp_id = %s AND usr_id = %s ''',
-                               (self.name, self.grp_id, self.usr_id))
+                cursor.execute(
+                    """SELECT stubgenid FROM production.stubgenerators
+                               WHERE name = %s AND grp_id = %s AND usr_id = %s """,
+                    (self.name, self.grp_id, self.usr_id),
+                )
                 self.stubgenid = cursor.fetchone()[0]
             else:
-                cursor.execute('UPDATE production.stubgenerators SET name = %s, querystring = %s, grp_id = %s WHERE stubgenid = %s',
-                               (self.name, self.querystring, self.grp_id, self.stubgenid,))
+                cursor.execute(
+                    "UPDATE production.stubgenerators SET name = %s, querystring = %s, grp_id = %s WHERE stubgenid = %s",
+                    (
+                        self.name,
+                        self.querystring,
+                        self.grp_id,
+                        self.stubgenid,
+                    ),
+                )
                 cursor.connection.commit()
 
     def run(self):
@@ -102,21 +132,27 @@ class PublicationGenerator(object):
         :raised: If there are communication problems with PubMed an HTTPError will be allowed to pass through
         """
         import time
+
         start = time.time()
-        pubmed_result = PubmedResult(urllib.request.urlopen(PUBMED_SEARCH_URL % (urllib.parse.quote(self.querystring),)).read())
+        pubmed_result = PubmedResult(
+            urllib.request.urlopen(
+                PUBMED_SEARCH_URL % (urllib.parse.quote(self.querystring),)
+            ).read()
+        )
 
         # Timing for how long the pubmed search took
         new_time = time.time()
         print("Time querying Pubmed")
         print(new_time - start)
 
-        #response = pubmed_result.fetch()
+        # response = pubmed_result.fetch()
 
         # Update the generator has having been run
         with geneweaverdb.PooledCursor() as cursor:
             cursor.execute(
-                'UPDATE production.stubgenerators SET last_update=NOW() WHERE stubgenid=%s;',
-                (self.stubgenid,))
+                "UPDATE production.stubgenerators SET last_update=NOW() WHERE stubgenid=%s;",
+                (self.stubgenid,),
+            )
             cursor.connection.commit()
         return pubmed_result
 
@@ -126,7 +162,8 @@ class PubmedResult(object):
     Class for storing the result of a Pubmed Search.
     An instance of this class holds the current state of the search for paging purposes.
     """
-    _PUBMED_DATA_URL = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&usehistory=y&query_key=%s&WebEnv=%s&retstart=%s&retmax=%s&retmode=xml'
+
+    _PUBMED_DATA_URL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&usehistory=y&query_key=%s&WebEnv=%s&retstart=%s&retmax=%s&retmode=xml"
     retmax = 10
     retstart = 0
     current_rows = []
@@ -138,9 +175,15 @@ class PubmedResult(object):
     def __init__(self, pubmed_response):
         # Something that calls this passes bytes. If we can't convert to a string raising that error here makes sense
         self.search_response = str(pubmed_response)
-        self.query_key = re.search('<QueryKey>([0-9]*)</QueryKey>', self.search_response).group(1)
-        self.web_env = re.search('<WebEnv>([^<]*)</WebEnv>', self.search_response).group(1)
-        self.total_count = int(re.search('<Count>([0-9]*)</Count>', self.search_response).group(1))
+        self.query_key = re.search(
+            "<QueryKey>([0-9]*)</QueryKey>", self.search_response
+        ).group(1)
+        self.web_env = re.search(
+            "<WebEnv>([^<]*)</WebEnv>", self.search_response
+        ).group(1)
+        self.total_count = int(
+            re.search("<Count>([0-9]*)</Count>", self.search_response).group(1)
+        )
         print("Total Records found = " + str(self.total_count))
 
     def fetch(self, start=None, max_result=None):
@@ -159,7 +202,10 @@ class PubmedResult(object):
             self.retmax = max_result
 
         try:
-            response = urllib.request.urlopen(self._PUBMED_DATA_URL % (self.query_key, self.web_env, self.retstart, self.retmax)).read()
+            response = urllib.request.urlopen(
+                self._PUBMED_DATA_URL
+                % (self.query_key, self.web_env, self.retstart, self.retmax)
+            ).read()
         # Allow HTTPError from communication problems with PubMed to get propogated up
         except urllib.error.HTTPError as e:
             print("Problem communicating with PubMed. {}".format(e.message))
@@ -168,7 +214,6 @@ class PubmedResult(object):
         self._process_pubmed_response(response)
 
         return self
-
 
     def _process_pubmed_response(self, response):
         """
@@ -186,6 +231,7 @@ class PubmedResult(object):
         pubmed_results = []
         # Timing code is for future performance tuning
         import time
+
         start = time.time()
         last = start
         total_parse = 0
@@ -197,39 +243,60 @@ class PubmedResult(object):
             ++count
             last = time.time()
             article_ids = {}
-            abstract = ''
+            abstract = ""
             fulltext_link = None
 
             # Default element type for a journal article is a MedlineCitation
-            citation = child.find('MedlineCitation')
+            citation = child.find("MedlineCitation")
             if citation is not None:
-                article = citation.find('Article')
-                article_title = article.find('ArticleTitle').text
-                pubmed_data = child.find('PubmedData')
-                article_id_list = pubmed_data.find('ArticleIdList')
-                journal = citation.find('MedlineJournalInfo').find('MedlineTA').text
+                article = citation.find("Article")
+                article_title = article.find("ArticleTitle").text
+                pubmed_data = child.find("PubmedData")
+                article_id_list = pubmed_data.find("ArticleIdList")
+                journal = citation.find("MedlineJournalInfo").find("MedlineTA").text
 
-                year = article.find('Journal').find('JournalIssue').find('PubDate').find('Year')
-                pub_year = year.text if year is not None else ''
+                year = (
+                    article.find("Journal")
+                    .find("JournalIssue")
+                    .find("PubDate")
+                    .find("Year")
+                )
+                pub_year = year.text if year is not None else ""
 
-                month = article.find('Journal').find('JournalIssue').find('PubDate').find('Month')
-                pm = month.text if month is not None else ''
+                month = (
+                    article.find("Journal")
+                    .find("JournalIssue")
+                    .find("PubDate")
+                    .find("Month")
+                )
+                pm = month.text if month is not None else ""
                 if pm in TO_MONTH_NAME:
                     pm = TO_MONTH_NAME[pm]
             else:
                 # Not a journal article, check to see if it's a book...
-                citation = child.find('BookDocument')
+                citation = child.find("BookDocument")
                 if citation is not None:
-                    article = citation.find('Book')
-                    article_title = "Book: " + article.find('BookTitle').text if article.find(
-                        'BookTitle') is not None else 'Book:'
-                    article_id_list = citation.find('ArticleIdList')
+                    article = citation.find("Book")
+                    article_title = (
+                        "Book: " + article.find("BookTitle").text
+                        if article.find("BookTitle") is not None
+                        else "Book:"
+                    )
+                    article_id_list = citation.find("ArticleIdList")
                     # for journal we'll take the Book Title
-                    journal = article.find('Publisher').find('PublisherName').text
+                    journal = article.find("Publisher").find("PublisherName").text
 
-                    pub_date = article.find('PubDate')
-                    pub_year = pub_date.find('Year').text if pub_date.find('Year') is not None else ''
-                    pm = pub_date.find('Month').text if pub_date.find('Month') is not None else ''
+                    pub_date = article.find("PubDate")
+                    pub_year = (
+                        pub_date.find("Year").text
+                        if pub_date.find("Year") is not None
+                        else ""
+                    )
+                    pm = (
+                        pub_date.find("Month").text
+                        if pub_date.find("Month") is not None
+                        else ""
+                    )
                     if pm in TO_MONTH_NAME:
                         pm = TO_MONTH_NAME[pm]
 
@@ -240,65 +307,82 @@ class PubmedResult(object):
                     print("Could not process citation {} skipping".format(child.tag))
                     continue
 
-            pmid = citation.find('PMID').text
+            pmid = citation.find("PMID").text
 
             # Iterate through list to get info for what to include for a link back to pub
             if article_id_list is not None:
                 for id_element in article_id_list:
-                    article_ids[id_element.get('IdType')] = id_element.text
-                if 'pmc' in article_ids:
-                    fulltext_link = 'http://www.ncbi.nlm.nih.gov/pmc/articles/%s/' % (article_ids['pmc'],)
-                elif 'doi' in article_ids:
-                    fulltext_link = 'http://dx.crossref.org/%s' % (article_ids['doi'],)
+                    article_ids[id_element.get("IdType")] = id_element.text
+                if "pmc" in article_ids:
+                    fulltext_link = "http://www.ncbi.nlm.nih.gov/pmc/articles/%s/" % (
+                        article_ids["pmc"],
+                    )
+                elif "doi" in article_ids:
+                    fulltext_link = "http://dx.crossref.org/%s" % (article_ids["doi"],)
 
             # Many abstracts come in multiple parts.  Iterate through and stitch them together
-            abstract_text_list = article.find('Abstract')
+            abstract_text_list = article.find("Abstract")
             if abstract_text_list is not None:
-                abstract += ''.join([abstract_element.text for abstract_element in abstract_text_list
-                                     if abstract_element.tag == 'AbstractText' and abstract_element.text])
+                abstract += "".join(
+                    [
+                        abstract_element.text
+                        for abstract_element in abstract_text_list
+                        if abstract_element.tag == "AbstractText"
+                        and abstract_element.text
+                    ]
+                )
             authors = []
-            author_list = article.find('AuthorList')
+            author_list = article.find("AuthorList")
             if author_list is not None:
                 for author_element in author_list:
-                    name = author_element.find('LastName').text if author_element.find('LastName') is not None else ''
-                    initials = author_element.find('Initials')
+                    name = (
+                        author_element.find("LastName").text
+                        if author_element.find("LastName") is not None
+                        else ""
+                    )
+                    initials = author_element.find("Initials")
                     if initials is not None:
-                        name += ' ' + initials.text
+                        name += " " + initials.text
                     if name:
                         authors.append(name)
 
-            authors = ', '.join(authors)
+            authors = ", ".join(authors)
 
             new_time = time.time()
             total_parse += new_time - last
             last = new_time
             pub_assigns = []
             with geneweaverdb.PooledCursor() as cursor:
-                cursor.execute('''
+                cursor.execute(
+                    """
                     SELECT p.pub_id as pub_id, curation_group as grp_id, g.grp_name as grp_name
                     FROM production.pub_assignments pa, production.publication p, production.grp g
                     WHERE pa.pub_id = p.pub_id
                     AND p.pub_pubmed = %s
                     AND pa.curation_group = g.grp_id
                     ORDER BY p.pub_pubmed
-                  ''', (pmid,))
+                  """,
+                    (pmid,),
+                )
                 for row in cursor:
                     pub_assigns.append(row[2])
             new_time = time.time()
             total_db += new_time - last
             last = new_time
 
-            pubmed_results.append({
-                'pmid': pmid,
-                'authors': authors,
-                'title': article_title,
-                'abstract': abstract,
-                'journal': journal,
-                'month': pm,
-                'year': pub_year,
-                'link_to_fulltext': fulltext_link,
-                'pub_assigns': ", ".join(pub_assigns)
-            })
+            pubmed_results.append(
+                {
+                    "pmid": pmid,
+                    "authors": authors,
+                    "title": article_title,
+                    "abstract": abstract,
+                    "journal": journal,
+                    "month": pm,
+                    "year": pub_year,
+                    "link_to_fulltext": fulltext_link,
+                    "pub_assigns": ", ".join(pub_assigns),
+                }
+            )
             new_time = time.time()
             total_append += new_time - last
             last = new_time
@@ -325,16 +409,20 @@ def list_generators(user_id, groups):
     generators = []
     with geneweaverdb.PooledCursor() as cursor:
         cursor.execute(
-            '''
+            """
                         SELECT DISTINCT stubgenid, sg.name as name, querystring, sg.usr_id,
                         to_char(last_update, 'YYYY-MM-DD') as last_update, sg.grp_id as grp_id, grp_name, LOWER(name)
                         FROM production.stubgenerators sg LEFT JOIN production.grp g
                         ON sg.grp_id = g.grp_id
                         WHERE usr_id=%s OR sg.grp_id=ANY(%s)
                         ORDER BY LOWER(name), grp_name
-                        ''', (str(user_id), '{' + ','.join(groups) + '}')
+                        """,
+            (str(user_id), "{" + ",".join(groups) + "}"),
         )
-        generators = [PublicationGenerator(**row_dict) for row_dict in geneweaverdb.dictify_cursor(cursor)]
+        generators = [
+            PublicationGenerator(**row_dict)
+            for row_dict in geneweaverdb.dictify_cursor(cursor)
+        ]
     return generators
 
 
@@ -348,16 +436,20 @@ def list_generators_by_group(groups):
     generators = []
     with geneweaverdb.PooledCursor() as cursor:
         cursor.execute(
-            '''
+            """
                         SELECT DISTINCT stubgenid, sg.name as name, querystring, sg.usr_id,
                         to_char(last_update, 'YYYY-MM-DD') as last_update, sg.grp_id as grp_id, grp_name, LOWER(name)
                         FROM production.stubgenerators sg LEFT JOIN production.grp g
                         ON sg.grp_id = g.grp_id
                         WHERE sg.grp_id IN (%s)
                         ORDER BY LOWER(name), grp_name
-                        ''' % (','.join(groups), )
+                        """
+            % (",".join(groups),)
         )
-        generators = [PublicationGenerator(**row_dict) for row_dict in geneweaverdb.dictify_cursor(cursor)]
+        generators = [
+            PublicationGenerator(**row_dict)
+            for row_dict in geneweaverdb.dictify_cursor(cursor)
+        ]
     return generators
 
 
@@ -370,8 +462,10 @@ def delete_generator(generator):
     """
     rowcount = 0
     with geneweaverdb.PooledCursor() as cursor:
-        cursor.execute('DELETE FROM production.stubgenerators WHERE stubgenid=%s;',
-                       (generator.stubgenid,))
+        cursor.execute(
+            "DELETE FROM production.stubgenerators WHERE stubgenid=%s;",
+            (generator.stubgenid,),
+        )
         rowcount = cursor.rowcount
         cursor.connection.commit()
     return rowcount

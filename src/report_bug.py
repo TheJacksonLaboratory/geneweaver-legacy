@@ -14,10 +14,12 @@ def to_jira(description=None, fullname=None, email=None, user_id=None, user_page
     :return:
     """
 
-    headers = {'Origin': 'https://jira.jax.org', 'User-Agent': ''}
+    headers = {"Origin": "https://jira.jax.org", "User-Agent": ""}
 
-    get_url = 'https://jira.jax.org/rest/collectors/1.0/template/form' \
-              '/2233f647?os_authType=none'
+    get_url = (
+        "https://jira.jax.org/rest/collectors/1.0/template/form"
+        "/2233f647?os_authType=none"
+    )
 
     response = requests.get(url=get_url, headers=headers)
 
@@ -25,41 +27,46 @@ def to_jira(description=None, fullname=None, email=None, user_id=None, user_page
     user_info = gwdb.get_user(user_id)
 
     # a foil for the SQL injecting sec team
-    if user_id == '922125168' or (user_info.first_name == "GUEST" and user_info.last_name == "GUEST"):
-        return {'message': 'This appears no other thing to me than a foul and pestilent congregation of vapors.'}
+    if user_id == "922125168" or (
+        user_info.first_name == "GUEST" and user_info.last_name == "GUEST"
+    ):
+        return {
+            "message": "This appears no other thing to me than a foul and pestilent congregation of vapors."
+        }
 
-    user_name = ''
+    user_name = ""
     if user_info:
-
         user_name = "{0} {1} ({2})".format(
-            user_info.first_name, user_info.last_name, user_id)
+            user_info.first_name, user_info.last_name, user_id
+        )
 
     description = "{0}\n\n{1}\n\n{2}".format(description, user_page, user_name)
 
-    post_url = 'https://jira.jax.org/rest/collectors/1.0/template/form/2233f647'
+    post_url = "https://jira.jax.org/rest/collectors/1.0/template/form/2233f647"
 
     post_data = {
-        'description': bleach.clean(description),
-        'screenshot': '',
-        'pid': 10404,
-        'alt_token': response.cookies['atlassian.xsrf.token'],
-        'fullname': bleach.clean(fullname),
-        'email': bleach.clean(email),
-        'webInfo': ''
+        "description": bleach.clean(description),
+        "screenshot": "",
+        "pid": 10404,
+        "alt_token": response.cookies["atlassian.xsrf.token"],
+        "fullname": bleach.clean(fullname),
+        "email": bleach.clean(email),
+        "webInfo": "",
     }
     headers = {
-        'Origin': 'https://jira.jax.org/',
-        'User-Agent': '',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Host': 'jira.jax.org',
-        'Referer': get_url,
-        'X-Atlassian-Token': 'no-check'
+        "Origin": "https://jira.jax.org/",
+        "User-Agent": "",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Host": "jira.jax.org",
+        "Referer": get_url,
+        "X-Atlassian-Token": "no-check",
     }
 
-    post_response = requests.post(post_url, data=post_data, headers=headers,
-                                  cookies=response.cookies)
+    post_response = requests.post(
+        post_url, data=post_data, headers=headers, cookies=response.cookies
+    )
 
     if post_response.status_code == 200:
-        return {'message': 'Report successfully submitted. Thank you.'}
+        return {"message": "Report successfully submitted. Thank you."}
     else:
-        return {'message': 'Oops! There was a problem submitting your report.'}
+        return {"message": "Oops! There was a problem submitting your report."}

@@ -10,12 +10,12 @@ import geneweaverdb as gwdb
 import tools.toolcommon as tc
 
 
-TOOL_CLASSNAME = 'ABBA'
+TOOL_CLASSNAME = "ABBA"
 abba_blueprint = flask.Blueprint(TOOL_CLASSNAME, __name__)
-RESULTS_PATH = config.get('application', 'results')
+RESULTS_PATH = config.get("application", "results")
 
 
-@abba_blueprint.route('/run-abba.html', methods=['POST'])
+@abba_blueprint.route("/run-abba.html", methods=["POST"])
 def run_tool():
     # TODO need to check for read permissions on genesets
     form = flask.request.form
@@ -29,31 +29,37 @@ def run_tool():
     selected_geneset_ids = tc.selected_geneset_ids(form)
 
     # Used only when rerunning the tool from the results page
-    if 'genesets' in form:
-        add_genesets = form['genesets'].split(' ')
+    if "genesets" in form:
+        add_genesets = form["genesets"].split(" ")
         edited_add_genesets = [gs[2:] for gs in add_genesets]
         selected_geneset_ids = selected_geneset_ids + edited_add_genesets
 
-    if ('ABBA_InputGenes' not in form or not form['ABBA_InputGenes']) and len(selected_geneset_ids) < 1:
+    if ("ABBA_InputGenes" not in form or not form["ABBA_InputGenes"]) and len(
+        selected_geneset_ids
+    ) < 1:
         # TODO add nice error message about missing genesets
-        flask.flash("Warning: You need to have input or/and at least a GeneSet selected!")
-        return flask.redirect('/analyze')
+        flask.flash(
+            "Warning: You need to have input or/and at least a GeneSet selected!"
+        )
+        return flask.redirect("/analyze")
 
     # Store genes from input genes form
-    params['ABBA_InputGenes'] = (form.getlist("ABBA_InputGenes"))
-    if len(selected_geneset_ids) > 0:   # Store Genes from selected project genesets
+    params["ABBA_InputGenes"] = form.getlist("ABBA_InputGenes")
+    if len(selected_geneset_ids) > 0:  # Store Genes from selected project genesets
         for gsid in selected_geneset_ids:
             genes = gwdb.get_genes_by_geneset_id(gsid)
             for gene in genes:
-                params['ABBA_InputGenes'].append(gene[0]['ode_ref_id'])
+                params["ABBA_InputGenes"].append(gene[0]["ode_ref_id"])
 
-    for parm, getting in [('ABBA_IgnHom', form.get),
-                          ('ABBA_ShowInter', form.get),
-                          ('ABBA_MinGenes', form.get),
-                          ('ABBA_MinGenesets', form.get),
-                          ('ABBA_RestrictOption', form.get),
-                          ('ABBA_Tierset', form.getlist),
-                          ('ABBA_RestrictSpecies', form.getlist)]:
+    for parm, getting in [
+        ("ABBA_IgnHom", form.get),
+        ("ABBA_ShowInter", form.get),
+        ("ABBA_MinGenes", form.get),
+        ("ABBA_MinGenesets", form.get),
+        ("ABBA_RestrictOption", form.get),
+        ("ABBA_Tierset", form.getlist),
+        ("ABBA_RestrictSpecies", form.getlist),
+    ]:
         if parm in form:
             params[parm] = getting(parm)
 
@@ -61,24 +67,26 @@ def run_tool():
 
     # insert result for this run
     user_id = None
-    if 'user_id' in flask.session:
-        user_id = flask.session['user_id']
+    if "user_id" in flask.session:
+        user_id = flask.session["user_id"]
         projects = gwdb.get_all_projects(user_id)
         project_dict = OrderedDict()
         for proj in projects:
-            project_dict[proj.project_id] = {'id': proj.project_id,
-                                             'name': proj.name,
-                                             'count': proj.count}
-        params['UserProjects'] = project_dict
+            project_dict[proj.project_id] = {
+                "id": proj.project_id,
+                "name": proj.name,
+                "count": proj.count,
+            }
+        params["UserProjects"] = project_dict
 
-        params['UserId'] = user_id
+        params["UserId"] = user_id
     else:
         flask.flash("Internal error: user ID missing")
-        return flask.redirect('/analyze')
+        return flask.redirect("/analyze")
 
     task_id = str(uuid.uuid4())
     tool = gwdb.get_tool(TOOL_CLASSNAME)
-    desc = '{} on {} GeneSets'.format(tool.name, len(selected_geneset_ids))
+    desc = "{} on {} GeneSets".format(tool.name, len(selected_geneset_ids))
     gwdb.insert_result(
         user_id,
         task_id,
@@ -86,27 +94,31 @@ def run_tool():
         json.dumps(params),
         tool.name,
         desc,
-        desc)
+        desc,
+    )
     async_result = tc.celery_app.send_task(
         tc.fully_qualified_name(TOOL_CLASSNAME),
         kwargs={
-            'gsids': selected_geneset_ids,
-            'output_prefix': task_id,
-            'params': params
+            "gsids": selected_geneset_ids,
+            "output_prefix": task_id,
+            "params": params,
         },
-        task_id=task_id)
+        task_id=task_id,
+    )
 
     # render the status page and perform a 303 redirect to the
     # URL that uniquely identifies this run
-    new_location = flask.url_for(TOOL_CLASSNAME + '.view_result', task_id=task_id)
+    new_location = flask.url_for(TOOL_CLASSNAME + ".view_result", task_id=task_id)
     response = flask.make_response(tc.render_tool_pending(async_result, tool))
     response.status_code = 303
-    response.headers['location'] = new_location
+    response.headers["location"] = new_location
 
     return response
 
 
-@abba_blueprint.route('/' + TOOL_CLASSNAME + '-result/<task_id>.html', methods=['GET', 'POST'])
+@abba_blueprint.route(
+    "/" + TOOL_CLASSNAME + "-result/<task_id>.html", methods=["GET", "POST"]
+)
 def view_result(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
@@ -114,51 +126,53 @@ def view_result(task_id):
 
     # Gather emphasis gene ids and put them in parameters
     emphgeneids = []
-    user_id = flask.session.get('user_id')
+    user_id = flask.session.get("user_id")
     emphgenes = gwdb.get_gene_and_species_info_by_user(user_id)
 
     species = list(gwdb.get_all_species().items())
 
     for row in emphgenes:
-        emphgeneids.append(int(row['ode_gene_id']))
+        emphgeneids.append(int(row["ode_gene_id"]))
 
     if async_result.state in states.PROPAGATE_STATES:
         # TODO render a real descriptive error page not just an exception
-        raise Exception('error while processing: ' + tool.name)
+        raise Exception("error while processing: " + tool.name)
 
     if async_result.state == states.FAILURE:
         results = json.loads(async_result.result)
 
-        if results['error']:
-            flask.flash(results['error'])
+        if results["error"]:
+            flask.flash(results["error"])
         else:
-            flask.flash('An unkown error occurred.'
-                        'Please contact a GeneWeaver admin.')
-            return flask.redirect('/analyze')
+            flask.flash("An unkown error occurred.Please contact a GeneWeaver admin.")
+            return flask.redirect("/analyze")
 
     elif async_result.state in states.READY_STATES:
         results = json.loads(async_result.result)
 
-        if results.get('error', False):
-            flask.flash(results['error'])
-            return flask.redirect('/analyze')
+        if results.get("error", False):
+            flask.flash(results["error"])
+            return flask.redirect("/analyze")
 
         # Open files and pass via template
-        with open(RESULTS_PATH + '/' + task_id + '.json', 'r') as _file:
+        with open(RESULTS_PATH + "/" + task_id + ".json", "r") as _file:
             json_results = _file.readline()
 
         # results are ready. render the page for the user
         return flask.render_template(
-            'tool/ABBA_result.html',
+            "tool/ABBA_result.html",
             json_result=json.loads(json_results),
             async_result=results,
-            tool=tool, emphgeneids=emphgeneids, species=species)
+            tool=tool,
+            emphgeneids=emphgeneids,
+            species=species,
+        )
 
     # render a page telling their results are pending
     return tc.render_tool_pending(async_result, tool)
 
 
-@abba_blueprint.route('/' + TOOL_CLASSNAME + '-status/<task_id>.json')
+@abba_blueprint.route("/" + TOOL_CLASSNAME + "-status/<task_id>.json")
 def status_json(task_id):
     # TODO need to check for read permissions on task
     async_result = tc.celery_app.AsyncResult(task_id)
@@ -170,20 +184,22 @@ def status_json(task_id):
             percent = None
 
         else:
-            progress = async_result.info['message']
-            percent = async_result.info['percent']
+            progress = async_result.info["message"]
+            percent = async_result.info["percent"]
 
     elif async_result.state == states.FAILURE:
-        progress = 'Failed'
-        percent = ''
+        progress = "Failed"
+        percent = ""
 
     else:
-        progress = 'Done'
-        percent = ''
+        progress = "Done"
+        percent = ""
 
-    return flask.jsonify({
-        'isReady': async_result.state in states.READY_STATES,
-        'state': async_result.state,
-        'progress': progress,
-        'percent': percent
-    })
+    return flask.jsonify(
+        {
+            "isReady": async_result.state in states.READY_STATES,
+            "state": async_result.state,
+            "progress": progress,
+            "percent": percent,
+        }
+    )

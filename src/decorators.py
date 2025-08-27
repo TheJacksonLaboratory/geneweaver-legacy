@@ -10,15 +10,22 @@ def login_required(json=False, allow_guests=False):
     :param allow_guests: A boolean indicating if this view allows users that are not registered
     :return: The decorator with the applicable json setting.
     """
+
     def decorator(f):
         def wrapped(*args, **kwargs):
-            if flask.g.get('user') is None or (not allow_guests and flask.g.user.is_guest):
+            if flask.g.get("user") is None or (
+                not allow_guests and flask.g.user.is_guest
+            ):
                 if json:
-                    return flask.jsonify({"error": "You must be signed in to perform this action"})
+                    return flask.jsonify(
+                        {"error": "You must be signed in to perform this action"}
+                    )
                 else:
-                    return flask.redirect(flask.url_for('register_or_login'))
+                    return flask.redirect(flask.url_for("register_or_login"))
             return f(*args, **kwargs)
+
         return update_wrapper(wrapped, f)
+
     return decorator
 
 
@@ -29,13 +36,15 @@ def restrict_to_current_user(f):
     :param f: The function to decorate.
     :return: The decorated function.
     """
+
     @wraps(f)
     def decorated(*args, **kwargs):
-        req_uid = int(flask.request.args['user_id'])
-        ses_uid = int(flask.session.get('user_id'))
+        req_uid = int(flask.request.args["user_id"])
+        ses_uid = int(flask.session.get("user_id"))
         if req_uid != ses_uid:
             flask.abort(403)
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -48,14 +57,14 @@ def create_guest(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        if flask.g.get('user') is None:
+        if flask.g.get("user") is None:
             user = geneweaverdb.new_guest()
             if user is not None:
                 flask.g.user = user
-                flask.session['user_id'] = user.user_id
+                flask.session["user_id"] = user.user_id
                 remote_addr = flask.request.remote_addr
                 if remote_addr:
-                    flask.session['remote_addr'] = remote_addr
+                    flask.session["remote_addr"] = remote_addr
         return f(*args, **kwargs)
-    return decorated
 
+    return decorated
