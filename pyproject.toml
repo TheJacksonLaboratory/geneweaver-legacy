@@ -1,7 +1,7 @@
 [project]
 name = "geneweaver-legacy"
 version = "1.5.19"
-description = ""
+description = "The Geneweaver Web Application"
 authors = [{name = "Alexander Berger", email = "alexander.berger@jax.org"}]
 readme = "README.md"
 requires-python = ">=3.9.2"
