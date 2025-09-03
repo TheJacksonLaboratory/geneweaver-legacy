@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeneSet Graph - Full View</title>
+    <script type="text/javascript" src="../../static/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../../static/jquery/jquery.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .controls button {
+            margin: 2px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .controls button:hover {
+            background: #e9e9e9;
+        }
+        
+        .controls button:active {
+            background: #d9d9d9;
+        }
+        
+        #graph-container {
+            width: 100%;
+            height: calc(100vh - 40px);
+            border: 1px solid #ddd;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #svg-viewer {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        #svg-viewer:active {
+            cursor: grabbing;
+        }
+        
+        .help-text {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+            max-width: 300px;
+        }
+        
+        .print-styles {
+            display: none;
+        }
+        
+        @media print {
+            .controls, .help-text {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            #graph-container {
+                height: 100vh;
+                border: none;
+                overflow: visible;
+            }
+            
+            .print-styles {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="zoom-in">🔍+</button>
+        <button id="zoom-out">🔍-</button>
+        <button id="fit-to-window">📐 Fit</button>
+        <button id="reset-view">🔄 Reset</button>
+        <button id="print-graph">🖨️ Print</button>
+    </div>
+    
+    <div id="graph-container">
+        <div id="svg-viewer"></div>
+        <div class="help-text">
+            <strong>Navigation:</strong><br>
+            • Mouse wheel: Zoom in/out<br>
+            • Click & drag: Pan around<br>
+            • Use buttons above for quick actions<br>
+            • Click gene/geneset labels to open details
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var svgFilePath = "{{ svg_file_path }}";
+        var currentScale = 1;
+        var currentTranslateX = 0;
+        var currentTranslateY = 0;
+        var svgElement;
+        var containerWidth, containerHeight;
+        
+        // Load and display the SVG
+        function loadSVG() {
+            d3.xml(svgFilePath).mimeType('image/svg+xml').get(function(error, xml) {
+                if (error) {
+                    console.error('Error loading SVG:', error);
+                    document.getElementById('svg-viewer').innerHTML = '<p>Error loading graph. Please try refreshing the page.</p>';
+                    return;
+                }
+                
+                svgElement = xml.documentElement;
+                document.getElementById('svg-viewer').appendChild(svgElement);
+                
+                // Get container dimensions
+                var container = document.getElementById('graph-container');
+                containerWidth = container.clientWidth;
+                containerHeight = container.clientHeight;
+                
+                // Set SVG to fill container initially
+                d3.select(svgElement)
+                    .attr('width', '100%')
+                    .attr('height', '100%')
+                    .style('display', 'block');
+                
+                // Add zoom and pan functionality
+                setupZoomPan();
+                
+                // Auto-fit to window on load with proper timing
+                setTimeout(function() {
+                    fitToWindow();
+                }, 200);
+            });
+        }
+        
+        function setupZoomPan() {
+            var svg = d3.select(svgElement);
+            
+            // Mouse wheel zoom
+            svg.on('wheel', function() {
+                d3.event.preventDefault();
+                var delta = d3.event.deltaY;
+                var zoomFactor = delta > 0 ? 0.9 : 1.1;
+                
+                var rect = svgElement.getBoundingClientRect();
+                var mouseX = d3.event.clientX - rect.left;
+                var mouseY = d3.event.clientY - rect.top;
+                
+                zoomAtPoint(mouseX, mouseY, zoomFactor);
+            });
+            
+            // Pan functionality
+            var isDragging = false;
+            var startX, startY;
+            
+            svg.on('mousedown', function() {
+                isDragging = true;
+                startX = d3.event.clientX - currentTranslateX;
+                startY = d3.event.clientY - currentTranslateY;
+                d3.event.preventDefault();
+            });
+            
+            d3.select(document).on('mousemove', function() {
+                if (!isDragging) return;
+                
+                currentTranslateX = d3.event.clientX - startX;
+                currentTranslateY = d3.event.clientY - startY;
+                updateTransform();
+            });
+            
+            d3.select(document).on('mouseup', function() {
+                isDragging = false;
+            });
+        }
+        
+        function zoomAtPoint(x, y, factor) {
+            var newScale = currentScale * factor;
+            
+            // Limit zoom levels
+            if (newScale < 0.1) newScale = 0.1;
+            if (newScale > 10) newScale = 10;
+            
+            // Calculate new translation to zoom at the point
+            currentTranslateX = x - (x - currentTranslateX) * (newScale / currentScale);
+            currentTranslateY = y - (y - currentTranslateY) * (newScale / currentScale);
+            
+            currentScale = newScale;
+            updateTransform();
+        }
+        
+        function updateTransform() {
+            if (!svgElement) return;
+            
+            var transform = 'translate(' + currentTranslateX + 'px, ' + currentTranslateY + 'px) scale(' + currentScale + ')';
+            svgElement.style.transform = transform;
+        }
+        
+        function fitToWindow() {
+            if (!svgElement) return;
+            
+            // Reset transforms first
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            updateTransform();
+            
+            // Update container dimensions
+            var container = document.getElementById('graph-container');
+            containerWidth = container.clientWidth;
+            containerHeight = container.clientHeight;
+            
+            // Get SVG dimensions after reset
+            var svgRect = svgElement.getBoundingClientRect();
+            var svgWidth = svgRect.width;
+            var svgHeight = svgRect.height;
+            
+            // Calculate scale to fit with padding
+            var scaleX = (containerWidth * 0.9) / svgWidth;
+            var scaleY = (containerHeight * 0.9) / svgHeight;
+            currentScale = Math.min(scaleX, scaleY);
+            
+            // Center the scaled SVG
+            var scaledWidth = svgWidth * currentScale;
+            var scaledHeight = svgHeight * currentScale;
+            currentTranslateX = (containerWidth - scaledWidth) / 2;
+            currentTranslateY = (containerHeight - scaledHeight) / 2;
+            
+            updateTransform();
+        }
+        
+        function resetView() {
+            currentScale = 1;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            updateTransform();
+        }
+        
+        function zoomIn() {
+            var centerX = containerWidth / 2;
+            var centerY = containerHeight / 2;
+            zoomAtPoint(centerX, centerY, 1.2);
+        }
+        
+        function zoomOut() {
+            var centerX = containerWidth / 2;
+            var centerY = containerHeight / 2;
+            zoomAtPoint(centerX, centerY, 0.8);
+        }
+        
+        function printGraph() {
+            window.print();
+        }
+        
+        // Event listeners
+        document.getElementById('zoom-in').addEventListener('click', zoomIn);
+        document.getElementById('zoom-out').addEventListener('click', zoomOut);
+        document.getElementById('fit-to-window').addEventListener('click', fitToWindow);
+        document.getElementById('reset-view').addEventListener('click', resetView);
+        document.getElementById('print-graph').addEventListener('click', printGraph);
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            var container = document.getElementById('graph-container');
+            containerWidth = container.clientWidth;
+            containerHeight = container.clientHeight;
+        });
+        
+        // Load SVG on page load
+        window.addEventListener('load', loadSVG);
+        
+        // Prevent context menu on right-click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
